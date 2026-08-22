@@ -1,0 +1,202 @@
+{
+  "height": 1100,
+  "links": [
+    {
+      "alt": "",
+      "href": "https://crosstalk.goarno.io/_next/static/css/d5a7ffe3e0960f7b.css?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "rel": "stylesheet",
+      "src": "",
+      "tag": "LINK"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/1dd3208c-f545d1f8b786f87a.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/1528-bd9c3e1ce5fd5345.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/main-app-420abd7798f6e175.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/950-e8940d999ece8540.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/8310-adc02323919eebd4.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/2247-52e0d28805aedb4a.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/8121-b7ab47708cb0f2fe.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/2486-65e8b9278d442ac3.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/app/%5Blocale%5D/page-b3909d5d59692cd7.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/3387-6255f7d932c16d5e.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/app/layout-16e403af52cc809a.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/polyfills-42372ed130431b0a.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    },
+    {
+      "alt": "CrossTalk by Arno",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/arno.svg",
+      "tag": "IMG"
+    },
+    {
+      "alt": "",
+      "href": "",
+      "rel": "",
+      "src": "https://crosstalk.goarno.io/_next/static/chunks/webpack-15715a062007fec4.js?dpl=dpl_5zFMcRDin9ExEjrrGxdydkT7kMsn",
+      "tag": "SCRIPT"
+    }
+  ],
+  "scrollHeight": 5450,
+  "sections": [
+    {
+      "cls": "mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-8 lg:px-12",
+      "heading": "HEADER",
+      "height": 84,
+      "i": 0,
+      "tag": "HEADER",
+      "top": 0
+    },
+    {
+      "cls": "mx-auto grid w-full max-w-7xl items-center gap-12 px-5 pb-16 pt-6 sm:px-8 lg:grid-cols-[0.95fr_1.05fr] lg:px-12",
+      "heading": "学一门语言 通过与 AI 伙伴聊天。",
+      "height": 490,
+      "i": 1,
+      "tag": "SECTION",
+      "top": 84
+    },
+    {
+      "cls": "border-y bg-white px-5 py-20 sm:px-8 lg:px-12",
+      "heading": "一款在你使用过程中教你语言的聊天应用。",
+      "height": 665,
+      "i": 2,
+      "tag": "SECTION",
+      "top": 574
+    },
+    {
+      "cls": "mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-12",
+      "heading": "每次聊天为你做的三件事。",
+      "height": 760,
+      "i": 3,
+      "tag": "SECTION",
+      "top": 1239
+    },
+    {
+      "cls": "bg-[#FFF7EC] px-5 py-20 sm:px-8 lg:px-12",
+      "heading": "卡住了？来一节 90 秒小课。",
+      "height": 650,
+      "i": 4,
+      "tag": "SECTION",
+      "top": 1998
+    },
+    {
+      "cls": "bg-white px-5 py-20 sm:px-8 lg:px-12",
+      "heading": "是搭档来适应你，而不是让你迁就搭档。",
+      "height": 599,
+      "i": 5,
+      "tag": "SECTION",
+      "top": 2648
+    },
+    {
+      "cls": "bg-background px-5 py-20 sm:px-8 lg:px-12",
+      "heading": "CrossTalk by Arno 方法，三个练习习惯。",
+      "height": 486,
+      "i": 6,
+      "tag": "SECTION",
+      "top": 3246
+    },
+    {
+      "cls": "bg-white px-5 py-20 sm:px-8 lg:px-12",
+      "heading": "CrossTalk by Arno 常见问题",
+      "height": 966,
+      "i": 7,
+      "tag": "SECTION",
+      "top": 3732
+    },
+    {
+      "cls": "px-5 pb-24 pt-8 sm:px-8 lg:px-12",
+      "heading": "别只学，开口聊。",
+      "height": 416,
+      "i": 8,
+      "tag": "SECTION",
+      "top": 4698
+    },
+    {
+      "cls": "bg-[#1b1e2a] py-10 text-white",
+      "heading": "产品",
+      "height": 336,
+      "i": 9,
+      "tag": "FOOTER",
+      "top": 5114
+    }
+  ],
+  "styles": {
+    "background": "rgb(255, 248, 240)",
+    "body": "",
+    "color": "rgb(43, 43, 43)",
+    "font": "-apple-system, BlinkMacSystemFont, \"Hiragino Sans\", \"Segoe UI\", sans-serif"
+  },
+  "title": "CrossTalk by Arno | Real conversation practice",
+  "url": "https://crosstalk.goarno.io/zh-CN",
+  "width": 1440
+}
