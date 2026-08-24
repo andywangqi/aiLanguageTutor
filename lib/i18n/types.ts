@@ -41,6 +41,7 @@ export type LandingDictionary = {
     tabs: {
       sayIt: string;
       talk: string;
+      practice: string;
     };
     promptLabel: string;
     prompt: string;

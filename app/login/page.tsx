@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { LoginPage } from "@/components/app/LoginPage";
+import { HomePage } from "@/components/landing/HomePage";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export const metadata: Metadata = {
   title: "Sign in | AI Language Tutor",
@@ -7,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <LoginPage />;
+  return (
+    <>
+      <HomePage dictionary={getDictionary("en")} locale="en" />
+      <LoginPage />
+    </>
+  );
 }

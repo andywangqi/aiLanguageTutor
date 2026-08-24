@@ -23,6 +23,11 @@ export function Hero({ dictionary }: { dictionary: LandingDictionary }) {
               {dictionary.hero.secondaryCta}
             </ButtonLink>
           </div>
+          <div className="hero-proof" aria-label="Product highlights">
+            <span>Start practicing free</span>
+            <span>No credit card required</span>
+            <span>Voice input</span>
+          </div>
         </div>
         <InteractiveDemo dictionary={dictionary} />
       </div>

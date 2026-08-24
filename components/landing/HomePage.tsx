@@ -1,14 +1,11 @@
+import Link from "next/link";
 import {
   BookOpen,
   Brain,
   CheckCircle2,
   ChevronRight,
-  Languages,
   Lightbulb,
-  Mic2,
   MessageSquareText,
-  PenLine,
-  SlidersHorizontal,
   Sparkles,
   Target,
   Volume2
@@ -20,9 +17,40 @@ import { Hero } from "./Hero";
 import { SectionHeading } from "./SectionHeading";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 
-const cardIcons = [Mic2, PenLine, Target];
-const whyIcons = [Sparkles, SlidersHorizontal, MessageSquareText];
-const correctionIcons = [PenLine, Languages, MessageSquareText, Volume2];
+const flowSteps = ["Speak", "Understand", "Practice"];
+const pronunciationBars = [34, 58, 72, 48, 64, 52, 76, 44];
+const vocabRows = [
+  { word: "delayed", meaning: "延迟的", practice: "Say it" },
+  { word: "reservation", meaning: "预订", practice: "Say it" },
+  { word: "crowded", meaning: "拥挤的", practice: "Say it" }
+];
+const memoryRows = [
+  { label: "New phrases", value: "3" },
+  { label: "Corrections", value: "2" },
+  { label: "Words learned", value: "5" }
+];
+const benefitIcons = [Sparkles, Target, MessageSquareText];
+
+const storySamples = [
+  {
+    badge: "Say It",
+    prompt: "我明天可能会迟到。",
+    response: "I might be late tomorrow.",
+    actions: ["Listen", "Translation", "Practice"]
+  },
+  {
+    badge: "Talk",
+    prompt: "What did you do this weekend?",
+    response: "I went to a small cafe and practiced ordering in English. What about you?",
+    actions: ["Follow up", "Keep going", "Speak again"]
+  },
+  {
+    badge: "Practice",
+    prompt: "I go there yesterday.",
+    response: "I went there yesterday.",
+    actions: ["Grammar", "Why", "Try again"]
+  }
+];
 
 export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
   const { sections } = dictionary;
@@ -33,23 +61,40 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
       <main>
         <Hero dictionary={dictionary} />
 
-        <section className="section section-white" id="method">
+        <section className="section section-white story-section" id="method">
           <div className="container">
-            <SectionHeading
-              eyebrow={sections.learn.eyebrow}
-              title={sections.learn.h2}
-              lead={sections.learn.lead}
-            />
-            <div className="feature-grid three">
+              <SectionHeading
+                eyebrow={sections.learn.eyebrow}
+                title={sections.learn.h2}
+                lead={sections.learn.lead}
+              />
+            <div className="story-grid">
               {sections.learn.cards.map((card, index) => {
-                const Icon = cardIcons[index] ?? Sparkles;
+                const sample = storySamples[index];
+
                 return (
-                  <article className="feature-card" key={card.title}>
-                    <span className="icon-tile orange">
-                      <Icon aria-hidden="true" size={24} />
-                    </span>
+                  <article className="story-card" key={card.title}>
+                    <div className="story-card-top">
+                      <span className="story-index">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="story-pill">{sample.badge}</span>
+                    </div>
                     <h3>{card.title}</h3>
+                    <div className="story-dialogue">
+                      <div className="story-sample story-user">
+                        <small>You</small>
+                        <strong>{sample.prompt}</strong>
+                      </div>
+                      <div className="story-sample story-tutor">
+                        <small>AI Tutor</small>
+                        <strong>{sample.response}</strong>
+                      </div>
+                    </div>
                     <p>{card.description}</p>
+                    <div className="story-actions" aria-label={card.title}>
+                      {sample.actions.map((action) => (
+                        <span key={action}>{action}</span>
+                      ))}
+                    </div>
                   </article>
                 );
               })}
@@ -58,7 +103,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
         </section>
 
         <section className="section section-warm">
-          <div className="container split-grid">
+          <div className="container split-grid product-grid">
             <div>
               <SectionHeading
                 align="left"
@@ -66,21 +111,35 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 title={sections.modes.h2}
                 lead={sections.modes.lead}
               />
-              <div className="mode-flow" aria-label="Tutor learning flow">
-                {["Say", "Talk", "Improve"].map((item) => (
-                  <span key={item}>{item}</span>
+              <div className="flow-track" aria-label="Learning flow">
+                {flowSteps.map((step, index) => (
+                  <span key={step}>
+                    {step}
+                    {index < flowSteps.length - 1 ? <ChevronRight aria-hidden="true" size={14} /> : null}
+                  </span>
                 ))}
               </div>
+              <p className="flow-note">
+                You do not need a full lesson before you can speak. One conversation creates the practice you need.
+              </p>
             </div>
-            <div className="mode-list">
+            <div className="mode-stack">
               {sections.modes.items.map((item, index) => (
-                <article className="mode-card" key={item.title}>
-                  <span className={index === 0 ? "mode-number orange" : "mode-number blue"}>
-                    {index + 1}
-                  </span>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
+                <article className="mode-card mode-story-card" key={item.title}>
+                  <div className="mode-card-head">
+                    <span className={index === 0 ? "mode-number orange" : "mode-number blue"}>{index + 1}</span>
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </div>
+                  </div>
+                  <div className="mode-example">
+                    <small>{index === 0 ? "You" : "AI Tutor"}</small>
+                    <strong>
+                      {index === 0
+                        ? "我想跟老板说我明天不能上班。"
+                        : "I need to tell my boss that I can't come to work tomorrow."}
+                    </strong>
                   </div>
                 </article>
               ))}
@@ -88,20 +147,22 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
           </div>
         </section>
 
-        <section className="section section-blue">
+        <section className="section section-blue" id="corrections">
           <div className="container correction-grid">
-            <div className="correction-board" aria-label="Tutor correction example">
+            <div className="correction-board">
               <div className="correction-row muted">
                 <span>You said</span>
-                <strong>I am agree with you.</strong>
+                <strong>I go to Tokyo yesterday.</strong>
               </div>
               <div className="correction-row active">
-                <span>Better</span>
-                <strong>I agree with you.</strong>
+                <span>Your tutor</span>
+                <strong>I went to Tokyo yesterday.</strong>
               </div>
               <div className="correction-note">
                 <Lightbulb aria-hidden="true" size={18} />
-                <p>Use “agree” as a verb. You do not need “am” before it.</p>
+                <p>
+                  Use <strong>went</strong> because yesterday is in the past. Try it again out loud.
+                </p>
               </div>
             </div>
             <div>
@@ -112,21 +173,18 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 lead={sections.corrections.lead}
               />
               <div className="correction-list">
-                {sections.corrections.points.map((point, index) => {
-                  const Icon = correctionIcons[index] ?? CheckCircle2;
-                  return (
-                    <div className="check-item" key={point}>
-                      <Icon aria-hidden="true" size={18} />
-                      <span>{point}</span>
-                    </div>
-                  );
-                })}
+                {sections.corrections.points.map((point) => (
+                  <div className="check-item" key={point}>
+                    <CheckCircle2 aria-hidden="true" size={18} />
+                    <span>{point}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        <section className="section section-white">
+        <section className="section section-white" id="pronunciation">
           <div className="container split-grid reverse-on-mobile">
             <div>
               <SectionHeading
@@ -144,23 +202,64 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 ))}
               </ul>
             </div>
-            <div className="ask-panel">
-              <span className="panel-label">Say It</span>
-              <p className="ask-question">How do I say this naturally?</p>
-              <div className="answer-strip">
-                <strong>I’m still getting used to it.</strong>
-                <small>Natural, casual, and useful in everyday conversation.</small>
+            <div className="pronunciation-panel">
+              <div className="panel-header">
+                <span className="panel-label">Pronunciation Practice</span>
+                <span className="live-dot">Live</span>
               </div>
-              <button type="button">
-                Practice this
+              <div className="pronunciation-word">
+                <Volume2 aria-hidden="true" size={18} />
+                <strong>comfortable</strong>
+              </div>
+              <div className="pronunciation-score">
+                <strong>87%</strong>
+                <p>Clear, but the middle sound can be softer.</p>
+              </div>
+              <div className="voice-wave" aria-hidden="true">
+                {pronunciationBars.map((height, index) => (
+                  <span key={index} style={{ height: `${height}%` }} />
+                ))}
+              </div>
+              <div className="pronunciation-details" aria-label="Syllables">
+                <span>comf</span>
+                <span>ter</span>
+                <span>ble</span>
+              </div>
+              <p className="pronunciation-copy">
+                Listen, speak, and improve your pronunciation as you practice.
+              </p>
+              <ButtonLink href="/login" variant="secondary" className="pronunciation-button">
+                Try again
                 <ChevronRight aria-hidden="true" size={18} />
-              </button>
+              </ButtonLink>
             </div>
           </div>
         </section>
 
-        <section className="section section-warm lesson-section">
-          <div className="container lesson-grid">
+        <section className="section section-warm">
+          <div className="container split-grid lesson-grid">
+            <div className="vocab-panel">
+              <div className="panel-header">
+                <span className="panel-label">Vocabulary</span>
+                <BookOpen aria-hidden="true" size={18} />
+              </div>
+              <div className="vocab-table" role="table" aria-label="Words you actually used">
+                <div className="vocab-head" role="row">
+                  <span role="columnheader">Word</span>
+                  <span role="columnheader">Meaning</span>
+                  <span role="columnheader">Practice</span>
+                </div>
+                {vocabRows.map((row) => (
+                  <div className="vocab-row" role="row" key={row.word}>
+                    <strong role="cell">{row.word}</strong>
+                    <span role="cell">{row.meaning}</span>
+                    <button type="button" aria-label={`Practice ${row.word}`}>
+                      {row.practice}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
             <div>
               <SectionHeading
                 align="left"
@@ -168,31 +267,31 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 title={sections.lesson.h2}
                 lead={sections.lesson.lead}
               />
-            </div>
-            <div className="lesson-chain">
-              {sections.lesson.steps.map((step, index) => (
-                <div className="lesson-step" key={step}>
-                  <span>{index + 1}</span>
-                  <strong>{step}</strong>
-                </div>
-              ))}
+              <div className="lesson-strip">
+                {sections.lesson.steps.map((step) => (
+                  <span key={step}>{step}</span>
+                ))}
+              </div>
+              <p className="lesson-note">
+                No random vocabulary lists. Learn the words that come from your own conversations.
+              </p>
             </div>
           </div>
         </section>
 
-        <section className="section section-white">
+        <section className="section section-blue" id="review">
           <div className="container personal-grid">
-            <div className="progress-panel">
-              <div className="progress-header">
-                <div>
-                  <span className="panel-label">Tutor memory</span>
-                  <strong>Updated after each session</strong>
-                </div>
-                <Brain aria-hidden="true" size={24} />
+            <div className="memory-panel">
+              <div className="panel-header">
+                <span className="panel-label">Review</span>
+                <Brain aria-hidden="true" size={18} />
               </div>
-              <div className="bar-chart" aria-hidden="true">
-                {[38, 48, 43, 58, 67, 75, 83, 91].map((height, index) => (
-                  <span key={index} style={{ height: `${height}%` }} />
+              <div className="memory-list">
+                {memoryRows.map((row) => (
+                  <div className="memory-item" key={row.label}>
+                    <span>{row.label}</span>
+                    <strong>{row.value}</strong>
+                  </div>
                 ))}
               </div>
               <div className="stat-grid">
@@ -229,7 +328,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
           </div>
         </section>
 
-        <section className="section section-blue" id="languages">
+        <section className="section section-white" id="languages">
           <div className="container">
             <SectionHeading
               eyebrow={sections.languages.eyebrow}
@@ -241,17 +340,19 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 <span key={language}>{language}</span>
               ))}
             </div>
+            <p className="language-note">Practice the language you actually want to speak, and expand from there.</p>
           </div>
         </section>
 
-        <section className="section section-white">
+        <section className="section section-warm">
           <div className="container">
             <SectionHeading eyebrow={sections.why.eyebrow} title={sections.why.h2} lead={sections.why.lead} />
-            <div className="feature-grid three">
+            <div className="benefit-grid">
               {sections.why.cards.map((card, index) => {
-                const Icon = whyIcons[index] ?? BookOpen;
+                const Icon = benefitIcons[index] ?? Sparkles;
+
                 return (
-                  <article className="feature-card" key={card.title}>
+                  <article className="benefit-card" key={card.title}>
                     <span className="icon-tile blue">
                       <Icon aria-hidden="true" size={24} />
                     </span>
@@ -264,7 +365,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
           </div>
         </section>
 
-        <section className="section section-warm" id="faq">
+        <section className="section section-white" id="faq">
           <div className="container">
             <SectionHeading eyebrow={sections.faq.eyebrow} title={sections.faq.h2} lead={sections.faq.lead} />
             <div className="faq-grid">
@@ -302,21 +403,35 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
 }
 
 function Footer({ dictionary }: { dictionary: LandingDictionary }) {
+  const footerLinks: Record<string, string> = {
+    "Say It": "#demo",
+    Talk: "#demo",
+    Corrections: "#corrections",
+    "Open App": "/app",
+    "Conversation Practice": "#method",
+    "Speaking Practice": "#method",
+    "Pronunciation Practice": "#pronunciation",
+    Review: "#review",
+    Contact: "/contact",
+    Privacy: "/privacy",
+    Terms: "/terms"
+  };
+
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
         <div>
           <h2>{dictionary.footer.brand}</h2>
           <p>{dictionary.footer.rights}</p>
-          <a href="mailto:support@example.com">support@example.com</a>
+          <a href="mailto:support@ailanguagetutor.com">support@ailanguagetutor.com</a>
         </div>
         {dictionary.footer.columns.map((column) => (
           <nav aria-label={column.title} key={column.title}>
             <h3>{column.title}</h3>
             {column.links.map((link) => (
-              <a href="#" key={link}>
+              <Link href={footerLinks[link] ?? "/"} key={link}>
                 {link}
-              </a>
+              </Link>
             ))}
           </nav>
         ))}

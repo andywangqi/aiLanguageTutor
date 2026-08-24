@@ -3,181 +3,176 @@ import type { LandingDictionary } from "./types";
 const baseEn: LandingDictionary = {
   locale: "en",
   seo: {
-    title: "AI Language Tutor | Speak, Learn & Improve with AI",
+    title: "AI Language Tutor | Learn Languages Through Real Conversations",
     description:
-      "Practice real conversations with an AI language tutor. Learn how to say things naturally, get instant corrections, and improve your speaking skills."
+      "Learn languages with an AI language tutor through real conversations. Speak in your native language when you need help, practice your target language, and improve with instant feedback."
   },
   nav: {
     product: "Product",
-    method: "Method",
+    method: "How it works",
     languages: "Languages",
     faq: "FAQ",
-    app: "Start Talking"
+    app: "Open App"
   },
   hero: {
-    eyebrow: "AI language tutor for speaking practice",
-    h1: "Your AI Language Tutor for Real Conversations",
+    eyebrow: "AI language tutor for real conversations",
+    h1: "AI Language Tutor for Real Conversations",
     lead:
-      "Speak in the language you're learning, get instant corrections, and learn how to express yourself naturally.",
-    primaryCta: "Start Talking — Free",
-    secondaryCta: "Try the demo"
+      "Learn a language by having real conversations with an AI tutor. Speak in your native language when you need help, or practice directly in the language you're learning.",
+    primaryCta: "Try Your First Conversation",
+    secondaryCta: "See how it works"
   },
   demo: {
     title: "Try your AI tutor",
     tabs: {
       sayIt: "Say It",
-      talk: "Talk"
+      talk: "Talk",
+      practice: "Practice"
     },
     promptLabel: "You",
     prompt: "I might be late tomorrow.",
     responseLabel: "AI Tutor",
-    response: "Natural. You can also say: “I may be running a little late tomorrow.”",
-    actions: ["Listen", "Translation", "Practice"],
+    response: "I might be late tomorrow.",
+    actions: ["Listen", "Translation", "Learn"],
     turn: "Your turn",
-    hint: "Practice the sentence out loud and get feedback."
+    hint: "Long-press to speak, then release to send."
   },
   sections: {
     learn: {
-      eyebrow: "Learn to Speak, Not Just Study",
-      h2: "Learn to Speak, Not Just Study",
-      lead:
-        "Practice real conversations with an AI tutor and learn how to express yourself naturally in the language you want to speak.",
+      eyebrow: "Core loop",
+      h2: "Learn a Language Through Conversation",
+      lead: "Speak, understand, and practice in one loop instead of studying first.",
       cards: [
         {
-          title: "Speak from day one",
-          description:
-            "Start with real things you want to say. Your tutor helps you form the sentence, say it, and improve it."
+          title: "Say It",
+          description: "Tell your tutor what you want to say in your own language, then hear the natural version."
         },
         {
-          title: "Understand the correction",
-          description:
-            "See what changed and why, from grammar and vocabulary to more natural everyday expressions."
+          title: "Talk",
+          description: "Keep a real conversation going in the language you're learning without leaving the screen."
         },
         {
-          title: "Practice until it feels natural",
-          description:
-            "Repeat useful phrases in context so they become easier to remember and use in conversation."
+          title: "Practice",
+          description: "Use the correction, understand why it changed, and say it again out loud."
         }
       ]
     },
     modes: {
-      eyebrow: "Say It. Talk. Improve.",
-      h2: "Say It. Talk. Improve.",
+      eyebrow: "Start with your own language",
+      h2: "Don't Know How to Say It? Start With Your Own Language.",
       lead:
-        "Use two simple modes: ask how to say something, then move into a conversation that adapts to your level.",
+        "You do not need the perfect sentence before you begin. Say what you mean in your native language, then keep talking in the language you're learning.",
       items: [
         {
           title: "Say It",
-          description:
-            "Tell your tutor what you want to say in your own language. Learn the natural way to say it, then practice speaking it."
+          description: "Say the sentence in your own language and get the natural version immediately."
         },
         {
           title: "Talk",
-          description:
-            "Have a real conversation in the language you're learning. Your AI tutor adapts to your level and keeps the conversation going."
+          description: "Stay in conversation while your tutor asks the next question and keeps it moving."
         }
       ]
     },
     corrections: {
-      eyebrow: "Instant speaking feedback",
-      h2: "Your AI Tutor Corrects You as You Speak",
-      lead:
-        "This is more than a chatbot. Your tutor listens for mistakes, gives useful corrections, and helps you sound more natural.",
+      eyebrow: "Corrections",
+      h2: "Improve Your Language as You Speak",
+      lead: "Get useful corrections while you practice, so you can understand mistakes and use better expressions in your next reply.",
       points: ["Grammar", "Vocabulary", "Natural expressions", "Pronunciation"]
     },
     stuck: {
-      eyebrow: "Stuck? Just Ask Your Tutor",
-      h2: "Stuck? Just Ask Your Tutor",
+      eyebrow: "Get Help",
+      h2: "Get Help When You Get Stuck",
       lead:
-        "Don't know how to say something? Ask your tutor in your own language. Get a natural answer, an explanation, and a chance to say it yourself.",
+        "Translate a message, listen to pronunciation, understand a new word, or get help saying what you mean without leaving the conversation.",
       points: [
-        "Ask in your own language when you get stuck",
-        "Get the natural expression, not a word-by-word translation",
-        "Practice the answer out loud right away"
+        "Translate a message",
+        "Listen to the pronunciation",
+        "Understand a new word",
+        "Say it naturally"
       ]
     },
     lesson: {
-      eyebrow: "Every Conversation Becomes a Lesson",
-      h2: "Every Conversation Becomes a Lesson",
-      lead:
-        "You don't need to study a lesson before you can speak. Your conversations create the lessons you need.",
-      steps: ["New words", "Mistakes", "Corrections", "Practice", "Progress"]
+      eyebrow: "Vocabulary",
+      h2: "Learn Useful Words From Your Conversations",
+      lead: "Your conversations introduce words and phrases that actually fit what you are trying to say.",
+      steps: ["New words", "Useful phrases", "Practice", "Review", "Progress"]
     },
     personal: {
-      eyebrow: "Personalized language learning",
-      h2: "Your Personal AI Language Tutor",
-      lead:
-        "Your tutor remembers your level, notices your mistakes, and keeps each conversation challenging without becoming overwhelming.",
+      eyebrow: "Review",
+      h2: "Every Conversation Becomes a Learning Opportunity",
+      lead: "Review useful phrases, corrections, and words from your conversations so you can practice them again later.",
       stats: [
-        { label: "Speaking pace", value: "Adaptive" },
-        { label: "Correction style", value: "Natural" },
-        { label: "Practice focus", value: "Personal" }
+        { label: "Review focus", value: "Past tense" },
+        { label: "Practice style", value: "Personal" },
+        { label: "Speaking pace", value: "Adaptive" }
       ]
     },
     languages: {
-      eyebrow: "Language SEO foundation",
-      h2: "Practice English, Spanish, Japanese & More",
-      lead:
-        "Start with the languages your learners care about most. Each language can grow into a focused SEO landing page later.",
-      items: ["English", "Spanish", "Japanese", "French", "German", "Korean"]
+      eyebrow: "Languages",
+      h2: "Learn the Language You Want to Speak",
+      lead: "Practice conversations in the language you are learning, starting with the languages your learners care about most.",
+      items: ["English", "Spanish", "Japanese", "Korean", "Chinese", "French", "German"]
     },
     why: {
-      eyebrow: "Why Learn with an AI Tutor?",
-      h2: "Why Learn with an AI Tutor?",
-      lead:
-        "AI language learning works best when practice, correction, pronunciation, and personalized progress happen in the same place.",
+      eyebrow: "Why learn with an AI tutor",
+      h2: "Why Learn With an AI Language Tutor?",
+      lead: "Practice speaking whenever you want, at your own level, without waiting for a class or finding a conversation partner.",
       cards: [
         {
-          title: "Always available",
-          description: "Practice when you have five minutes, without scheduling a class."
+          title: "Practice anytime",
+          description: "Start a conversation whenever you have a few minutes."
         },
         {
-          title: "Personalized practice",
-          description: "Focus on the grammar, vocabulary, and pronunciation you actually need."
+          title: "Learn at your level",
+          description: "Practice with conversations and support that match your current ability."
         },
         {
-          title: "Real conversation",
-          description: "Build confidence by speaking about your work, travel, life, and ideas."
+          title: "Speak without pressure",
+          description: "Make mistakes, ask for help, and try again in a private learning environment."
         }
       ]
     },
     faq: {
-      eyebrow: "Frequently Asked Questions",
-      h2: "Frequently Asked Questions",
-      lead:
-        "Answers to common questions about AI language tutors, speaking practice, corrections, and learning a language with AI.",
+      eyebrow: "Frequently Asked Questions About AI Language Tutors",
+      h2: "Frequently Asked Questions About AI Language Tutors",
+      lead: "Answers to the most common questions about trying the tutor, speaking in your own language, and practicing out loud.",
       items: [
         {
-          question: "Is there an AI language tutor?",
+          question: "What is an AI Language Tutor?",
           answer:
-            "Yes. An AI language tutor can help you practice conversations, correct your grammar and vocabulary, explain natural expressions, and guide your speaking practice."
+            "An AI language tutor is an AI-powered learning partner that helps you practice a language through conversation, feedback, explanations, and other learning support."
         },
         {
-          question: "Are AI language tutors good?",
+          question: "How does an AI Language Tutor work?",
           answer:
-            "AI language tutors are useful for regular practice, instant feedback, and personalized review. They work best when you use them to speak, correct mistakes, and repeat useful phrases."
+            "Choose the language you want to learn and start a conversation. You can speak in your native language when you need help, or practice directly in your target language."
         },
         {
-          question: "Do AI language tutors work?",
+          question: "Can I speak in my native language?",
           answer:
-            "They can help you improve when you practice consistently. The most useful flow is conversation, feedback, explanation, and another chance to say it better."
+            "Yes. When you do not know how to express something in your target language, you can say it in your native language and your AI tutor can respond in the language you're learning."
         },
         {
-          question: "How can I use AI to learn a language?",
+          question: "Can I practice conversations with an AI tutor?",
           answer:
-            "Use AI to practice real conversations, ask how to say things naturally, get corrections, review pronunciation, and turn your mistakes into short lessons."
+            "Yes. You can practice conversations about everyday life, travel, work, hobbies, and other topics in the language you're learning."
         },
         {
-          question: "Is there a free AI language tutor?",
+          question: "Can I listen to the AI tutor?",
           answer:
-            "Many AI language tutor apps offer a free way to start. This site is designed around a free first speaking session so learners can try the tutor immediately."
+            "Yes. Your tutor can speak its responses so you can listen, repeat, and practice pronunciation."
+        },
+        {
+          question: "What languages can I learn?",
+          answer:
+            "Start with the languages your learners care about most, then expand to more supported languages over time."
         }
       ]
     },
     cta: {
-      h2: "Start Talking Today",
-      lead: "Open your AI tutor, say one real sentence, and turn it into speaking practice.",
-      primaryCta: "Start Talking — Free",
+      h2: "Start Learning With Your AI Language Tutor",
+      lead: "Choose a language, start a conversation, and practice speaking today.",
+      primaryCta: "Try Your First Conversation",
       secondaryCta: "See how it works"
     }
   },
@@ -186,8 +181,7 @@ const baseEn: LandingDictionary = {
     rights: "© 2026 AI Language Tutor. All rights reserved.",
     columns: [
       { title: "Product", links: ["Say It", "Talk", "Corrections", "Open App"] },
-      { title: "Learning", links: ["AI language tutor", "Speaking practice", "Pronunciation practice", "Personalized learning"] },
-      { title: "Languages", links: ["Learn English", "Learn Spanish", "Learn Japanese", "Learn Korean"] },
+      { title: "Learn", links: ["Conversation Practice", "Speaking Practice", "Pronunciation Practice", "Review"] },
       { title: "Company", links: ["Contact", "Privacy", "Terms"] }
     ]
   }
@@ -221,8 +215,8 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
       },
       modes: {
         ...baseEn.sections.modes,
-        eyebrow: "Say It. Talk. Improve.",
-        h2: "言ってみる。話す。上達する。"
+        eyebrow: "Say It. Talk. Practice.",
+        h2: "言ってみる。話す。練習する。"
       },
       corrections: { ...baseEn.sections.corrections, h2: "話しながらAIチューターが添削します" },
       stuck: { ...baseEn.sections.stuck, h2: "困ったら、チューターに聞くだけ" },

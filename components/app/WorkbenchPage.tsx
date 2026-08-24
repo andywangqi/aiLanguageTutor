@@ -265,9 +265,9 @@ export function WorkbenchPage() {
                 {nativeLanguage} → {learningLanguage}
               </span>
             </button>
-            <Link className="upgrade-button" href="#">
+            <Link className="upgrade-button" href="/pricing">
               <CreditCard size={18} aria-hidden="true" />
-              Upgrade
+              Start Pro
             </Link>
           </div>
         </header>
