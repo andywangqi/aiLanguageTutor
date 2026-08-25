@@ -2,7 +2,29 @@ import type { Metadata } from "next";
 import { localeLabels, localeUrl, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
-export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ailanguagetutor.com";
+const defaultSiteUrl = "https://www.ailanguagetutor.com";
+
+function resolveSiteUrl(value: string | undefined) {
+  const candidate = value?.trim();
+
+  if (!candidate) {
+    return defaultSiteUrl;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return defaultSiteUrl;
+    }
+
+    return candidate.replace(/\/+$/, "");
+  } catch {
+    return defaultSiteUrl;
+  }
+}
+
+export const siteUrl = resolveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
 export function createPageMetadata(locale: Locale): Metadata {
   const dictionary = getDictionary(locale);

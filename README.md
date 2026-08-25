@@ -31,7 +31,7 @@ The default English page is available at `http://127.0.0.1:3000/`.
 - `screenshots/reference`: screenshots captured from the reference site for visual comparison.
 - `screenshots/local`: screenshots captured from this implementation.
 
-Set `NEXT_PUBLIC_SITE_URL` before deploying so canonical URLs, language alternates, sitemap, and JSON-LD point to the production domain.
+Set `NEXT_PUBLIC_SITE_URL` before deploying so canonical URLs, language alternates, sitemap, and JSON-LD point to the production domain. If the variable is missing or empty, the app safely falls back to `https://www.ailanguagetutor.com`; on Vercel, either remove an empty variable or set it to the real production URL.
 
 ## Verification
 
