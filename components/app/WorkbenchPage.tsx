@@ -29,13 +29,18 @@ import {
   X
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api/client";
+import { trackEvent } from "@/lib/analytics/client";
+import { ApiError, type TutorConversation, type TutorMessage, type WorkbenchData } from "@/lib/api/types";
+import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
 import { BrandMark } from "./BrandMark";
 
 type NavItem = "Home" | "Chat history" | "Saved cards" | "Partners";
 type WorkbenchMode = "sayIt" | "talk";
 type InsightMode = "Translate" | "Grammar";
 type Message = {
-  id: number;
+  id: string;
   role: "tutor" | "user";
   text: string;
 };
@@ -84,13 +89,14 @@ const navItems: Array<{ label: NavItem; icon: typeof Home }> = [
 
 const initialMessages: Message[] = [
   {
-    id: 1,
+    id: "demo-welcome",
     role: "tutor",
     text: "What would you like to do this weekend?"
   }
 ];
 
 export function WorkbenchPage() {
+  const router = useRouter();
   const [activeNav, setActiveNav] = useState<NavItem>("Home");
   const [mode, setMode] = useState<WorkbenchMode>("sayIt");
   const [insightMode, setInsightMode] = useState<InsightMode>("Translate");
@@ -101,17 +107,60 @@ export function WorkbenchPage() {
   const [level, setLevel] = useState("Auto-detect");
   const [isListening, setIsListening] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState("");
+  const [apiNotice, setApiNotice] = useState("");
+  const [isRemoteSession, setIsRemoteSession] = useState(false);
+  const [isApiBusy, setIsApiBusy] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const voiceTranscriptRef = useRef("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
+  const audioCapturePromiseRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
+      if (mediaRecorderRef.current?.state !== "inactive") mediaRecorderRef.current?.stop();
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
   const [selectedPhrase, setSelectedPhrase] = useState("");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  useEffect(() => {
+    let active = true;
+
+    async function hydrateWorkbench() {
+      const supabase = createSupabaseBrowserClient();
+      if (!supabase) return;
+
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.replace("/login");
+        return;
+      }
+
+      if (!active) return;
+      setIsRemoteSession(true);
+
+      try {
+        await api.auth.sync();
+        const workbench = await api.workbench.get();
+        if (!active) return;
+        applyWorkbenchData(workbench);
+      } catch {
+        if (active) setApiNotice("Your account is connected. The tutor service is temporarily unavailable, so this page is showing the practice preview.");
+      }
+    }
+
+    if (isSupabaseConfigured()) void hydrateWorkbench();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const workspaceTitle = useMemo(() => {
     if (activeNav === "Chat history") return "Chat history";
@@ -119,54 +168,170 @@ export function WorkbenchPage() {
     if (activeNav === "Partners") return "Your partners";
     return "AI Language Tutor";
   }, [activeNav]);
+  const selectedMessage = messages.find((message) => message.role === "tutor" && message.text === selectedPhrase);
 
-  function startConversation() {
+  function applyWorkbenchData(workbench: WorkbenchData) {
+    const settings = workbench.settings;
+    if (settings?.nativeLanguageCode) setNativeLanguage(languageName(settings.nativeLanguageCode));
+    if (settings?.learningLanguageCode) setLearningLanguage(languageName(settings.learningLanguageCode));
+    if (settings?.levelCode) setLevel(levelName(settings.levelCode));
+
+    const conversation = workbench.currentConversation || workbench.conversation || workbench.recentConversations?.[0];
+    if (conversation?.id) {
+      setConversationId(conversation.id);
+      const remoteMessages = getConversationMessages(conversation);
+      if (remoteMessages.length > 0) setMessages(remoteMessages);
+      setLanguageModalOpen(false);
+    }
+  }
+
+  function resetDemoConversation(nextMode = mode) {
     setMessages([
       {
-        id: Date.now(),
+        id: `demo-${Date.now()}`,
         role: "tutor",
-        text: mode === "sayIt" ? "What would you like to say in English?" : "What would you like to talk about today?"
+        text: nextMode === "sayIt" ? "What would you like to say in English?" : "What would you like to talk about today?"
       }
     ]);
     setSelectedPhrase("");
     setInput("");
+  }
+
+  async function createConversation(nextMode = mode) {
+    resetDemoConversation(nextMode);
+    setApiNotice("");
+
+    if (!isRemoteSession) return;
+
+    setIsApiBusy(true);
+    try {
+      const conversationPayload = {
+        mode: nextMode === "sayIt" ? "say_it" : "talk",
+        nativeLanguageCode: languageCode(nativeLanguage),
+        learningLanguageCode: languageCode(learningLanguage),
+        levelCode: levelCode(level)
+      };
+      const conversation = conversationId
+        ? await api.conversations.reset(conversationId, conversationPayload)
+        : await api.conversations.create(conversationPayload);
+      setConversationId(conversation.id);
+      const remoteMessages = getConversationMessages(conversation);
+      if (remoteMessages.length > 0) setMessages(remoteMessages);
+      await trackEvent("conversation_started", { mode: nextMode });
+    } catch {
+      setApiNotice("A new conversation could not be created. Please try again.");
+    } finally {
+      setIsApiBusy(false);
+    }
+  }
+
+  function startConversation() {
+    void createConversation();
   }
 
   function switchMode(nextMode: WorkbenchMode) {
     setMode(nextMode);
-    setMessages([
-      {
-        id: Date.now(),
-        role: "tutor",
-        text:
-          nextMode === "sayIt"
-            ? "What would you like to say in English?"
-            : "What would you like to talk about today?"
-      }
-    ]);
-    setSelectedPhrase("");
+    void createConversation(nextMode);
   }
 
-  function sendMessageText(text: string) {
+  async function getOrCreateConversation() {
+    if (conversationId) return conversationId;
+
+    const conversation = await api.conversations.create({
+      mode: mode === "sayIt" ? "say_it" : "talk",
+      nativeLanguageCode: languageCode(nativeLanguage),
+      learningLanguageCode: languageCode(learningLanguage),
+      levelCode: levelCode(level)
+    });
+    setConversationId(conversation.id);
+    return conversation.id;
+  }
+
+  async function sendMessageText(text: string, inputType: "text" | "voice" = "text", audioBlob?: Blob | null) {
     const trimmed = text.trim();
     if (!trimmed) return;
-    setMessages((current) => [
-      ...current,
-      { id: Date.now(), role: "user", text: trimmed },
-      {
-        id: Date.now() + 1,
-        role: "tutor",
-        text:
-          mode === "sayIt"
-            ? "Nice. I understand you. Try saying it once more in English, and I’ll help you make it sound natural."
-            : "Nice. Keep the conversation going. I’ll reply in English and adjust the pace to your level."
-      }
-    ]);
+    const clientMessageId = crypto.randomUUID();
+    const userMessage: Message = { id: clientMessageId, role: "user", text: trimmed };
+    setMessages((current) => [...current, userMessage]);
     setInput("");
+    setApiNotice("");
+
+    if (!isRemoteSession) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: `demo-${Date.now()}`,
+          role: "tutor",
+          text:
+            mode === "sayIt"
+              ? "Nice. I understand you. Try saying it once more in English, and I’ll help you make it sound natural."
+              : "Nice. Keep the conversation going. I’ll reply in English and adjust the pace to your level."
+        }
+      ]);
+      return;
+    }
+
+    setIsApiBusy(true);
+    try {
+      const currentConversationId = await getOrCreateConversation();
+      const sourceLanguageCode = inputType === "voice" && mode === "talk" ? languageCode(learningLanguage) : languageCode(nativeLanguage);
+      if (inputType === "voice") {
+        let audioId: string | undefined;
+
+        if (audioBlob) {
+          const mimeType = audioBlob.type || "audio/webm";
+          const upload = await api.voice.uploadUrl({ mimeType });
+          const uploadUrl = stringValue(upload.uploadUrl) || stringValue(upload.signedUrl) || stringValue(upload.url);
+          const audioPath = stringValue(upload.audioPath) || stringValue(upload.path) || stringValue(upload.objectPath);
+
+          if (uploadUrl && audioPath) {
+            const uploadResponse = await fetch(uploadUrl, {
+              method: "PUT",
+              headers: { "Content-Type": mimeType },
+              body: audioBlob
+            });
+            if (!uploadResponse.ok) throw new Error("Voice upload failed.");
+
+            const voiceInput = await api.voice.registerInput({
+              conversationId: currentConversationId,
+              audioPath,
+              mimeType,
+              durationMs: 0
+            });
+            audioId = stringValue(voiceInput.id) || stringValue(voiceInput.audioId);
+          }
+        }
+
+        await api.conversations.sendVoiceMessage(currentConversationId, {
+          clientMessageId,
+          transcript: trimmed,
+          ...(audioId ? { audioId } : {}),
+          sourceLanguageCode
+        });
+      } else {
+        await api.conversations.sendMessage(currentConversationId, {
+          clientMessageId,
+          content: trimmed,
+          inputType,
+          sourceLanguageCode
+        });
+      }
+      const conversation = await api.conversations.get(currentConversationId);
+      const remoteMessages = getConversationMessages(conversation);
+      if (remoteMessages.length > 0) setMessages(remoteMessages);
+      await trackEvent(inputType === "voice" ? "voice_transcribed" : "message_submitted", { mode });
+    } catch (error) {
+      const message = error instanceof ApiError && error.code === "AI_PROVIDER_ERROR"
+        ? "Your message was saved, but the tutor could not reply yet. Please try again shortly."
+        : "Your message could not be sent. Please try again.";
+      setApiNotice(message);
+    } finally {
+      setIsApiBusy(false);
+    }
   }
 
   function sendMessage() {
-    sendMessageText(input);
+    void sendMessageText(input);
   }
 
   function startVoiceInput() {
@@ -186,6 +351,7 @@ export function WorkbenchPage() {
     recognition.onstart = () => {
       setVoiceNotice("Release to send");
       setIsListening(true);
+      void trackEvent("voice_recording_started", { mode });
     };
     recognition.onresult = (event) => {
       const transcript = Array.from({ length: event.results.length }, (_, index) => event.results[index][0].transcript)
@@ -197,6 +363,7 @@ export function WorkbenchPage() {
     recognition.onerror = (event) => {
       setIsListening(false);
       voiceTranscriptRef.current = "";
+      void finishAudioCapture();
       setVoiceNotice(
         event.error === "not-allowed"
           ? "Microphone permission was denied. Allow microphone access and try again."
@@ -204,17 +371,11 @@ export function WorkbenchPage() {
       );
     };
     recognition.onend = () => {
-      setIsListening(false);
-      recognitionRef.current = null;
-      const transcript = voiceTranscriptRef.current.trim();
-      voiceTranscriptRef.current = "";
-      if (transcript) {
-        sendMessageText(transcript);
-        setVoiceNotice("Sent");
-      }
+      void finishVoiceInput();
     };
     recognitionRef.current = recognition;
     setVoiceNotice("");
+    audioCapturePromiseRef.current = startAudioCapture();
     recognition.start();
   }
 
@@ -222,6 +383,100 @@ export function WorkbenchPage() {
     if (!recognitionRef.current) return;
     recognitionRef.current.stop();
     setVoiceNotice("Sending…");
+  }
+
+  async function startAudioCapture() {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const options = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? { mimeType: "audio/webm;codecs=opus" } : undefined;
+      const recorder = new MediaRecorder(stream, options);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) voiceChunksRef.current.push(event.data);
+      };
+      mediaStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+    } catch {
+      // SpeechRecognition can still provide a transcript when audio upload is unavailable.
+    }
+  }
+
+  function stopAndBuildAudio() {
+    const recorder = mediaRecorderRef.current;
+    const stream = mediaStreamRef.current;
+    mediaRecorderRef.current = null;
+    mediaStreamRef.current = null;
+
+    if (!recorder) {
+      stream?.getTracks().forEach((track) => track.stop());
+      return Promise.resolve<Blob | null>(null);
+    }
+
+    return new Promise<Blob | null>((resolve) => {
+      recorder.onstop = () => {
+        stream?.getTracks().forEach((track) => track.stop());
+        const blob = voiceChunksRef.current.length > 0 ? new Blob(voiceChunksRef.current, { type: recorder.mimeType || "audio/webm" }) : null;
+        voiceChunksRef.current = [];
+        resolve(blob);
+      };
+      if (recorder.state !== "inactive") recorder.stop();
+      else resolve(null);
+    });
+  }
+
+  async function finishAudioCapture() {
+    await audioCapturePromiseRef.current;
+    audioCapturePromiseRef.current = null;
+    return stopAndBuildAudio();
+  }
+
+  async function finishVoiceInput() {
+    setIsListening(false);
+    recognitionRef.current = null;
+    const transcript = voiceTranscriptRef.current.trim();
+    voiceTranscriptRef.current = "";
+    const audioBlob = await finishAudioCapture();
+
+    if (transcript) {
+      await sendMessageText(transcript, "voice", audioBlob);
+      setVoiceNotice("Sent");
+    }
+  }
+
+  async function saveLanguageSettings() {
+    setLanguageModalOpen(false);
+    if (!isRemoteSession) return;
+
+    try {
+      await api.me.updateSettings({
+        nativeLanguageCode: languageCode(nativeLanguage),
+        learningLanguageCode: languageCode(learningLanguage),
+        levelCode: levelCode(level)
+      });
+      setApiNotice("");
+    } catch {
+      setApiNotice("Your language settings could not be saved. Please try again.");
+    }
+  }
+
+  async function requestMessageHelp(message: Message, kind: "translate" | "grammar" | "audio" | "card") {
+    setSelectedPhrase(message.text);
+    if (!isRemoteSession || message.id.startsWith("demo-")) return;
+
+    try {
+      if (kind === "translate") await api.messages.translate(message.id);
+      if (kind === "grammar") await api.messages.grammar(message.id);
+      if (kind === "audio") await api.messages.audio(message.id);
+      if (kind === "card") {
+        await api.messages.saveCard(message.id);
+        await trackEvent("learning_card_saved", { messageId: message.id });
+      }
+    } catch {
+      setApiNotice("That learning tool is temporarily unavailable. Please try again.");
+    }
   }
 
   return (
@@ -354,9 +609,9 @@ export function WorkbenchPage() {
                 <Stat value="0" label="YOUR TURNS" />
                 <Stat value="8" label="INPUT WORDS" />
               </div>
-              <button className="new-conversation" type="button" onClick={startConversation}>
+              <button className="new-conversation" type="button" onClick={startConversation} disabled={isApiBusy}>
                 <RotateCcw size={17} aria-hidden="true" />
-                New conversation
+                {isApiBusy ? "Starting…" : "New conversation"}
               </button>
             </div>
 
@@ -382,7 +637,7 @@ export function WorkbenchPage() {
                       )}
                       {message.role === "tutor" ? (
                         <div className="message-tools">
-                          <button type="button">
+                          <button type="button" onClick={() => void requestMessageHelp(message, "audio")}>
                             <Volume2 size={15} aria-hidden="true" />
                             Listen
                           </button>
@@ -394,7 +649,7 @@ export function WorkbenchPage() {
                             <EyeOff size={15} aria-hidden="true" />
                             Hide
                           </button>
-                          <button type="button" onClick={() => setSelectedPhrase(message.text)}>
+                          <button type="button" onClick={() => void requestMessageHelp(message, "translate")}>
                             <Languages size={15} aria-hidden="true" />
                             Translation
                           </button>
@@ -454,11 +709,12 @@ export function WorkbenchPage() {
                 >
                   {isListening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
                 </button>
-                <button className="send-button" type="button" onClick={sendMessage} aria-label="Send message">
+                <button className="send-button" type="button" onClick={sendMessage} aria-label="Send message" disabled={isApiBusy}>
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
               {voiceNotice ? <p className="voice-notice">{voiceNotice}</p> : null}
+              {apiNotice ? <p className="workbench-api-notice" role="status">{apiNotice}</p> : null}
             </div>
           </div>
 
@@ -494,7 +750,7 @@ export function WorkbenchPage() {
                       ? "A natural sentence you can understand and use in your next conversation."
                       : "Notice the word order and the everyday expression. Try saying it out loud once."}
                   </p>
-                  <button type="button">
+                  <button type="button" onClick={() => selectedMessage && void requestMessageHelp(selectedMessage, "card")}>
                     <Plus size={17} aria-hidden="true" />
                     Save learning card
                   </button>
@@ -544,6 +800,7 @@ export function WorkbenchPage() {
           onNativeLanguageChange={setNativeLanguage}
           onLearningLanguageChange={setLearningLanguage}
           onLevelChange={setLevel}
+          onSave={() => void saveLanguageSettings()}
           onClose={() => setLanguageModalOpen(false)}
         />
       ) : null}
@@ -572,6 +829,81 @@ function getSpeechLocale(language: string) {
   return locales[language] ?? "en-US";
 }
 
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function languageCode(language: string) {
+  const codes: Record<string, string> = {
+    Chinese: "zh-CN",
+    English: "en",
+    Spanish: "es",
+    Japanese: "ja",
+    French: "fr",
+    Korean: "ko"
+  };
+
+  return codes[language] || "en";
+}
+
+function languageName(code: string) {
+  const names: Record<string, string> = {
+    "zh-CN": "Chinese",
+    "zh-TW": "Chinese",
+    en: "English",
+    "en-US": "English",
+    es: "Spanish",
+    "es-ES": "Spanish",
+    ja: "Japanese",
+    "ja-JP": "Japanese",
+    fr: "French",
+    "fr-FR": "French",
+    ko: "Korean",
+    "ko-KR": "Korean"
+  };
+
+  return names[code] || "English";
+}
+
+function levelCode(level: string) {
+  const codes: Record<string, string> = {
+    "Auto-detect": "auto",
+    Beginner: "beginner",
+    Intermediate: "intermediate",
+    Advanced: "advanced"
+  };
+
+  return codes[level] || "auto";
+}
+
+function levelName(code: string) {
+  const names: Record<string, string> = {
+    auto: "Auto-detect",
+    beginner: "Beginner",
+    intermediate: "Intermediate",
+    advanced: "Advanced"
+  };
+
+  return names[code] || "Auto-detect";
+}
+
+function getConversationMessages(conversation: TutorConversation) {
+  const messages = conversation.messages || [];
+
+  return messages
+    .map((message: TutorMessage): Message | null => {
+      const text = message.content || message.text;
+      if (!text || !message.id) return null;
+
+      return {
+        id: message.id,
+        role: message.role === "assistant" || message.role === "tutor" ? "tutor" : "user",
+        text
+      };
+    })
+    .filter((message): message is Message => Boolean(message));
+}
+
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="conversation-stat">
@@ -588,6 +920,7 @@ function LanguageSetupModal({
   onNativeLanguageChange,
   onLearningLanguageChange,
   onLevelChange,
+  onSave,
   onClose
 }: {
   nativeLanguage: string;
@@ -596,6 +929,7 @@ function LanguageSetupModal({
   onNativeLanguageChange: (value: string) => void;
   onLearningLanguageChange: (value: string) => void;
   onLevelChange: (value: string) => void;
+  onSave: () => void;
   onClose: () => void;
 }) {
   const languages = ["Chinese", "English", "Spanish", "Japanese", "French", "Korean"];
@@ -647,7 +981,7 @@ function LanguageSetupModal({
           <button className="language-modal-secondary" type="button" onClick={onClose}>
             I&apos;ll choose later
           </button>
-          <button className="language-modal-primary" type="button" onClick={onClose}>
+          <button className="language-modal-primary" type="button" onClick={onSave}>
             Start talking
             <ArrowRight size={17} aria-hidden="true" />
           </button>

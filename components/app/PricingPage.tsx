@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, LoaderCircle, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { BrandMark } from "./BrandMark";
+import { api } from "@/lib/api/client";
+import { ApiError, type BillingPlan } from "@/lib/api/types";
+import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
 
 const freeFeatures = [
   "1-minute AI conversation",
@@ -32,7 +36,78 @@ const proFeatures = [
   "Progress tracking"
 ];
 
+const fallbackPlans: BillingPlan[] = [
+  { planCode: "pro_monthly", name: "Pro", amount: 12.99, currency: "USD", interval: "month", popular: true },
+  { planCode: "pro_annual", name: "Pro Annual", amount: 79.99, currency: "USD", interval: "year" }
+];
+
+function planCode(plan: BillingPlan, fallback: string) {
+  return plan.planCode || plan.code || fallback;
+}
+
+function planAmount(plan: BillingPlan, fallback: string) {
+  if (typeof plan.amount === "number") return `$${plan.amount.toFixed(2)}`;
+  if (typeof plan.price === "number") return `$${plan.price.toFixed(2)}`;
+  return fallback;
+}
+
 export function PricingPage() {
+  const [plans, setPlans] = useState<BillingPlan[]>(fallbackPlans);
+  const [checkoutPlan, setCheckoutPlan] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api.billing
+      .plans()
+      .then((remotePlans) => {
+        if (active && remotePlans.length > 0) setPlans(remotePlans);
+      })
+      .catch(() => {
+        // The documented defaults keep the page useful while central plans are unavailable.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const monthlyPlan = plans.find((plan) => (plan.interval || "").toLowerCase().includes("month")) || plans[0] || fallbackPlans[0];
+  const annualPlan = plans.find((plan) => (plan.interval || "").toLowerCase().includes("year")) || plans[1] || fallbackPlans[1];
+
+  async function startCheckout(plan: BillingPlan, fallbackCode: string) {
+    setNotice("");
+    const code = planCode(plan, fallbackCode);
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase || !isSupabaseConfigured()) {
+      setNotice("Add Supabase environment variables before starting a paid checkout.");
+      return;
+    }
+
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      window.location.assign(`/login?next=/pricing&plan=${encodeURIComponent(code)}`);
+      return;
+    }
+
+    setCheckoutPlan(code);
+    try {
+      const checkout = await api.billing.checkout(code, {
+        successPath: "/app?payment=success",
+        cancelPath: "/pricing?payment=cancelled"
+      });
+      const checkoutUrl = checkout.checkoutUrl || checkout.url;
+      if (!checkoutUrl) {
+        setNotice("Checkout is not configured yet. Please try again after Waffo is connected.");
+        return;
+      }
+      window.location.assign(checkoutUrl);
+    } catch (error) {
+      setNotice(error instanceof ApiError && error.code === "PAYMENT_PENDING" ? "Checkout is waiting for the Waffo merchant configuration." : "We could not start checkout. Please try again.");
+    } finally {
+      setCheckoutPlan("");
+    }
+  }
+
   return (
     <main className="pricing-lite-page">
       <header className="pricing-lite-header">
@@ -79,10 +154,10 @@ export function PricingPage() {
           <article className="pricing-lite-card pricing-lite-card-pro">
             <span className="pricing-lite-pill">Most popular</span>
             <span className="pricing-lite-kicker">Unlimited practice</span>
-            <h2>Pro</h2>
+            <h2>{monthlyPlan.name || "Pro"}</h2>
             <div className="pricing-lite-price">
-              <strong>$12.99</strong>
-              <span>/ month</span>
+              <strong>{planAmount(monthlyPlan, "$12.99")}</strong>
+              <span>/ {monthlyPlan.interval || "month"}</span>
             </div>
             <p className="pricing-lite-subtitle">Practice without limits.</p>
             <ul className="pricing-lite-list">
@@ -93,28 +168,31 @@ export function PricingPage() {
                 </li>
               ))}
             </ul>
-            <Link className="pricing-lite-button pricing-lite-button-primary" href="/login">
+            <button className="pricing-lite-button pricing-lite-button-primary" type="button" onClick={() => startCheckout(monthlyPlan, "pro_monthly")} disabled={Boolean(checkoutPlan)}>
+              {checkoutPlan === planCode(monthlyPlan, "pro_monthly") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
               Start Pro
-            </Link>
+            </button>
           </article>
         </section>
 
         <section className="pricing-lite-annual" aria-label="Annual plan">
           <div>
             <span className="pricing-lite-kicker">Save more with Annual</span>
-            <h2>Pro Annual</h2>
+            <h2>{annualPlan.name || "Pro Annual"}</h2>
             <p>Pay once and keep practicing all year.</p>
           </div>
           <div className="pricing-lite-annual-price">
             <del>$155.88</del>
-            <strong>$79.99</strong>
-            <span>/ year · $6.67 / month</span>
+            <strong>{planAmount(annualPlan, "$79.99")}</strong>
+            <span>/ {annualPlan.interval || "year"} · $6.67 / month</span>
           </div>
           <div className="pricing-lite-annual-savings">Save 49%</div>
-          <Link className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" href="/login">
+          <button className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" type="button" onClick={() => startCheckout(annualPlan, "pro_annual")} disabled={Boolean(checkoutPlan)}>
+            {checkoutPlan === planCode(annualPlan, "pro_annual") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
             Get Pro
-          </Link>
+          </button>
         </section>
+        {notice ? <p className="pricing-lite-notice" role="status">{notice}</p> : null}
       </div>
     </main>
   );

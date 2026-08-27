@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BookOpen, Building2, Coffee, Languages, Mic, Plane, Sparkles, Utensils, Volume2 } from "lucide-react";
 
@@ -17,13 +17,21 @@ type DemoScenario = {
   VisualIcon: LucideIcon;
 };
 
+type BrowserLanguage = "en" | "zh-CN" | "zh-TW" | "ja" | "th" | "ko" | "es" | "fr";
+
+type LocalizedDemoCopy = {
+  languagePair: string;
+  userMessage: string;
+  aiMessage?: string;
+};
+
 const demoScenarios: DemoScenario[] = [
   {
     id: "airport",
-    languagePair: "Chinese → English",
+    languagePair: "English → English",
     scenario: "Airport",
-    userMessage: "我明天要去机场，但是不知道怎么问登机口在哪里。",
-    aiMessage: "I'm going to the airport tomorrow, but I don't know how to ask where my gate is.",
+    userMessage: "I need to ask where my gate is.",
+    aiMessage: 'You could say, "Excuse me, where is Gate 24?"',
     naturalPhrase: "Excuse me, where is Gate 24?",
     visualLabel: "Airport help",
     visualMeta: "Tomorrow · Terminal 2",
@@ -71,9 +79,19 @@ const demoScenarios: DemoScenario[] = [
 const learningFlow = ["Native language", "AI understands", "Target expression", "Speak"];
 
 export function InteractiveDemo() {
+  const [browserLanguage, setBrowserLanguage] = useState<BrowserLanguage>("en");
   const [activeId, setActiveId] = useState(demoScenarios[0].id);
-  const active = demoScenarios.find((scenario) => scenario.id === activeId) ?? demoScenarios[0];
+  const [hasDetectedLanguage, setHasDetectedLanguage] = useState(false);
+  const baseActive = demoScenarios.find((scenario) => scenario.id === activeId) ?? demoScenarios[0];
+  const active = getLocalizedScenario(baseActive, browserLanguage);
   const VisualIcon = active.VisualIcon;
+
+  useEffect(() => {
+    const detected = detectBrowserLanguage();
+    setBrowserLanguage(detected);
+    setActiveId(defaultScenarioForLanguage(detected));
+    setHasDetectedLanguage(true);
+  }, []);
 
   return (
     <div className="demo-panel hero-product-demo" id="demo">
@@ -113,7 +131,7 @@ export function InteractiveDemo() {
           </div>
         </aside>
 
-        <div className="demo-message-stack">
+        <div className="demo-message-stack" data-language-detected={hasDetectedLanguage}>
           <div className="demo-message-row user">
             <div className="demo-avatar">You</div>
             <div className="demo-chat-bubble user">
@@ -178,3 +196,128 @@ export function InteractiveDemo() {
     </div>
   );
 }
+
+function detectBrowserLanguage(): BrowserLanguage {
+  if (typeof navigator === "undefined") return "en";
+
+  const candidates = [...(navigator.languages ?? []), navigator.language].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const normalized = candidate.toLowerCase();
+
+    if (normalized.startsWith("zh-tw") || normalized.startsWith("zh-hk") || normalized.startsWith("zh-mo")) {
+      return "zh-TW";
+    }
+    if (normalized.startsWith("zh")) return "zh-CN";
+    if (normalized.startsWith("ja")) return "ja";
+    if (normalized.startsWith("th")) return "th";
+    if (normalized.startsWith("ko")) return "ko";
+    if (normalized.startsWith("es")) return "es";
+    if (normalized.startsWith("fr")) return "fr";
+    if (normalized.startsWith("en")) return "en";
+  }
+
+  return "en";
+}
+
+function defaultScenarioForLanguage(language: BrowserLanguage) {
+  if (language === "ja") return "coffee";
+  if (language === "es") return "restaurant";
+  if (language === "fr") return "hotel";
+  return "airport";
+}
+
+function getLocalizedScenario(scenario: DemoScenario, language: BrowserLanguage): DemoScenario {
+  const copy = localizedDemoCopy[scenario.id]?.[language];
+  return copy
+    ? {
+        ...scenario,
+        languagePair: copy.languagePair,
+        userMessage: copy.userMessage,
+        aiMessage: copy.aiMessage ?? scenario.aiMessage
+      }
+    : scenario;
+}
+
+const localizedDemoCopy: Record<string, Partial<Record<BrowserLanguage, LocalizedDemoCopy>>> = {
+  airport: {
+    en: {
+      languagePair: "English → English",
+      userMessage: "I need to ask where my gate is.",
+      aiMessage: 'You could say, "Excuse me, where is Gate 24?"'
+    },
+    "zh-CN": {
+      languagePair: "Chinese → English",
+      userMessage: "我明天要去机场，但是不知道怎么问登机口在哪里。"
+    },
+    "zh-TW": {
+      languagePair: "Chinese → English",
+      userMessage: "我明天要去機場，但是不知道怎麼問登機口在哪裡。"
+    },
+    th: {
+      languagePair: "Thai → English",
+      userMessage: "พรุ่งนี้ฉันจะไปสนามบิน แต่ไม่รู้ว่าจะถามว่าประตูขึ้นเครื่องอยู่ที่ไหน"
+    },
+    ko: {
+      languagePair: "Korean → English",
+      userMessage: "내일 공항에 가는데 탑승구가 어디인지 어떻게 물어봐야 할지 모르겠어요."
+    }
+  },
+  coffee: {
+    ja: {
+      languagePair: "Japanese → English",
+      userMessage: "このコーヒーは持ち帰りできますか？"
+    },
+    en: {
+      languagePair: "English → English",
+      userMessage: "I want to ask if I can take this coffee to go.",
+      aiMessage: 'You could say, "Can I get this coffee to go, please?"'
+    },
+    "zh-CN": {
+      languagePair: "Chinese → English",
+      userMessage: "我想问这杯咖啡可以打包带走吗？"
+    },
+    "zh-TW": {
+      languagePair: "Chinese → English",
+      userMessage: "我想問這杯咖啡可以外帶嗎？"
+    }
+  },
+  restaurant: {
+    es: {
+      languagePair: "Spanish → English",
+      userMessage: "¿Tienen opciones vegetarianas?"
+    },
+    en: {
+      languagePair: "English → English",
+      userMessage: "I want to ask if you have vegetarian options.",
+      aiMessage: 'You could say, "Do you have any vegetarian options?"'
+    },
+    "zh-CN": {
+      languagePair: "Chinese → English",
+      userMessage: "我想问你们有没有素食选择。"
+    },
+    "zh-TW": {
+      languagePair: "Chinese → English",
+      userMessage: "我想問你們有沒有素食選擇。"
+    }
+  },
+  hotel: {
+    fr: {
+      languagePair: "French → English",
+      userMessage: "Je voudrais dire que j'ai une réservation."
+    },
+    en: {
+      languagePair: "English → English",
+      userMessage: "I want to say that I have a reservation.",
+      aiMessage: 'You could say, "Hi, I have a reservation under my name."'
+    },
+    "zh-CN": {
+      languagePair: "Chinese → English",
+      userMessage: "我想说我有一个预订。"
+    },
+    "zh-TW": {
+      languagePair: "Chinese → English",
+      userMessage: "我想說我有一個預訂。"
+    }
+  }
+};

@@ -2396,6 +2396,7 @@ h1 {
 }
 
 .auth-dialog-google {
+  width: 100%;
   min-height: 52px;
   display: flex;
   align-items: center;
@@ -2409,6 +2410,17 @@ h1 {
   box-shadow: 0 12px 22px rgba(36, 68, 255, 0.18);
   font-size: 14px;
   font-weight: 950;
+  font-family: inherit;
+  border: 0;
+  cursor: pointer;
+}
+
+.auth-dialog-google:disabled,
+.pricing-lite-button:disabled,
+.new-conversation:disabled,
+.send-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .auth-google-mark {
@@ -2450,6 +2462,32 @@ h1 {
 .auth-dialog-terms a {
   color: var(--ink);
   font-weight: 800;
+}
+
+.auth-dialog-status,
+.auth-dialog-error {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.auth-dialog-status {
+  color: #777a80;
+}
+
+.auth-dialog-error {
+  color: #bf4c3e;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .workbench-shell {
@@ -3118,6 +3156,14 @@ h1 {
   font-weight: 800;
 }
 
+.workbench-api-notice {
+  margin: 9px 8px 0;
+  color: #b65a3d;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 750;
+}
+
 .insight-panel {
   display: flex;
   min-height: 670px;
@@ -3692,6 +3738,15 @@ h1 {
 
 .pricing-lite-annual-button {
   min-width: 146px;
+}
+
+.pricing-lite-notice {
+  margin: 14px 0 0;
+  color: #b65a3d;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  font-weight: 750;
 }
 
 .pricing-lite-button-primary {
