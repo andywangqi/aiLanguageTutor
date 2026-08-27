@@ -33,23 +33,30 @@ const benefitIcons = [Sparkles, Target, MessageSquareText];
 
 const storySamples = [
   {
-    badge: "Say It",
-    prompt: "我明天可能会迟到。",
-    response: "I might be late tomorrow.",
-    actions: ["Listen", "Translation", "Practice"]
-  },
-  {
     badge: "Talk",
-    prompt: "What did you do this weekend?",
-    response: "I went to a small cafe and practiced ordering in English. What about you?",
-    actions: ["Follow up", "Keep going", "Speak again"]
+    prompt: "I go to Tokyo with my friend.",
+    response:
+      "A more natural way to say that is, 'I went to Tokyo with my friend.' What did you enjoy most about Tokyo?",
+    actions: ["Correction", "Continue", "Keep talking"]
   },
   {
-    badge: "Practice",
-    prompt: "I go there yesterday.",
-    response: "I went there yesterday.",
-    actions: ["Grammar", "Why", "Try again"]
+    badge: "Get Help",
+    prompt: "我通常下班后回家做饭。",
+    response:
+      "You could say, 'I usually go home and cook, but sometimes I grab dinner with friends.'",
+    actions: ["Listen", "Learn", "Try saying it"]
+  },
+  {
+    badge: "Say It Again",
+    prompt: "I had to work late yesterday.",
+    response: "Great. Say it again, then your tutor will keep the conversation going.",
+    actions: ["Listen", "Try again", "Continue"]
   }
+];
+
+const modeExamples = [
+  { label: "You", text: "我想告诉我的老板我明天不能上班。" },
+  { label: "AI Tutor", text: "You could say, 'I need to tell my boss that I cannot come to work tomorrow.'" }
 ];
 
 export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
@@ -134,12 +141,8 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                     </div>
                   </div>
                   <div className="mode-example">
-                    <small>{index === 0 ? "You" : "AI Tutor"}</small>
-                    <strong>
-                      {index === 0
-                        ? "我想跟老板说我明天不能上班。"
-                        : "I need to tell my boss that I can't come to work tomorrow."}
-                    </strong>
+                    <small>{modeExamples[index]?.label}</small>
+                    <strong>{modeExamples[index]?.text}</strong>
                   </div>
                 </article>
               ))}
@@ -212,8 +215,9 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 <strong>comfortable</strong>
               </div>
               <div className="pronunciation-score">
-                <strong>87%</strong>
-                <p>Clear, but the middle sound can be softer.</p>
+                <span>Tutor feedback</span>
+                <strong>Clear and natural</strong>
+                <p>Try making the middle sound softer, then say the phrase once more.</p>
               </div>
               <div className="voice-wave" aria-hidden="true">
                 {pronunciationBars.map((height, index) => (
@@ -389,7 +393,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                   {sections.cta.primaryCta}
                   <ChevronRight aria-hidden="true" size={18} />
                 </ButtonLink>
-                <ButtonLink href="#method" variant="ghost">
+                <ButtonLink href="/pricing" variant="ghost">
                   {sections.cta.secondaryCta}
                 </ButtonLink>
               </div>
@@ -406,6 +410,7 @@ function Footer({ dictionary }: { dictionary: LandingDictionary }) {
   const footerLinks: Record<string, string> = {
     "Say It": "#demo",
     Talk: "#demo",
+    "Get Help": "#method",
     Corrections: "#corrections",
     "Open App": "/app",
     "Conversation Practice": "#method",

@@ -1,104 +1,179 @@
 "use client";
 
 import { useState } from "react";
-import { Languages, Mic, Sparkles, Volume2 } from "lucide-react";
-import type { LandingDictionary } from "@/lib/i18n/types";
+import type { LucideIcon } from "lucide-react";
+import { ArrowRight, BookOpen, Building2, Coffee, Languages, Mic, Plane, Sparkles, Utensils, Volume2 } from "lucide-react";
 
-type DemoMode = "sayIt" | "talk" | "practice";
-
-const demoModes: Record<
-  DemoMode,
-  {
-    prompt: string;
-    response: string;
-    detailLabel: string;
-    detail: string;
-    hint: string;
-  }
-> = {
-  sayIt: {
-    prompt: "我明天可能会迟到。",
-    response: "I might be late tomorrow.",
-    detailLabel: "Translation",
-    detail: "我明天可能会迟到。",
-    hint: "Say the sentence in your own language, then hear the natural version."
-  },
-  talk: {
-    prompt: "What did you do this weekend?",
-    response: "I went to a small cafe and practiced ordering in English. What about you?",
-    detailLabel: "Keep going",
-    detail: "Ask a follow-up and keep the conversation moving.",
-    hint: "Use the language you're learning while the tutor keeps the chat alive."
-  },
-  practice: {
-    prompt: "I go there yesterday.",
-    response: "I went there yesterday.",
-    detailLabel: "Correction",
-    detail: "Use went because yesterday is already in the past.",
-    hint: "See the correction, understand it, and try again."
-  }
+type DemoScenario = {
+  id: string;
+  languagePair: string;
+  scenario: string;
+  userMessage: string;
+  aiMessage: string;
+  naturalPhrase: string;
+  visualLabel: string;
+  visualMeta: string;
+  visualDetail: string;
+  VisualIcon: LucideIcon;
 };
 
-export function InteractiveDemo({ dictionary }: { dictionary: LandingDictionary }) {
-  const [mode, setMode] = useState<DemoMode>("sayIt");
-  const active = demoModes[mode];
+const demoScenarios: DemoScenario[] = [
+  {
+    id: "airport",
+    languagePair: "Chinese → English",
+    scenario: "Airport",
+    userMessage: "我明天要去机场，但是不知道怎么问登机口在哪里。",
+    aiMessage: "I'm going to the airport tomorrow, but I don't know how to ask where my gate is.",
+    naturalPhrase: "Excuse me, where is Gate 24?",
+    visualLabel: "Airport help",
+    visualMeta: "Tomorrow · Terminal 2",
+    visualDetail: "Gate 24",
+    VisualIcon: Plane
+  },
+  {
+    id: "coffee",
+    languagePair: "Japanese → English",
+    scenario: "Coffee shop",
+    userMessage: "このコーヒーは持ち帰りできますか？",
+    aiMessage: "Can I get this coffee to go?",
+    naturalPhrase: "Can I get this to go, please?",
+    visualLabel: "Cafe order",
+    visualMeta: "Morning · Counter",
+    visualDetail: "To go",
+    VisualIcon: Coffee
+  },
+  {
+    id: "restaurant",
+    languagePair: "Spanish → English",
+    scenario: "Restaurant",
+    userMessage: "¿Tienen opciones vegetarianas?",
+    aiMessage: "Do you have any vegetarian options?",
+    naturalPhrase: "Do you have any vegetarian dishes?",
+    visualLabel: "Menu question",
+    visualMeta: "Dinner · Ordering",
+    visualDetail: "Vegetarian",
+    VisualIcon: Utensils
+  },
+  {
+    id: "hotel",
+    languagePair: "French → English",
+    scenario: "Hotel",
+    userMessage: "Je voudrais dire que j'ai une réservation.",
+    aiMessage: "I'd like to say that I have a reservation.",
+    naturalPhrase: "Hi, I have a reservation under my name.",
+    visualLabel: "Check-in",
+    visualMeta: "Evening · Front desk",
+    visualDetail: "Reservation",
+    VisualIcon: Building2
+  }
+];
+
+const learningFlow = ["Native language", "AI understands", "Target expression", "Speak"];
+
+export function InteractiveDemo() {
+  const [activeId, setActiveId] = useState(demoScenarios[0].id);
+  const active = demoScenarios.find((scenario) => scenario.id === activeId) ?? demoScenarios[0];
+  const VisualIcon = active.VisualIcon;
 
   return (
-    <div className="demo-panel" id="demo">
-      <div className="demo-topline">
-        <span>{dictionary.demo.title}</span>
-        <span className="live-dot">Live</span>
-      </div>
-
-      <div className="segmented-control" aria-label="Tutor mode">
-        <button className={mode === "sayIt" ? "active" : ""} type="button" onClick={() => setMode("sayIt")}>
-          {dictionary.demo.tabs.sayIt}
-        </button>
-        <button className={mode === "talk" ? "active" : ""} type="button" onClick={() => setMode("talk")}>
-          {dictionary.demo.tabs.talk}
-        </button>
-        <button className={mode === "practice" ? "active" : ""} type="button" onClick={() => setMode("practice")}>
-          {dictionary.demo.tabs.practice}
-        </button>
-      </div>
-
-      <div className="message-stack">
-        <div className="message message-user">
-          <small>{dictionary.demo.promptLabel}</small>
-          <strong>{active.prompt}</strong>
-        </div>
-        <div className="message message-tutor">
-          <small>{dictionary.demo.responseLabel}</small>
-          <strong>{active.response}</strong>
-          <div className="demo-insight">
-            <span className="demo-insight-label">{active.detailLabel}</span>
-            <p>{active.detail}</p>
-          </div>
-          <div className="demo-actions" aria-label="Tutor actions">
-            <span>
-              <Volume2 aria-hidden="true" size={15} />
-              {dictionary.demo.actions[0]}
-            </span>
-            <span>
-              <Languages aria-hidden="true" size={15} />
-              {dictionary.demo.actions[1]}
-            </span>
-            <span>
-              <Mic aria-hidden="true" size={15} />
-              {dictionary.demo.actions[2]}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="practice-bar">
+    <div className="demo-panel hero-product-demo" id="demo">
+      <div className="demo-product-header">
         <div>
-          <span>{dictionary.demo.turn}</span>
-          <strong>{active.hint}</strong>
+          <span className="demo-window-dot" aria-hidden="true" />
+          <strong>AI Language Tutor</strong>
         </div>
-        <button type="button" aria-label="Start speaking">
-          <Sparkles aria-hidden="true" size={18} />
+        <button className="demo-language-pair" type="button" aria-label="Current language pair">
+          <Languages aria-hidden="true" size={16} />
+          {active.languagePair}
         </button>
+      </div>
+
+      <div className="demo-scenario-tabs" aria-label="Conversation scenario">
+        {demoScenarios.map((scenario) => (
+          <button
+            className={scenario.id === active.id ? "active" : ""}
+            type="button"
+            key={scenario.id}
+            onClick={() => setActiveId(scenario.id)}
+          >
+            {scenario.scenario}
+          </button>
+        ))}
+      </div>
+
+      <div className="demo-conversation" key={active.id} aria-live="polite">
+        <aside className="demo-context-card" aria-label={`${active.scenario} context`}>
+          <span className="demo-context-icon">
+            <VisualIcon aria-hidden="true" size={20} />
+          </span>
+          <div>
+            <span>{active.visualLabel}</span>
+            <strong>{active.visualDetail}</strong>
+            <small>{active.visualMeta}</small>
+          </div>
+        </aside>
+
+        <div className="demo-message-stack">
+          <div className="demo-message-row user">
+            <div className="demo-avatar">You</div>
+            <div className="demo-chat-bubble user">
+              <span>Tell your tutor what you mean</span>
+              <strong>{active.userMessage}</strong>
+            </div>
+          </div>
+
+          <div className="demo-message-row tutor">
+            <div className="demo-avatar tutor">AI</div>
+            <div className="demo-chat-bubble tutor">
+              <span>Target-language response</span>
+              <strong>{active.aiMessage}</strong>
+              <div className="demo-learning-actions" aria-label="Learning actions">
+                <button type="button">
+                  <Volume2 aria-hidden="true" size={15} />
+                  Listen
+                </button>
+                <button type="button">
+                  <Languages aria-hidden="true" size={15} />
+                  Translate
+                </button>
+                <button type="button">
+                  <BookOpen aria-hidden="true" size={15} />
+                  Learn
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="demo-assist-card">
+          <span>
+            <Sparkles aria-hidden="true" size={15} />
+            More natural:
+          </span>
+          <strong>{active.naturalPhrase}</strong>
+        </div>
+      </div>
+
+      <div className="demo-practice-row">
+        <button type="button">
+          <Mic aria-hidden="true" size={18} />
+          Practice this phrase
+        </button>
+        <div className="demo-mic-meter" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
+
+      <div className="demo-learning-flow" aria-label="Learning flow">
+        {learningFlow.map((step, index) => (
+          <span key={step}>
+            {step}
+            {index < learningFlow.length - 1 ? <ArrowRight aria-hidden="true" size={13} /> : null}
+          </span>
+        ))}
       </div>
     </div>
   );

@@ -29,7 +29,7 @@ export function Hero({ dictionary }: { dictionary: LandingDictionary }) {
             <span>Voice input</span>
           </div>
         </div>
-        <InteractiveDemo dictionary={dictionary} />
+        <InteractiveDemo />
       </div>
     </section>
   );

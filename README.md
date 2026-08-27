@@ -26,6 +26,7 @@ The default English page is available at `http://127.0.0.1:3000/`.
 - `lib/i18n/config.ts`: locale list, labels, URL helpers, and hreflang values.
 - `lib/i18n/dictionaries.ts`: all landing copy in one typed dictionary.
 - `lib/seo/metadata.ts`: reusable title, description, canonical, Open Graph, robots, FAQ schema, and SoftwareApplication schema.
+- `docs/api-spec.md`: frontend/backend interface contract for Supabase, Waffo, conversations, voice, and admin.
 - `components/landing`: reusable landing sections and product demo.
 - `app/sitemap.ts` and `app/robots.ts`: generated technical SEO files.
 - `screenshots/reference`: screenshots captured from the reference site for visual comparison.

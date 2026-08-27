@@ -3,9 +3,9 @@ import type { LandingDictionary } from "./types";
 const baseEn: LandingDictionary = {
   locale: "en",
   seo: {
-    title: "AI Language Tutor | Learn Languages Through Real Conversations",
+    title: "AI Language Tutor | Practice Speaking Through Real Conversations",
     description:
-      "Learn languages with an AI language tutor through real conversations. Speak in your native language when you need help, practice your target language, and improve with instant feedback."
+      "Practice speaking English and other languages with an AI tutor. Have real conversations, get help when you get stuck, improve your grammar and pronunciation, and speak with more confidence."
   },
   nav: {
     product: "Product",
@@ -15,11 +15,11 @@ const baseEn: LandingDictionary = {
     app: "Open App"
   },
   hero: {
-    eyebrow: "AI language tutor for real conversations",
-    h1: "AI Language Tutor for Real Conversations",
+    eyebrow: "AI Language Tutor + speaking practice",
+    h1: "Practice Speaking With an AI Language Tutor",
     lead:
-      "Learn a language by having real conversations with an AI tutor. Speak in your native language when you need help, or practice directly in the language you're learning.",
-    primaryCta: "Try Your First Conversation",
+      "Have real conversations, get help when you get stuck, and improve by actually speaking the language you're learning.",
+    primaryCta: "Start Practicing Free",
     secondaryCta: "See how it works"
   },
   demo: {
@@ -39,37 +39,37 @@ const baseEn: LandingDictionary = {
   },
   sections: {
     learn: {
-      eyebrow: "Core loop",
-      h2: "Learn a Language Through Conversation",
-      lead: "Speak, understand, and practice in one loop instead of studying first.",
+      eyebrow: "Language conversation practice",
+      h2: "Practice Speaking Through Real Conversations",
+      lead: "Talk with your AI tutor, get help when you get stuck, and keep speaking in the language you're learning.",
       cards: [
         {
-          title: "Say It",
-          description: "Tell your tutor what you want to say in your own language, then hear the natural version."
-        },
-        {
           title: "Talk",
-          description: "Keep a real conversation going in the language you're learning without leaving the screen."
+          description: "Have a real conversation while your tutor responds naturally and keeps the exchange moving."
         },
         {
-          title: "Practice",
-          description: "Use the correction, understand why it changed, and say it again out loud."
+          title: "Get Help",
+          description: "When you do not know how to say something, explain what you mean in your own language."
+        },
+        {
+          title: "Say It Again",
+          description: "Learn the natural expression, practice it out loud, and return to the conversation."
         }
       ]
     },
     modes: {
-      eyebrow: "Start with your own language",
-      h2: "Don't Know How to Say It? Start With Your Own Language.",
+      eyebrow: "Get Help",
+      h2: "Don't Know How to Say It? Get Help and Keep Talking.",
       lead:
-        "You do not need the perfect sentence before you begin. Say what you mean in your native language, then keep talking in the language you're learning.",
+        "Tell your tutor what you mean in your own language. Get a natural expression in the language you're learning, then use it in the next turn.",
       items: [
         {
-          title: "Say It",
-          description: "Say the sentence in your own language and get the natural version immediately."
+          title: "Help me say it",
+          description: "Explain the idea in your own language and get the natural expression immediately."
         },
         {
-          title: "Talk",
-          description: "Stay in conversation while your tutor asks the next question and keeps it moving."
+          title: "Continue",
+          description: "Practice the phrase, then let your tutor ask a follow-up question and keep the conversation alive."
         }
       ]
     },
@@ -80,15 +80,15 @@ const baseEn: LandingDictionary = {
       points: ["Grammar", "Vocabulary", "Natural expressions", "Pronunciation"]
     },
     stuck: {
-      eyebrow: "Get Help",
-      h2: "Get Help When You Get Stuck",
+      eyebrow: "Pronunciation Practice",
+      h2: "Listen, Speak, and Improve Your Pronunciation",
       lead:
-        "Translate a message, listen to pronunciation, understand a new word, or get help saying what you mean without leaving the conversation.",
+        "Listen to the tutor, say the phrase yourself, and get focused feedback that helps you speak more clearly.",
       points: [
-        "Translate a message",
-        "Listen to the pronunciation",
-        "Understand a new word",
-        "Say it naturally"
+        "Listen to the tutor",
+        "Repeat the phrase",
+        "Get speaking feedback",
+        "Try again"
       ]
     },
     lesson: {
@@ -99,8 +99,8 @@ const baseEn: LandingDictionary = {
     },
     personal: {
       eyebrow: "Review",
-      h2: "Every Conversation Becomes a Learning Opportunity",
-      lead: "Review useful phrases, corrections, and words from your conversations so you can practice them again later.",
+      h2: "Review What You Learned",
+      lead: "Keep useful phrases, corrections, and words from your conversations in one place so you can practice them again later.",
       stats: [
         { label: "Review focus", value: "Past tense" },
         { label: "Practice style", value: "Personal" },
@@ -115,12 +115,12 @@ const baseEn: LandingDictionary = {
     },
     why: {
       eyebrow: "Why learn with an AI tutor",
-      h2: "Why Learn With an AI Language Tutor?",
-      lead: "Practice speaking whenever you want, at your own level, without waiting for a class or finding a conversation partner.",
+      h2: "Why Practice With an AI Language Tutor?",
+      lead: "Practice travel, work, interviews, small talk, and everyday conversations whenever you want, at your own level.",
       cards: [
         {
-          title: "Practice anytime",
-          description: "Start a conversation whenever you have a few minutes."
+          title: "Practice real situations",
+          description: "Prepare for travel, work, interviews, and everyday small talk with conversations that feel useful."
         },
         {
           title: "Learn at your level",
@@ -128,7 +128,7 @@ const baseEn: LandingDictionary = {
         },
         {
           title: "Speak without pressure",
-          description: "Make mistakes, ask for help, and try again in a private learning environment."
+          description: "Make mistakes, ask for help, and try again while your tutor adapts to your pace."
         }
       ]
     },
@@ -170,17 +170,17 @@ const baseEn: LandingDictionary = {
       ]
     },
     cta: {
-      h2: "Start Learning With Your AI Language Tutor",
-      lead: "Choose a language, start a conversation, and practice speaking today.",
-      primaryCta: "Try Your First Conversation",
-      secondaryCta: "See how it works"
+      h2: "Start Speaking Today",
+      lead: "Try your first AI language conversation free, then keep practicing when you're ready.",
+      primaryCta: "Start Speaking Free",
+      secondaryCta: "View plans"
     }
   },
   footer: {
     brand: "AI Language Tutor",
     rights: "© 2026 AI Language Tutor. All rights reserved.",
     columns: [
-      { title: "Product", links: ["Say It", "Talk", "Corrections", "Open App"] },
+      { title: "Product", links: ["Talk", "Get Help", "Corrections", "Open App"] },
       { title: "Learn", links: ["Conversation Practice", "Speaking Practice", "Pronunciation Practice", "Review"] },
       { title: "Company", links: ["Contact", "Privacy", "Terms"] }
     ]
