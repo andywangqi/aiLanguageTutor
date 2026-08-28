@@ -20,6 +20,18 @@ function getStoredId(storage: Storage, key: string, prefix: string) {
   return created;
 }
 
+function isProductionSite() {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const configuredHost = new URL(getProductSiteUrl()).hostname.toLowerCase().replace(/^www\./, "");
+    const currentHost = window.location.hostname.toLowerCase().replace(/^www\./, "");
+    return currentHost === configuredHost;
+  } catch {
+    return false;
+  }
+}
+
 export function getBrowserIdentity() {
   if (typeof window === "undefined") {
     return { anonymousId: undefined, sessionId: undefined };
@@ -33,7 +45,7 @@ export function getBrowserIdentity() {
 
 export async function trackEvent(event: string, properties: Record<string, unknown> = {}) {
   const writeKey = process.env.NEXT_PUBLIC_ZHYADMIN_WRITE_KEY?.trim();
-  if (!writeKey || typeof window === "undefined") return false;
+  if (!writeKey || !isProductionSite()) return false;
 
   const { anonymousId, sessionId } = getBrowserIdentity();
   const path = window.location.pathname;
@@ -42,7 +54,9 @@ export async function trackEvent(event: string, properties: Record<string, unkno
   const enrichedProperties = {
     ...properties,
     locale: properties.locale ?? (isLocale(pathLocale) ? pathLocale : "en"),
-    page_path: properties.page_path ?? path
+    page_path: properties.page_path ?? path,
+    environment: "production",
+    host: window.location.hostname
   };
 
   try {

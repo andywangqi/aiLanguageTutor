@@ -30,6 +30,11 @@ central endpoint and write key enable central plan reads and browser event
 tracking. The write key must belong to an active website registration in the
 central console; the server key is only available to server modules.
 
+The browser client only sends analytics when the current hostname matches the
+configured production site URL (with an optional `www.` prefix). Localhost,
+`127.0.0.1`, preview deployments, and other non-production hosts are ignored
+so development traffic cannot inflate production visitor counts.
+
 If `/api/track` returns `The requested website is not registered`, register the
 website in the central console with the production URL first, then update the
 Vercel environment variable with that registration's write key.
