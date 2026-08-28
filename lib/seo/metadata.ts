@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { localeLabels, localeUrl, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
-const defaultSiteUrl = "https://www.ailanguagetutor.com";
+const defaultSiteUrl = "https://ailanguagetutor.online";
 
 function resolveSiteUrl(value: string | undefined) {
   const candidate = value?.trim();

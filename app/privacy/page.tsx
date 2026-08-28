@@ -139,7 +139,7 @@ export default function PrivacyPage() {
         </p>
         <p>
           Privacy questions or requests can be sent to{" "}
-          <a href="mailto:privacy@ailanguagetutor.com">privacy@ailanguagetutor.com</a>. You can also visit our{" "}
+          <a href="mailto:privacy@ailanguagetutor.online">privacy@ailanguagetutor.online</a>. You can also visit our{" "}
           <Link href="/contact">Contact page</Link>.
         </p>
       </section>

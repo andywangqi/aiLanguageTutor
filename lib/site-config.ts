@@ -1,5 +1,5 @@
 const defaultCentralEndpoint = "https://zhyadmin.vercel.app";
-const defaultSiteUrl = "https://www.ailanguagetutor.com";
+const defaultSiteUrl = "https://ailanguagetutor.online";
 
 function removeTrailingSlashes(value: string) {
   return value.replace(/\/+$/, "");

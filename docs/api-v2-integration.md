@@ -9,7 +9,7 @@ Copy `.env.example` to `.env.local` and fill the values in the deployment
 environment:
 
 ```env
-NEXT_PUBLIC_SITE_URL=https://www.ailanguagetutor.com
+NEXT_PUBLIC_SITE_URL=https://ailanguagetutor.online
 NEXT_PUBLIC_ZHYADMIN_ENDPOINT=https://zhyadmin.vercel.app
 NEXT_PUBLIC_ZHYADMIN_WRITE_KEY=
 

@@ -22,7 +22,7 @@
 ### 1.1 基础地址
 
 ```text
-Web:              https://www.ailanguagetutor.com
+Web:              https://ailanguagetutor.online
 Product API:      same-origin /api/*
 Central Data API: https://zhyadmin.vercel.app
 Site Type:        ai_language_tutor
@@ -118,7 +118,7 @@ INTERNAL_ERROR
 真实 key 由你提供，部署时配置到 Vercel / 本地 `.env.local`。文档和 Git 中只保留变量名，避免把 `serverKey` 提交到仓库。
 
 ```env
-NEXT_PUBLIC_SITE_URL=https://www.ailanguagetutor.com
+NEXT_PUBLIC_SITE_URL=https://ailanguagetutor.online
 
 # Central data backend
 NEXT_PUBLIC_ZHYADMIN_ENDPOINT=https://zhyadmin.vercel.app
@@ -604,7 +604,7 @@ X-Site-Secret: <serverKey>
 {
   "siteType": "ai_language_tutor",
   "siteName": "AI Language Tutor",
-  "siteUrl": "https://www.ailanguagetutor.com",
+  "siteUrl": "https://ailanguagetutor.online",
   "active": true,
   "metadata": {}
 }
@@ -665,7 +665,7 @@ Content-Type: application/json
 
 ```json
 {
-  "siteUrl": "https://www.ailanguagetutor.com",
+  "siteUrl": "https://ailanguagetutor.online",
   "eventName": "conversation_started",
   "anonymousId": "anon_xxx",
   "userId": null,

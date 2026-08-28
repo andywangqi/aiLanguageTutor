@@ -24,8 +24,8 @@ export default function ContactPage() {
               Tell us what happened, which language you were practicing, and what device or browser you were using.
               We can usually diagnose a problem faster with those details.
             </p>
-            <a className="info-card-link" href="mailto:support@ailanguagetutor.com">
-              support@ailanguagetutor.com
+            <a className="info-card-link" href="mailto:support@ailanguagetutor.online">
+              support@ailanguagetutor.online
             </a>
           </article>
           <article className="info-card">
@@ -35,8 +35,8 @@ export default function ContactPage() {
               Tell us which conversations you want to practice, which corrections feel useful, or where the
               experience gets in your way.
             </p>
-            <a className="info-card-link" href="mailto:hello@ailanguagetutor.com">
-              hello@ailanguagetutor.com
+            <a className="info-card-link" href="mailto:hello@ailanguagetutor.online">
+              hello@ailanguagetutor.online
             </a>
           </article>
           <article className="info-card">
@@ -46,8 +46,8 @@ export default function ContactPage() {
               We are open to conversations with language teachers, learning communities, and teams exploring
               conversation-first practice.
             </p>
-            <a className="info-card-link" href="mailto:partners@ailanguagetutor.com">
-              partners@ailanguagetutor.com
+            <a className="info-card-link" href="mailto:partners@ailanguagetutor.online">
+              partners@ailanguagetutor.online
             </a>
           </article>
         </div>

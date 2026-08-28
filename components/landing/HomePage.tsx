@@ -405,7 +405,7 @@ function Footer({ dictionary }: { dictionary: LandingDictionary }) {
         <div>
           <h2>{dictionary.footer.brand}</h2>
           <p>{dictionary.footer.rights}</p>
-          <a href="mailto:support@ailanguagetutor.com">support@ailanguagetutor.com</a>
+          <a href="mailto:support@ailanguagetutor.online">support@ailanguagetutor.online</a>
         </div>
         {dictionary.footer.columns.map((column, index) => (
           <nav aria-label={footerTitles[locale][index] ?? column.title} key={column.title}>
