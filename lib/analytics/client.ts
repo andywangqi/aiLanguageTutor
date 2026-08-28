@@ -1,6 +1,8 @@
 "use client";
 
+import { isLocale } from "@/lib/i18n/config";
 import { getProductSiteUrl } from "@/lib/site-config";
+import type { AnalyticsEvent } from "./events";
 
 const anonymousStorageKey = "ai-tutor-anonymous-id";
 const sessionStorageKey = "ai-tutor-session-id";
@@ -31,27 +33,66 @@ export function getBrowserIdentity() {
 
 export async function trackEvent(event: string, properties: Record<string, unknown> = {}) {
   const writeKey = process.env.NEXT_PUBLIC_ZHYADMIN_WRITE_KEY?.trim();
-  if (!writeKey || typeof window === "undefined") return;
+  if (!writeKey || typeof window === "undefined") return false;
 
   const { anonymousId, sessionId } = getBrowserIdentity();
+  const path = window.location.pathname;
+  const pathLocale = path.split("/")[1];
+  const occurredAt = new Date().toISOString();
+  const enrichedProperties = {
+    ...properties,
+    locale: properties.locale ?? (isLocale(pathLocale) ? pathLocale : "en"),
+    page_path: properties.page_path ?? path
+  };
 
   try {
-    await fetch("/api/track", {
+    const response = await fetch("/api/track", {
       method: "POST",
       keepalive: true,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Site-Key": writeKey
+      },
       body: JSON.stringify({
-        siteKey: writeKey,
+        eventName: event,
         siteUrl: getProductSiteUrl(),
-        event,
-        properties,
+        properties: enrichedProperties,
         anonymousId,
+        userId: null,
         sessionId,
-        path: window.location.pathname
+        path: `${path}${window.location.search}`,
+        referrer: document.referrer,
+        occurredAt
       })
     });
+    return response.ok;
   } catch {
     // Analytics must never interrupt a learning action.
+    return false;
   }
 }
 
+export async function trackEventOnce(
+  key: string,
+  event: AnalyticsEvent | string,
+  properties: Record<string, unknown> = {}
+) {
+  if (typeof window === "undefined") return;
+
+  const storageKey = `ai-tutor-event:${key}`;
+  try {
+    if (window.sessionStorage.getItem(storageKey)) return true;
+  } catch {
+    // A blocked sessionStorage should not prevent the event from being sent.
+  }
+
+  const sent = await trackEvent(event, properties);
+  if (sent) {
+    try {
+      window.sessionStorage.setItem(storageKey, "1");
+    } catch {
+      // A blocked sessionStorage should not prevent the event from being sent.
+    }
+  }
+  return sent;
+}

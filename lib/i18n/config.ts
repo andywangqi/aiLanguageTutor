@@ -22,6 +22,20 @@ export function localePath(locale: Locale): string {
   return locale === defaultLocale ? "/" : `/${locale}`;
 }
 
+export function localizedPath(locale: Locale, path: string): string {
+  if (
+    locale === defaultLocale ||
+    path.startsWith("#") ||
+    path.startsWith("mailto:") ||
+    path.startsWith("http://") ||
+    path.startsWith("https://")
+  ) {
+    return path;
+  }
+
+  return `${localePath(locale).replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export function localeUrl(baseUrl: string, locale: Locale): string {
   const normalizedBase = baseUrl.replace(/\/$/, "");
   return `${normalizedBase}${localePath(locale)}`;

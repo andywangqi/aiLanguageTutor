@@ -55,12 +55,11 @@ Idempotency-Key: <uuid-or-stable-key>
 Content-Type: application/json
 ```
 
-在埋点 SDK 里，这个值通常作为 `siteKey` 传入；本质上就是你提供的 `writeKey`。
+在埋点 SDK 里，这个值通过 `X-Site-Key` 请求头传入；本质上就是你提供的
+`writeKey`。不能把 `serverKey` 用在浏览器埋点。
 
-```json
-{
-  "siteKey": "<NEXT_PUBLIC_ZHYADMIN_WRITE_KEY>"
-}
+```http
+X-Site-Key: <NEXT_PUBLIC_ZHYADMIN_WRITE_KEY>
 ```
 
 服务端同步必须使用 `serverKey`：
@@ -666,11 +665,14 @@ Content-Type: application/json
 
 ```json
 {
-  "siteKey": "<writeKey>",
-  "event": "conversation_started",
+  "siteUrl": "https://www.ailanguagetutor.com",
+  "eventName": "conversation_started",
   "anonymousId": "anon_xxx",
-  "userId": "auth-user-uuid",
-  "timestamp": "2026-08-25T09:01:00.000Z",
+  "userId": null,
+  "sessionId": "session_xxx",
+  "path": "/",
+  "referrer": "",
+  "occurredAt": "2026-08-25T09:01:00.000Z",
   "properties": {
     "mode": "say_it",
     "language": "en"

@@ -2,39 +2,16 @@
 
 import Link from "next/link";
 import { ArrowLeft, Check, LoaderCircle, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrandMark } from "./BrandMark";
 import { api } from "@/lib/api/client";
 import { ApiError, type BillingPlan } from "@/lib/api/types";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
-
-const freeFeatures = [
-  "1-minute AI conversation",
-  "Voice input",
-  "AI replies in your target language",
-  "Translation",
-  "Listen to AI",
-  "Basic word explanations",
-  "Basic pronunciation feedback",
-  "No credit card required"
-];
-
-const proFeatures = [
-  "Unlimited AI conversations",
-  "Voice conversations",
-  "Target-language AI replies",
-  "Instant translation",
-  "AI voice / TTS",
-  "Slow playback",
-  "Word & phrase explanations",
-  "AI pronunciation feedback",
-  "Grammar corrections",
-  "Natural expression suggestions",
-  "Saved words & phrases",
-  "Conversation history",
-  "Personalized practice",
-  "Progress tracking"
-];
+import type { LandingDictionary } from "@/lib/i18n/types";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
+import { LanguageSwitcher } from "@/components/landing/LanguageSwitcher";
+import { paymentEventForStatus } from "@/lib/analytics/events";
+import { trackEvent, trackEventOnce } from "@/lib/analytics/client";
 
 const fallbackPlans: BillingPlan[] = [
   { planCode: "pro_monthly", name: "Pro", amount: 12.99, currency: "USD", interval: "month", popular: true },
@@ -51,10 +28,33 @@ function planAmount(plan: BillingPlan, fallback: string) {
   return fallback;
 }
 
-export function PricingPage() {
+export function PricingPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
+  const copy = dictionary.product.pricing;
   const [plans, setPlans] = useState<BillingPlan[]>(fallbackPlans);
   const [checkoutPlan, setCheckoutPlan] = useState("");
   const [notice, setNotice] = useState("");
+  const paymentStatusTracked = useRef("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    void trackEventOnce(`pricing_page_viewed:${locale}:${window.location.pathname}`, "pricing_page_viewed", {
+      locale,
+      selected_plan: params.get("plan") || undefined
+    });
+  }, [locale]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("payment");
+    const event = paymentEventForStatus(status);
+    if (!event) return;
+
+    const plan = params.get("plan") || "unknown";
+    const key = `${event}:${locale}:${plan}`;
+    if (paymentStatusTracked.current === key) return;
+    paymentStatusTracked.current = key;
+    void trackEventOnce(key, event, { locale, plan_code: plan, payment_status: status });
+  }, [locale]);
 
   useEffect(() => {
     let active = true;
@@ -77,32 +77,53 @@ export function PricingPage() {
   async function startCheckout(plan: BillingPlan, fallbackCode: string) {
     setNotice("");
     const code = planCode(plan, fallbackCode);
+    void trackEvent("pricing_cta_clicked", {
+      locale,
+      plan_code: code,
+      plan_name: plan.name || code,
+      billing_interval: plan.interval || fallbackCode.replace("pro_", "")
+    });
     const supabase = createSupabaseBrowserClient();
     if (!supabase || !isSupabaseConfigured()) {
-      setNotice("Add Supabase environment variables before starting a paid checkout.");
+      void trackEvent("checkout_failed", { locale, plan_code: code, stage: "configuration" });
+      setNotice(copy.supabaseNotice);
       return;
     }
 
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
-      window.location.assign(`/login?next=/pricing&plan=${encodeURIComponent(code)}`);
+      const next = localizedPath(locale, `/pricing?plan=${encodeURIComponent(code)}`);
+      window.location.assign(`${localizedPath(locale, "/login")}?next=${encodeURIComponent(next)}`);
       return;
     }
 
     setCheckoutPlan(code);
+    void trackEvent("checkout_started", {
+      locale,
+      plan_code: code,
+      plan_name: plan.name || code,
+      billing_interval: plan.interval || fallbackCode.replace("pro_", "")
+    });
     try {
       const checkout = await api.billing.checkout(code, {
-        successPath: "/app?payment=success",
-        cancelPath: "/pricing?payment=cancelled"
+        successPath: localizedPath(locale, `/app?payment=success&plan=${encodeURIComponent(code)}`),
+        cancelPath: localizedPath(locale, `/pricing?payment=cancelled&plan=${encodeURIComponent(code)}`)
       });
       const checkoutUrl = checkout.checkoutUrl || checkout.url;
       if (!checkoutUrl) {
-        setNotice("Checkout is not configured yet. Please try again after Waffo is connected.");
+        void trackEvent("checkout_failed", { locale, plan_code: code, stage: "missing_checkout_url" });
+        setNotice(copy.pendingNotice);
         return;
       }
       window.location.assign(checkoutUrl);
     } catch (error) {
-      setNotice(error instanceof ApiError && error.code === "PAYMENT_PENDING" ? "Checkout is waiting for the Waffo merchant configuration." : "We could not start checkout. Please try again.");
+      void trackEvent("checkout_failed", {
+        locale,
+        plan_code: code,
+        stage: "request",
+        error_code: error instanceof ApiError ? error.code : "UNKNOWN_ERROR"
+      });
+      setNotice(error instanceof ApiError && error.code === "PAYMENT_PENDING" ? copy.pendingNotice : copy.checkoutNotice);
     } finally {
       setCheckoutPlan("");
     }
@@ -111,57 +132,60 @@ export function PricingPage() {
   return (
     <main className="pricing-lite-page">
       <header className="pricing-lite-header">
-        <BrandMark />
-        <Link className="pricing-lite-back" href="/app">
-          <ArrowLeft size={17} aria-hidden="true" />
-          Back to workbench
-        </Link>
+        <BrandMark href={localizedPath(locale, "/")} />
+        <div className="pricing-lite-header-actions">
+          <LanguageSwitcher currentLocale={locale} />
+          <Link className="pricing-lite-back" href={localizedPath(locale, "/app")}>
+            <ArrowLeft size={17} aria-hidden="true" />
+            {copy.back}
+          </Link>
+        </div>
       </header>
 
       <div className="pricing-lite-shell container">
         <section className="pricing-lite-hero" aria-labelledby="pricing-lite-title">
           <p className="pricing-lite-eyebrow">
             <Sparkles size={16} aria-hidden="true" />
-            Pricing
+            {copy.eyebrow}
           </p>
-          <h1 id="pricing-lite-title">Practice for free. Upgrade when you&apos;re ready.</h1>
-          <p className="pricing-lite-lead">Try your first conversation for free.</p>
+          <h1 id="pricing-lite-title">{copy.title}</h1>
+          <p className="pricing-lite-lead">{copy.lead}</p>
         </section>
 
-        <section className="pricing-lite-grid" aria-label="Subscription plans">
+        <section className="pricing-lite-grid" aria-label={copy.plansLabel}>
           <article className="pricing-lite-card pricing-lite-card-free">
-            <span className="pricing-lite-kicker">Try first</span>
-            <h2>Free</h2>
+            <span className="pricing-lite-kicker">{copy.freeKicker}</span>
+            <h2>{copy.freeName}</h2>
             <div className="pricing-lite-price">
-              <strong>$0</strong>
-              <span>1-minute trial</span>
+              <strong>{copy.freePrice}</strong>
+              <span>{copy.freeTerm}</span>
             </div>
-            <p className="pricing-lite-subtitle">Try your first conversation.</p>
+            <p className="pricing-lite-subtitle">{copy.freeSubtitle}</p>
             <ul className="pricing-lite-list">
-              {freeFeatures.map((feature) => (
+              {copy.freeFeatures.map((feature) => (
                 <li key={feature}>
                   <Check size={16} aria-hidden="true" />
                   <span>{feature}</span>
                 </li>
               ))}
             </ul>
-            <p className="pricing-lite-note">No credit card required.</p>
-            <Link className="pricing-lite-button pricing-lite-button-secondary" href="/app">
-              Try for free
+            <p className="pricing-lite-note">{copy.freeNote}</p>
+            <Link className="pricing-lite-button pricing-lite-button-secondary" href={localizedPath(locale, "/app")}>
+              {copy.freeCta}
             </Link>
           </article>
 
           <article className="pricing-lite-card pricing-lite-card-pro">
-            <span className="pricing-lite-pill">Most popular</span>
-            <span className="pricing-lite-kicker">Unlimited practice</span>
-            <h2>{monthlyPlan.name || "Pro"}</h2>
+            <span className="pricing-lite-pill">{copy.proBadge}</span>
+            <span className="pricing-lite-kicker">{copy.proKicker}</span>
+            <h2>{monthlyPlan.name || copy.proName}</h2>
             <div className="pricing-lite-price">
-              <strong>{planAmount(monthlyPlan, "$12.99")}</strong>
-              <span>/ {monthlyPlan.interval || "month"}</span>
+              <strong>{planAmount(monthlyPlan, copy.proFallbackPrice)}</strong>
+              <span>/ {copy.month}</span>
             </div>
-            <p className="pricing-lite-subtitle">Practice without limits.</p>
+            <p className="pricing-lite-subtitle">{copy.proSubtitle}</p>
             <ul className="pricing-lite-list">
-              {proFeatures.map((feature) => (
+              {copy.proFeatures.map((feature) => (
                 <li key={feature}>
                   <Check size={16} aria-hidden="true" />
                   <span>{feature}</span>
@@ -170,26 +194,26 @@ export function PricingPage() {
             </ul>
             <button className="pricing-lite-button pricing-lite-button-primary" type="button" onClick={() => startCheckout(monthlyPlan, "pro_monthly")} disabled={Boolean(checkoutPlan)}>
               {checkoutPlan === planCode(monthlyPlan, "pro_monthly") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
-              Start Pro
+              {copy.proCta}
             </button>
           </article>
         </section>
 
-        <section className="pricing-lite-annual" aria-label="Annual plan">
+        <section className="pricing-lite-annual" aria-label={copy.annualName}>
           <div>
-            <span className="pricing-lite-kicker">Save more with Annual</span>
-            <h2>{annualPlan.name || "Pro Annual"}</h2>
-            <p>Pay once and keep practicing all year.</p>
+            <span className="pricing-lite-kicker">{copy.annualKicker}</span>
+            <h2>{annualPlan.name || copy.annualName}</h2>
+            <p>{copy.annualDescription}</p>
           </div>
           <div className="pricing-lite-annual-price">
             <del>$155.88</del>
-            <strong>{planAmount(annualPlan, "$79.99")}</strong>
-            <span>/ {annualPlan.interval || "year"} · $6.67 / month</span>
+            <strong>{planAmount(annualPlan, copy.annualFallbackPrice)}</strong>
+            <span>/ {copy.year} · {copy.monthEquivalent}</span>
           </div>
-          <div className="pricing-lite-annual-savings">Save 49%</div>
+          <div className="pricing-lite-annual-savings">{copy.annualSavings}</div>
           <button className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" type="button" onClick={() => startCheckout(annualPlan, "pro_annual")} disabled={Boolean(checkoutPlan)}>
             {checkoutPlan === planCode(annualPlan, "pro_annual") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
-            Get Pro
+            {copy.annualCta}
           </button>
         </section>
         {notice ? <p className="pricing-lite-notice" role="status">{notice}</p> : null}

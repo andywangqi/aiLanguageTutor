@@ -27,7 +27,12 @@ WAFFO_WEBHOOK_PUBLIC_KEY=
 
 The two Supabase public variables are required for real Google OAuth. The
 central endpoint and write key enable central plan reads and browser event
-tracking. The server key is only available to server modules.
+tracking. The write key must belong to an active website registration in the
+central console; the server key is only available to server modules.
+
+If `/api/track` returns `The requested website is not registered`, register the
+website in the central console with the production URL first, then update the
+Vercel environment variable with that registration's write key.
 
 ## 2. Google OAuth
 
@@ -74,6 +79,7 @@ Authorization
 Content-Type
 X-Request-Id
 Idempotency-Key
+X-Site-Key (analytics only)
 ```
 
 Admin endpoints and Waffo webhooks are intentionally not exposed through this
@@ -149,8 +155,9 @@ duplicating those records with a second client-side sync path.
 ## 8. Analytics
 
 `lib/analytics/client.ts` creates stable anonymous and session identifiers in
-browser storage and posts events to the same-origin `/api/track` proxy with
-the public write key as `siteKey`.
+browser storage and posts events to the same-origin `/api/track` proxy. The
+proxy forwards the public write key as `X-Site-Key`; the event payload uses the
+central analytics contract's `eventName` and `occurredAt` fields.
 
 Tracked events include:
 

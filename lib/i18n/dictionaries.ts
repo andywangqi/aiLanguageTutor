@@ -1,4 +1,6 @@
 import type { LandingDictionary } from "./types";
+import { getLandingSections } from "./landing-copy";
+import { getProductCopy } from "./product-copy";
 
 const baseEn: LandingDictionary = {
   locale: "en",
@@ -184,7 +186,8 @@ const baseEn: LandingDictionary = {
       { title: "Learn", links: ["Conversation Practice", "Speaking Practice", "Pronunciation Practice", "Review"] },
       { title: "Company", links: ["Contact", "Privacy", "Terms"] }
     ]
-  }
+  },
+  product: getProductCopy("en")
 };
 
 export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary> = {
@@ -192,12 +195,13 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
   ja: {
     ...baseEn,
     locale: "ja",
+    product: getProductCopy("ja"),
     seo: {
       title: "AI Language Tutor | AIで話して学ぶ語学チューター",
       description:
         "AI語学チューターと実際の会話を練習。自然な言い方、即時添削、スピーキング力の向上をサポートします。"
     },
-    nav: { product: "製品", method: "メソッド", languages: "言語", faq: "FAQ", app: "アプリを開く" },
+    nav: { product: "製品", method: "メソッド", languages: "言語", faq: "FAQ", app: "話してみる" },
     hero: {
       eyebrow: "スピーキング練習のためのAI語学チューター",
       h1: "リアルな会話のためのAI Language Tutor",
@@ -231,12 +235,13 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
   th: {
     ...baseEn,
     locale: "th",
+    product: getProductCopy("th"),
     seo: {
       title: "AI Language Tutor | ฝึกพูดและพัฒนาภาษาด้วย AI",
       description:
         "ฝึกสนทนาจริงกับติวเตอร์ภาษา AI เรียนรู้การพูดให้เป็นธรรมชาติ รับคำแก้ไขทันที และพัฒนาทักษะการพูด"
     },
-    nav: { product: "ผลิตภัณฑ์", method: "วิธีเรียน", languages: "ภาษา", faq: "FAQ", app: "เปิดแอป" },
+    nav: { product: "ผลิตภัณฑ์", method: "วิธีเรียน", languages: "ภาษา", faq: "FAQ", app: "เริ่มพูด" },
     hero: {
       eyebrow: "ติวเตอร์ภาษา AI สำหรับฝึกพูด",
       h1: "AI Language Tutor สำหรับบทสนทนาจริง",
@@ -261,12 +266,13 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
   ko: {
     ...baseEn,
     locale: "ko",
+    product: getProductCopy("ko"),
     seo: {
       title: "AI Language Tutor | AI와 말하며 배우는 언어 튜터",
       description:
         "AI 언어 튜터와 실제 대화를 연습하세요. 자연스러운 표현, 즉각적인 교정, 말하기 실력 향상을 도와줍니다."
     },
-    nav: { product: "제품", method: "방법", languages: "언어", faq: "FAQ", app: "앱 열기" },
+    nav: { product: "제품", method: "방법", languages: "언어", faq: "FAQ", app: "말하기 시작" },
     hero: {
       eyebrow: "말하기 연습을 위한 AI 언어 튜터",
       h1: "실전 대화를 위한 AI Language Tutor",
@@ -291,12 +297,13 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
   "zh-CN": {
     ...baseEn,
     locale: "zh-CN",
+    product: getProductCopy("zh-CN"),
     seo: {
       title: "AI Language Tutor | 用 AI 开口练语言",
       description:
         "和 AI 语言导师练习真实对话，学习更自然的表达，获得即时纠错，并提升你的口语能力。"
     },
-    nav: { product: "产品", method: "方法", languages: "语言", faq: "常见问题", app: "打开应用" },
+    nav: { product: "产品", method: "方法", languages: "语言", faq: "常见问题", app: "免费开始对话" },
     hero: {
       eyebrow: "用于口语练习的 AI 语言导师",
       h1: "面向真实对话的 AI Language Tutor",
@@ -327,12 +334,13 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
   "zh-TW": {
     ...baseEn,
     locale: "zh-TW",
+    product: getProductCopy("zh-TW"),
     seo: {
       title: "AI Language Tutor | 用 AI 開口練語言",
       description:
         "和 AI 語言導師練習真實對話，學習更自然的表達，獲得即時修正，並提升口說能力。"
     },
-    nav: { product: "產品", method: "方法", languages: "語言", faq: "常見問題", app: "打開應用" },
+    nav: { product: "產品", method: "方法", languages: "語言", faq: "常見問題", app: "免費開始對話" },
     hero: {
       eyebrow: "用於口說練習的 AI 語言導師",
       h1: "面向真實對話的 AI Language Tutor",
@@ -357,12 +365,13 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
   es: {
     ...baseEn,
     locale: "es",
+    product: getProductCopy("es"),
     seo: {
       title: "AI Language Tutor | Habla, aprende y mejora con AI",
       description:
         "Practica conversaciones reales con un tutor de idiomas con AI. Aprende expresiones naturales, recibe correcciones al instante y mejora tu speaking."
     },
-    nav: { product: "Producto", method: "Método", languages: "Idiomas", faq: "FAQ", app: "Abrir app" },
+    nav: { product: "Producto", method: "Método", languages: "Idiomas", faq: "FAQ", app: "Empezar a hablar" },
     hero: {
       eyebrow: "Tutor de idiomas con AI para practicar speaking",
       h1: "Tu AI Language Tutor para conversaciones reales",
@@ -385,6 +394,10 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
     }
   }
 };
+
+for (const locale of ["ja", "th", "ko", "zh-CN", "zh-TW", "es"] as const) {
+  dictionaries[locale].sections = getLandingSections(locale);
+}
 
 export function getDictionary(locale: LandingDictionary["locale"]): LandingDictionary {
   return dictionaries[locale];

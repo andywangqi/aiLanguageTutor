@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PricingPage } from "@/components/app/PricingPage";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export const metadata: Metadata = {
   title: "Pricing | AI Language Tutor",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <PricingPage />;
+  return <PricingPage dictionary={getDictionary("en")} locale="en" />;
 }

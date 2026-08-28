@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WorkbenchPage } from "@/components/app/WorkbenchPage";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export const metadata: Metadata = {
   title: "Workbench | AI Language Tutor",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <WorkbenchPage />;
+  return <WorkbenchPage dictionary={getDictionary("en")} locale="en" />;
 }

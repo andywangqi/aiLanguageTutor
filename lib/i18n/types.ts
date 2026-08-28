@@ -16,106 +16,183 @@ export type FaqItem = {
   answer: string;
 };
 
+export type DemoScenario = {
+  id: "airport" | "coffee" | "restaurant" | "hotel";
+  languagePair: string;
+  scenario: string;
+  userMessage: string;
+  aiMessage: string;
+  naturalPhrase: string;
+  visualLabel: string;
+  visualMeta: string;
+  visualDetail: string;
+  browserCopy?: Record<string, {
+    languagePair: string;
+    userMessage: string;
+    aiMessage?: string;
+  }>;
+};
+
+export type ProductCopy = {
+  demo: {
+    productName: string;
+    languagePairLabel: string;
+    scenarioLabel: string;
+    contextLabel: string;
+    userLabel: string;
+    tutorLabel: string;
+    userInstruction: string;
+    responseLabel: string;
+    actions: string[];
+    moreNaturalLabel: string;
+    practiceCta: string;
+    learningFlow: string[];
+    scenarios: DemoScenario[];
+  };
+  home: {
+    flowSteps: string[];
+    flowNote: string;
+    storySamples: Array<{ badge: string; prompt: string; response: string; actions: string[] }>;
+    modeExamples: Array<{ label: string; text: string }>;
+    correction: { youSaid: string; youSaidText: string; tutorLabel: string; tutorText: string; note: string };
+    pronunciation: { label: string; word: string; feedbackLabel: string; feedbackTitle: string; feedbackBody: string; syllables: string[]; copy: string; cta: string; ariaSyllables: string };
+    vocabulary: { label: string; ariaLabel: string; columns: string[]; rows: Array<{ word: string; meaning: string; practice: string }>; note: string };
+    review: { label: string; rows: Array<{ label: string; value: string }>; ariaLabel: string; items: string[] };
+    languageNote: string;
+  };
+  auth: {
+    ariaLabel: string;
+    closeLabel: string;
+    eyebrow: string;
+    title: string;
+    lead: string;
+    google: string;
+    googleLoading: string;
+    accountNote: string;
+    demoMode: string;
+    callbackError: string;
+    termsPrefix: string;
+    termsLabel: string;
+    termsAnd: string;
+    privacyLabel: string;
+  };
+  pricing: {
+    back: string;
+    eyebrow: string;
+    title: string;
+    lead: string;
+    plansLabel: string;
+    freeKicker: string;
+    freeName: string;
+    freePrice: string;
+    freeTerm: string;
+    freeSubtitle: string;
+    freeFeatures: string[];
+    freeNote: string;
+    freeCta: string;
+    proKicker: string;
+    proBadge: string;
+    proName: string;
+    proFallbackPrice: string;
+    month: string;
+    proSubtitle: string;
+    proFeatures: string[];
+    proCta: string;
+    annualKicker: string;
+    annualName: string;
+    annualDescription: string;
+    annualFallbackPrice: string;
+    year: string;
+    monthEquivalent: string;
+    annualSavings: string;
+    annualCta: string;
+    supabaseNotice: string;
+    pendingNotice: string;
+    checkoutNotice: string;
+  };
+  workbench: {
+    nav: { home: string; history: string; cards: string; partners: string; aria: string };
+    accountPlan: string;
+    tutorLabel: string;
+    remoteUnavailable: string;
+    newConversationError: string;
+    demoSayItReply: string;
+    demoTalkReply: string;
+    providerError: string;
+    messageError: string;
+    settingsError: string;
+    learningToolError: string;
+    title: string;
+    mobileTitle: string;
+    subtitle: string;
+    languageSettingsLabel: string;
+    upgradeCta: string;
+    partnerGenderOrigin: string;
+    partnerDescription: string;
+    customize: string;
+    changePartner: string;
+    partnerSettings: string;
+    partnerReady: string;
+    closePartner: string;
+    practiceMode: string;
+    sayItMode: string;
+    talkMode: string;
+    stats: string[];
+    startConversation: string;
+    startingConversation: string;
+    today: string;
+    listen: string;
+    slow: string;
+    hide: string;
+    translation: string;
+    lost: string;
+    gotIt: string;
+    showHints: string;
+    releaseToSend: string;
+    sending: string;
+    typeSayIt: string;
+    typeTalk: string;
+    messageLabel: string;
+    holdToSpeak: string;
+    sendMessage: string;
+    voiceUnsupported: string;
+    micDenied: string;
+    voiceUnclear: string;
+    sent: string;
+    insightTranslate: string;
+    insightGrammar: string;
+    insightEmptyTitle: string;
+    insightEmptyBody: string;
+    selectedTranslateBody: string;
+    selectedGrammarBody: string;
+    saveCard: string;
+    lookupPlaceholder: string;
+    lookupLabel: string;
+    privateNote: string;
+    modal: { close: string; eyebrow: string; title: string; lead: string; native: string; learning: string; level: string; later: string; start: string };
+    languageNames: Record<string, string>;
+    levels: Record<string, string>;
+  };
+};
+
 export type LandingDictionary = {
   locale: Locale;
-  seo: {
-    title: string;
-    description: string;
-  };
-  nav: {
-    product: string;
-    method: string;
-    languages: string;
-    faq: string;
-    app: string;
-  };
-  hero: {
-    eyebrow: string;
-    h1: string;
-    lead: string;
-    primaryCta: string;
-    secondaryCta: string;
-  };
-  demo: {
-    title: string;
-    tabs: {
-      sayIt: string;
-      talk: string;
-      practice: string;
-    };
-    promptLabel: string;
-    prompt: string;
-    responseLabel: string;
-    response: string;
-    actions: string[];
-    turn: string;
-    hint: string;
-  };
+  seo: { title: string; description: string };
+  nav: { product: string; method: string; languages: string; faq: string; app: string };
+  hero: { eyebrow: string; h1: string; lead: string; primaryCta: string; secondaryCta: string; proof?: string[] };
+  demo: { title: string; tabs: { sayIt: string; talk: string; practice: string }; promptLabel: string; prompt: string; responseLabel: string; response: string; actions: string[]; turn: string; hint: string };
   sections: {
-    learn: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      cards: FeatureCard[];
-    };
-    modes: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      items: TutorMode[];
-    };
-    corrections: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      points: string[];
-    };
-    stuck: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      points: string[];
-    };
-    lesson: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      steps: string[];
-    };
-    personal: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      stats: Array<{ label: string; value: string }>;
-    };
-    languages: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      items: string[];
-    };
-    why: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      cards: FeatureCard[];
-    };
-    faq: {
-      eyebrow: string;
-      h2: string;
-      lead: string;
-      items: FaqItem[];
-    };
-    cta: {
-      h2: string;
-      lead: string;
-      primaryCta: string;
-      secondaryCta: string;
-    };
+    learn: { eyebrow: string; h2: string; lead: string; cards: FeatureCard[] };
+    modes: { eyebrow: string; h2: string; lead: string; items: TutorMode[] };
+    corrections: { eyebrow: string; h2: string; lead: string; points: string[] };
+    stuck: { eyebrow: string; h2: string; lead: string; points: string[] };
+    lesson: { eyebrow: string; h2: string; lead: string; steps: string[] };
+    personal: { eyebrow: string; h2: string; lead: string; stats: Array<{ label: string; value: string }> };
+    languages: { eyebrow: string; h2: string; lead: string; items: string[] };
+    why: { eyebrow: string; h2: string; lead: string; cards: FeatureCard[] };
+    faq: { eyebrow: string; h2: string; lead: string; items: FaqItem[] };
+    cta: { h2: string; lead: string; primaryCta: string; secondaryCta: string };
   };
-  footer: {
-    brand: string;
-    rights: string;
-    columns: Array<{ title: string; links: string[] }>;
-  };
+  footer: { brand: string; rights: string; columns: Array<{ title: string; links: string[] }> };
+  product: ProductCopy;
 };

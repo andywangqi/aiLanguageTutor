@@ -7,7 +7,6 @@ import {
   BookOpen,
   Brain,
   Check,
-  ChevronDown,
   Clock3,
   CreditCard,
   EyeOff,
@@ -16,6 +15,7 @@ import {
   Home,
   Languages,
   Lightbulb,
+  LogOut,
   Mic,
   MicOff,
   PanelRight,
@@ -31,14 +31,17 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
-import { trackEvent } from "@/lib/analytics/client";
+import { trackEvent, trackEventOnce } from "@/lib/analytics/client";
+import { paymentEventForStatus } from "@/lib/analytics/events";
 import { ApiError, type TutorConversation, type TutorMessage, type WorkbenchData } from "@/lib/api/types";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
+import type { LandingDictionary, ProductCopy } from "@/lib/i18n/types";
 import { BrandMark } from "./BrandMark";
 
-type NavItem = "Home" | "Chat history" | "Saved cards" | "Partners";
+type NavItem = "home" | "history" | "cards" | "partners";
 type WorkbenchMode = "sayIt" | "talk";
-type InsightMode = "Translate" | "Grammar";
+type InsightMode = "translate" | "grammar";
 type Message = {
   id: string;
   role: "tutor" | "user";
@@ -80,12 +83,119 @@ declare global {
   }
 }
 
-const navItems: Array<{ label: NavItem; icon: typeof Home }> = [
-  { label: "Home", icon: Home },
-  { label: "Chat history", icon: History },
-  { label: "Saved cards", icon: BookOpen },
-  { label: "Partners", icon: Users }
+const navItems: Array<{ key: NavItem; icon: typeof Home }> = [
+  { key: "home", icon: Home },
+  { key: "history", icon: History },
+  { key: "cards", icon: BookOpen },
+  { key: "partners", icon: Users }
 ];
+
+type WorkbenchUiMessages = Pick<
+  import("@/lib/i18n/types").ProductCopy["workbench"],
+  | "tutorLabel"
+  | "remoteUnavailable"
+  | "newConversationError"
+  | "demoSayItReply"
+  | "demoTalkReply"
+  | "providerError"
+  | "messageError"
+  | "settingsError"
+  | "learningToolError"
+> & { signOut: string; signingOut: string };
+
+const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
+  en: {
+    tutorLabel: "AI tutor",
+    remoteUnavailable: "Your account is connected. The tutor service is temporarily unavailable, so this page is showing the practice preview.",
+    newConversationError: "A new conversation could not be created. Please try again.",
+    demoSayItReply: "Nice. I understand you. Try saying it once more in English, and I’ll help you make it sound natural.",
+    demoTalkReply: "Nice. Keep the conversation going. I’ll reply in English and adjust the pace to your level.",
+    providerError: "Your message was saved, but the tutor could not reply yet. Please try again shortly.",
+    messageError: "Your message could not be sent. Please try again.",
+    settingsError: "Your language settings could not be saved. Please try again.",
+    learningToolError: "That learning tool is temporarily unavailable. Please try again.",
+    signOut: "Sign out",
+    signingOut: "Signing out…"
+  },
+  ja: {
+    tutorLabel: "AIチューター",
+    remoteUnavailable: "アカウントは接続されていますが、現在チューターサービスを利用できないため、練習プレビューを表示しています。",
+    newConversationError: "新しい会話を開始できませんでした。もう一度お試しください。",
+    demoSayItReply: "伝わりました。もう一度英語で言ってみましょう。自然な表現に整えるお手伝いをします。",
+    demoTalkReply: "いいですね。このまま会話を続けましょう。レベルに合わせて英語で返答します。",
+    providerError: "メッセージは保存されましたが、チューターからの返答を取得できませんでした。少し待って再試行してください。",
+    messageError: "メッセージを送信できませんでした。もう一度お試しください。",
+    settingsError: "言語設定を保存できませんでした。もう一度お試しください。",
+    learningToolError: "学習ツールを一時的に利用できません。もう一度お試しください。",
+    signOut: "ログアウト",
+    signingOut: "ログアウト中…"
+  },
+  th: {
+    tutorLabel: "AI Tutor",
+    remoteUnavailable: "เชื่อมต่อบัญชีแล้ว แต่บริการ Tutor ยังไม่พร้อมใช้งานชั่วคราว จึงแสดงตัวอย่างการฝึกให้คุณดู",
+    newConversationError: "เริ่มบทสนทนาใหม่ไม่ได้ ลองอีกครั้งนะ",
+    demoSayItReply: "เข้าใจแล้ว ลองพูดเป็นภาษาอังกฤษอีกครั้ง แล้วฉันจะช่วยปรับให้ฟังเป็นธรรมชาติมากขึ้น",
+    demoTalkReply: "ดีมาก คุยต่อได้เลย ฉันจะตอบเป็นภาษาอังกฤษและปรับจังหวะให้เหมาะกับระดับของคุณ",
+    providerError: "บันทึกข้อความแล้ว แต่ Tutor ยังตอบกลับไม่ได้ ลองใหม่อีกครั้งในอีกสักครู่",
+    messageError: "ส่งข้อความไม่ได้ ลองอีกครั้งนะ",
+    settingsError: "บันทึกการตั้งค่าภาษาไม่ได้ ลองอีกครั้งนะ",
+    learningToolError: "เครื่องมือการเรียนรู้ยังไม่พร้อมใช้งานชั่วคราว ลองอีกครั้งนะ",
+    signOut: "ออกจากระบบ",
+    signingOut: "กำลังออกจากระบบ…"
+  },
+  ko: {
+    tutorLabel: "AI 튜터",
+    remoteUnavailable: "계정은 연결되었지만 현재 튜터 서비스를 사용할 수 없어 연습 미리보기를 보여드리고 있습니다.",
+    newConversationError: "새 대화를 시작할 수 없습니다. 다시 시도해 주세요.",
+    demoSayItReply: "잘 이해했어요. 영어로 한 번 더 말해 보세요. 더 자연스럽게 다듬어 드릴게요.",
+    demoTalkReply: "좋아요. 대화를 계속해 보세요. 현재 레벨에 맞춰 영어로 답할게요.",
+    providerError: "메시지는 저장되었지만 튜터가 아직 답하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    messageError: "메시지를 보내지 못했습니다. 다시 시도해 주세요.",
+    settingsError: "언어 설정을 저장하지 못했습니다. 다시 시도해 주세요.",
+    learningToolError: "학습 도구를 잠시 사용할 수 없습니다. 다시 시도해 주세요.",
+    signOut: "로그아웃",
+    signingOut: "로그아웃 중…"
+  },
+  "zh-CN": {
+    tutorLabel: "AI 导师",
+    remoteUnavailable: "账号已连接，但导师服务暂时不可用。当前显示的是练习预览。",
+    newConversationError: "暂时无法开始新对话，请稍后再试。",
+    demoSayItReply: "我明白你的意思了。再用英语说一次，我会帮你调整得更自然。",
+    demoTalkReply: "很好，继续聊下去吧。我会用英语回复，并根据你的水平调整表达和节奏。",
+    providerError: "消息已保存，但导师暂时还没有回复，请稍后再试。",
+    messageError: "消息发送失败，请再试一次。",
+    settingsError: "语言设置保存失败，请再试一次。",
+    learningToolError: "学习工具暂时不可用，请再试一次。",
+    signOut: "退出登录",
+    signingOut: "正在退出…"
+  },
+  "zh-TW": {
+    tutorLabel: "AI 導師",
+    remoteUnavailable: "帳號已連線，但 Tutor 服務暫時無法使用。目前顯示的是練習預覽。",
+    newConversationError: "暫時無法開始新的會話，請稍後再試。",
+    demoSayItReply: "我明白你的意思了。再用英語說一次，我會幫你調整得更自然。",
+    demoTalkReply: "很好，繼續聊下去吧。我會用英語回覆，並依照你的程度調整表達和節奏。",
+    providerError: "訊息已儲存，但 Tutor 暫時還沒有回覆，請稍後再試。",
+    messageError: "訊息傳送失敗，請再試一次。",
+    settingsError: "語言設定儲存失敗，請再試一次。",
+    learningToolError: "學習工具暫時無法使用，請再試一次。",
+    signOut: "登出",
+    signingOut: "正在登出…"
+  },
+  es: {
+    tutorLabel: "Tutor con AI",
+    remoteUnavailable: "Tu cuenta está conectada, pero el servicio del tutor no está disponible ahora. Mostramos una vista previa de práctica.",
+    newConversationError: "No se pudo iniciar una conversación nueva. Vuelve a intentarlo.",
+    demoSayItReply: "Te entiendo. Inténtalo una vez más en inglés y te ayudaré a decirlo de forma más natural.",
+    demoTalkReply: "Muy bien. Sigue la conversación. Responderé en inglés y adaptaré el ritmo a tu nivel.",
+    providerError: "Tu mensaje se guardó, pero el tutor aún no pudo responder. Vuelve a intentarlo en un momento.",
+    messageError: "No se pudo enviar el mensaje. Vuelve a intentarlo.",
+    settingsError: "No se pudo guardar la configuración de idiomas. Vuelve a intentarlo.",
+    learningToolError: "La herramienta de aprendizaje no está disponible ahora. Vuelve a intentarlo.",
+    signOut: "Cerrar sesión",
+    signingOut: "Cerrando sesión…"
+  }
+};
 
 const initialMessages: Message[] = [
   {
@@ -95,11 +205,15 @@ const initialMessages: Message[] = [
   }
 ];
 
-export function WorkbenchPage() {
+export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
   const router = useRouter();
-  const [activeNav, setActiveNav] = useState<NavItem>("Home");
+  const copy = useMemo(
+    () => ({ ...dictionary.product.workbench, ...localizedWorkbenchMessages[locale] }),
+    [dictionary.product.workbench, locale]
+  );
+  const [activeNav, setActiveNav] = useState<NavItem>("home");
   const [mode, setMode] = useState<WorkbenchMode>("sayIt");
-  const [insightMode, setInsightMode] = useState<InsightMode>("Translate");
+  const [insightMode, setInsightMode] = useState<InsightMode>("translate");
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(true);
   const [nativeLanguage, setNativeLanguage] = useState("Chinese");
@@ -110,7 +224,9 @@ export function WorkbenchPage() {
   const [apiNotice, setApiNotice] = useState("");
   const [isRemoteSession, setIsRemoteSession] = useState(false);
   const [isApiBusy, setIsApiBusy] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const paymentStatusTracked = useRef("");
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const voiceTranscriptRef = useRef("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -130,6 +246,19 @@ export function WorkbenchPage() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("payment");
+    const event = paymentEventForStatus(status);
+    if (!event) return;
+
+    const plan = params.get("plan") || "unknown";
+    const key = `${event}:${locale}:${plan}`;
+    if (paymentStatusTracked.current === key) return;
+    paymentStatusTracked.current = key;
+    void trackEventOnce(key, event, { locale, plan_code: plan, payment_status: status });
+  }, [locale]);
+
+  useEffect(() => {
     let active = true;
 
     async function hydrateWorkbench() {
@@ -138,7 +267,7 @@ export function WorkbenchPage() {
 
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
-        router.replace("/login");
+        router.replace(localizedPath(locale, "/login"));
         return;
       }
 
@@ -151,7 +280,7 @@ export function WorkbenchPage() {
         if (!active) return;
         applyWorkbenchData(workbench);
       } catch {
-        if (active) setApiNotice("Your account is connected. The tutor service is temporarily unavailable, so this page is showing the practice preview.");
+        if (active) setApiNotice(copy.remoteUnavailable);
       }
     }
 
@@ -160,14 +289,14 @@ export function WorkbenchPage() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [copy, locale, router]);
 
   const workspaceTitle = useMemo(() => {
-    if (activeNav === "Chat history") return "Chat history";
-    if (activeNav === "Saved cards") return "Saved cards";
-    if (activeNav === "Partners") return "Your partners";
-    return "AI Language Tutor";
-  }, [activeNav]);
+    if (activeNav === "history") return copy.nav.history;
+    if (activeNav === "cards") return copy.nav.cards;
+    if (activeNav === "partners") return copy.nav.partners;
+    return copy.title;
+  }, [activeNav, copy]);
   const selectedMessage = messages.find((message) => message.role === "tutor" && message.text === selectedPhrase);
 
   function applyWorkbenchData(workbench: WorkbenchData) {
@@ -219,7 +348,7 @@ export function WorkbenchPage() {
       if (remoteMessages.length > 0) setMessages(remoteMessages);
       await trackEvent("conversation_started", { mode: nextMode });
     } catch {
-      setApiNotice("A new conversation could not be created. Please try again.");
+      setApiNotice(copy.newConversationError);
     } finally {
       setIsApiBusy(false);
     }
@@ -264,8 +393,8 @@ export function WorkbenchPage() {
           role: "tutor",
           text:
             mode === "sayIt"
-              ? "Nice. I understand you. Try saying it once more in English, and I’ll help you make it sound natural."
-              : "Nice. Keep the conversation going. I’ll reply in English and adjust the pace to your level."
+              ? copy.demoSayItReply
+              : copy.demoTalkReply
         }
       ]);
       return;
@@ -322,8 +451,8 @@ export function WorkbenchPage() {
       await trackEvent(inputType === "voice" ? "voice_transcribed" : "message_submitted", { mode });
     } catch (error) {
       const message = error instanceof ApiError && error.code === "AI_PROVIDER_ERROR"
-        ? "Your message was saved, but the tutor could not reply yet. Please try again shortly."
-        : "Your message could not be sent. Please try again.";
+        ? copy.providerError
+        : copy.messageError;
       setApiNotice(message);
     } finally {
       setIsApiBusy(false);
@@ -339,7 +468,7 @@ export function WorkbenchPage() {
 
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Recognition) {
-      setVoiceNotice("Voice input is not supported in this browser. Try Chrome or Edge.");
+      setVoiceNotice(copy.voiceUnsupported);
       return;
     }
 
@@ -349,7 +478,7 @@ export function WorkbenchPage() {
     recognition.interimResults = true;
     voiceTranscriptRef.current = "";
     recognition.onstart = () => {
-      setVoiceNotice("Release to send");
+      setVoiceNotice(copy.releaseToSend);
       setIsListening(true);
       void trackEvent("voice_recording_started", { mode });
     };
@@ -366,8 +495,8 @@ export function WorkbenchPage() {
       void finishAudioCapture();
       setVoiceNotice(
         event.error === "not-allowed"
-          ? "Microphone permission was denied. Allow microphone access and try again."
-          : "I couldn’t hear that. Please try again."
+          ? copy.micDenied
+          : copy.voiceUnclear
       );
     };
     recognition.onend = () => {
@@ -382,7 +511,7 @@ export function WorkbenchPage() {
   function stopVoiceInput() {
     if (!recognitionRef.current) return;
     recognitionRef.current.stop();
-    setVoiceNotice("Sending…");
+    setVoiceNotice(copy.sending);
   }
 
   async function startAudioCapture() {
@@ -442,7 +571,7 @@ export function WorkbenchPage() {
 
     if (transcript) {
       await sendMessageText(transcript, "voice", audioBlob);
-      setVoiceNotice("Sent");
+      setVoiceNotice(copy.sent);
     }
   }
 
@@ -458,8 +587,34 @@ export function WorkbenchPage() {
       });
       setApiNotice("");
     } catch {
-      setApiNotice("Your language settings could not be saved. Please try again.");
+      setApiNotice(copy.settingsError);
     }
+  }
+
+  async function handleLogout() {
+    if (isSigningOut) return;
+
+    setIsSigningOut(true);
+    void trackEvent("logout_clicked", { locale });
+
+    let centralLogoutSucceeded = true;
+    try {
+      if (isRemoteSession) await api.auth.logout();
+    } catch {
+      centralLogoutSucceeded = false;
+    }
+
+    const supabase = createSupabaseBrowserClient();
+    const signOutError = supabase ? (await supabase.auth.signOut()).error : null;
+    const logoutSucceeded = !signOutError;
+
+    void trackEvent(logoutSucceeded ? "logout_succeeded" : "logout_failed", {
+      locale,
+      central_sync: centralLogoutSucceeded ? "succeeded" : "failed",
+      error_code: signOutError?.name || undefined
+    });
+
+    router.replace(localizedPath(locale, "/"));
   }
 
   async function requestMessageHelp(message: Message, kind: "translate" | "grammar" | "audio" | "card") {
@@ -475,54 +630,54 @@ export function WorkbenchPage() {
         await trackEvent("learning_card_saved", { messageId: message.id });
       }
     } catch {
-      setApiNotice("That learning tool is temporarily unavailable. Please try again.");
+      setApiNotice(copy.learningToolError);
     }
   }
 
   return (
     <main className="workbench-shell">
       <aside className="workbench-sidebar">
-        <BrandMark />
-        <nav className="workbench-nav" aria-label="Workbench">
-          {navItems.map(({ label, icon: Icon }) => (
+        <BrandMark href={localizedPath(locale, "/")} />
+        <nav className="workbench-nav" aria-label={copy.nav.aria}>
+          {navItems.map(({ key, icon: Icon }) => (
             <button
-              className={activeNav === label ? "active" : ""}
-              key={label}
+              className={activeNav === key ? "active" : ""}
+              key={key}
               type="button"
-              onClick={() => setActiveNav(label)}
+              onClick={() => setActiveNav(key)}
             >
               <Icon size={21} aria-hidden="true" />
-              <span>{label}</span>
+              <span>{copy.nav[key]}</span>
             </button>
           ))}
         </nav>
-        <div className="workbench-account">
+        <button className="workbench-account" type="button" onClick={() => void handleLogout()} disabled={isSigningOut} aria-label={copy.signOut}>
           <span className="account-avatar">A</span>
           <span>
             <strong>alex.tutor</strong>
-            <small>Free plan</small>
+            <small>{copy.accountPlan}</small>
           </span>
-          <ChevronDown size={17} aria-hidden="true" />
-        </div>
+          {isSigningOut ? <span className="account-signout-status">{copy.signingOut}</span> : <LogOut size={17} aria-hidden="true" />}
+        </button>
       </aside>
 
       <section className="workbench-main">
         <header className="workbench-topbar">
           <div>
-            <span className="workbench-mobile-nav">{activeNav}</span>
+            <span className="workbench-mobile-nav">{copy.nav[activeNav]}</span>
             <h1>{workspaceTitle}</h1>
-            <p>Listen in English. Reply in English or your own language.</p>
+            <p>{copy.subtitle}</p>
           </div>
           <div className="workbench-top-actions">
             <button className="language-settings-button" type="button" onClick={() => setLanguageModalOpen(true)}>
               <Globe2 size={18} aria-hidden="true" />
-              <span>
-                {nativeLanguage} → {learningLanguage}
+              <span aria-label={copy.languageSettingsLabel}>
+                {copy.languageNames[nativeLanguage] ?? nativeLanguage} → {copy.languageNames[learningLanguage] ?? learningLanguage}
               </span>
             </button>
-            <Link className="upgrade-button" href="/pricing">
+            <Link className="upgrade-button" href={localizedPath(locale, "/pricing")}>
               <CreditCard size={18} aria-hidden="true" />
-              Start Pro
+              {copy.upgradeCta}
             </Link>
           </div>
         </header>
@@ -534,18 +689,18 @@ export function WorkbenchPage() {
             </div>
             <div>
               <h2>Clara Ruiz</h2>
-              <strong>Female · From Valencia</strong>
-              <p>Calm, observant, gently witty</p>
+              <strong>{copy.partnerGenderOrigin}</strong>
+              <p>{copy.partnerDescription}</p>
             </div>
           </div>
           <div className="partner-actions">
             <button type="button" onClick={() => setPartnerOpen((open) => !open)}>
               <Settings2 size={17} aria-hidden="true" />
-              Customize
+              {copy.customize}
             </button>
             <button type="button" onClick={() => setPartnerOpen(true)}>
               <Users size={17} aria-hidden="true" />
-              Change partner
+              {copy.changePartner}
             </button>
           </div>
         </section>
@@ -553,19 +708,19 @@ export function WorkbenchPage() {
         {partnerOpen ? (
           <section className="partner-popover">
             <div>
-              <span className="panel-label">Partner settings</span>
-              <strong>Clara is ready for a relaxed conversation.</strong>
+              <span className="panel-label">{copy.partnerSettings}</span>
+              <strong>{copy.partnerReady}</strong>
             </div>
-            <button type="button" onClick={() => setPartnerOpen(false)} aria-label="Close partner settings">
+            <button type="button" onClick={() => setPartnerOpen(false)} aria-label={copy.closePartner}>
               <X size={17} aria-hidden="true" />
             </button>
           </section>
         ) : null}
 
-        <section className="workbench-mode-switcher" aria-label="Practice mode">
+        <section className="workbench-mode-switcher" aria-label={copy.practiceMode}>
           <div>
-            <span className="panel-label">Practice mode</span>
-            <strong>{mode === "sayIt" ? "Say It / Translate" : "Talk / Conversation"}</strong>
+            <span className="panel-label">{copy.practiceMode}</span>
+            <strong>{mode === "sayIt" ? copy.sayItMode : copy.talkMode}</strong>
           </div>
           <div className="workbench-mode-tabs" role="tablist">
             <button
@@ -576,7 +731,7 @@ export function WorkbenchPage() {
               onClick={() => switchMode("sayIt")}
             >
               <Languages size={17} aria-hidden="true" />
-              Say It / Translate
+              {copy.sayItMode}
             </button>
             <button
               className={mode === "talk" ? "active" : ""}
@@ -586,7 +741,7 @@ export function WorkbenchPage() {
               onClick={() => switchMode("talk")}
             >
               <MessageCircleIcon />
-              Talk / Conversation
+              {copy.talkMode}
             </button>
           </div>
         </section>
@@ -600,23 +755,23 @@ export function WorkbenchPage() {
                 </div>
                 <div>
                   <strong>Clara Ruiz</strong>
-                  <span>AI tutor</span>
+                  <span>{copy.tutorLabel}</span>
                 </div>
               </div>
               <div className="conversation-stats">
-                <Stat value="1" label="MINUTES" />
-                <Stat value={String(messages.length)} label="MESSAGES" />
-                <Stat value="0" label="YOUR TURNS" />
-                <Stat value="8" label="INPUT WORDS" />
+                <Stat value="1" label={copy.stats[0]} />
+                <Stat value={String(messages.length)} label={copy.stats[1]} />
+                <Stat value="0" label={copy.stats[2]} />
+                <Stat value="8" label={copy.stats[3]} />
               </div>
               <button className="new-conversation" type="button" onClick={startConversation} disabled={isApiBusy}>
                 <RotateCcw size={17} aria-hidden="true" />
-                {isApiBusy ? "Starting…" : "New conversation"}
+                {isApiBusy ? copy.startingConversation : copy.startConversation}
               </button>
             </div>
 
             <div className="conversation-body">
-              <div className="today-label">TODAY</div>
+              <div className="today-label">{copy.today}</div>
               <div className="message-list">
                 {messages.map((message) => (
                   <div className={`workbench-message ${message.role}`} key={message.id}>
@@ -639,19 +794,19 @@ export function WorkbenchPage() {
                         <div className="message-tools">
                           <button type="button" onClick={() => void requestMessageHelp(message, "audio")}>
                             <Volume2 size={15} aria-hidden="true" />
-                            Listen
+                            {copy.listen}
                           </button>
                           <button type="button">
                             <Clock3 size={15} aria-hidden="true" />
-                            Slow
+                            {copy.slow}
                           </button>
                           <button type="button" onClick={() => setSelectedPhrase("")}>
                             <EyeOff size={15} aria-hidden="true" />
-                            Hide
+                            {copy.hide}
                           </button>
                           <button type="button" onClick={() => void requestMessageHelp(message, "translate")}>
                             <Languages size={15} aria-hidden="true" />
-                            Translation
+                            {copy.translation}
                           </button>
                         </div>
                       ) : null}
@@ -665,20 +820,20 @@ export function WorkbenchPage() {
               <div className="conversation-shortcuts">
                 <button className="lost" type="button">
                   <AlertCircle size={16} aria-hidden="true" />
-                  I&apos;m lost
+                  {copy.lost}
                 </button>
                 <button className="got-it" type="button">
                   <Brain size={16} aria-hidden="true" />
-                  Did I get it?
+                  {copy.gotIt}
                 </button>
                 <button className="show-hints" type="button">
-                  Show hints
+                  {copy.showHints}
                 </button>
               </div>
               <div className="message-composer">
                 {isListening ? (
                   <div className="voice-wave-overlay" aria-live="polite">
-                    <span className="voice-wave-label">Release to send</span>
+                    <span className="voice-wave-label">{copy.releaseToSend}</span>
                     <span className="voice-wave" aria-hidden="true">
                       {[18, 30, 44, 26, 38, 52, 31, 20, 42, 27].map((height, index) => (
                         <i key={index} style={{ height: `${height}%` }} />
@@ -693,8 +848,8 @@ export function WorkbenchPage() {
                   onKeyDown={(event) => {
                     if (event.key === "Enter") sendMessage();
                   }}
-                  placeholder={mode === "sayIt" ? "Type what you want to say" : "Reply in English or your own language"}
-                  aria-label="Message"
+                  placeholder={mode === "sayIt" ? copy.typeSayIt : copy.typeTalk}
+                  aria-label={copy.messageLabel}
                 />
                 <button
                   className={isListening ? "voice-button listening" : "voice-button"}
@@ -703,13 +858,13 @@ export function WorkbenchPage() {
                   onPointerUp={stopVoiceInput}
                   onPointerCancel={stopVoiceInput}
                   onPointerLeave={stopVoiceInput}
-                  aria-label="Hold to speak"
+                  aria-label={copy.holdToSpeak}
                   aria-pressed={isListening}
-                  title="Hold to speak, release to send"
+                  title={copy.holdToSpeak}
                 >
                   {isListening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
                 </button>
-                <button className="send-button" type="button" onClick={sendMessage} aria-label="Send message" disabled={isApiBusy}>
+                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={isApiBusy}>
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
@@ -721,38 +876,36 @@ export function WorkbenchPage() {
           <aside className="insight-panel">
             <div className="insight-tabs">
               <button
-                className={insightMode === "Translate" ? "active" : ""}
+                className={insightMode === "translate" ? "active" : ""}
                 type="button"
-                onClick={() => setInsightMode("Translate")}
+                onClick={() => setInsightMode("translate")}
               >
                 <Languages size={17} aria-hidden="true" />
-                Translate
+                {copy.insightTranslate}
               </button>
               <button
-                className={insightMode === "Grammar" ? "active" : ""}
+                className={insightMode === "grammar" ? "active" : ""}
                 type="button"
-                onClick={() => setInsightMode("Grammar")}
+                onClick={() => setInsightMode("grammar")}
               >
                 <Brain size={17} aria-hidden="true" />
-                Grammar
+                {copy.insightGrammar}
               </button>
             </div>
             <div className="insight-content">
               {selectedPhrase ? (
                 <div className="selected-insight">
                   <span className="insight-icon">
-                    {insightMode === "Translate" ? <Languages size={22} /> : <Brain size={22} />}
+                    {insightMode === "translate" ? <Languages size={22} /> : <Brain size={22} />}
                   </span>
-                  <span className="panel-label">{insightMode}</span>
+                  <span className="panel-label">{insightMode === "translate" ? copy.insightTranslate : copy.insightGrammar}</span>
                   <h2>{selectedPhrase}</h2>
                   <p>
-                    {insightMode === "Translate"
-                      ? "A natural sentence you can understand and use in your next conversation."
-                      : "Notice the word order and the everyday expression. Try saying it out loud once."}
+                    {insightMode === "translate" ? copy.selectedTranslateBody : copy.selectedGrammarBody}
                   </p>
                   <button type="button" onClick={() => selectedMessage && void requestMessageHelp(selectedMessage, "card")}>
                     <Plus size={17} aria-hidden="true" />
-                    Save learning card
+                    {copy.saveCard}
                   </button>
                 </div>
               ) : (
@@ -760,25 +913,25 @@ export function WorkbenchPage() {
                   <span className="insight-icon">
                     <Sparkles size={24} aria-hidden="true" />
                   </span>
-                  <h2>Highlight or type text</h2>
-                  <p>Select a word or phrase from Clara Ruiz, or type it below, to see meaning or grammar.</p>
+                  <h2>{copy.insightEmptyTitle}</h2>
+                  <p>{copy.insightEmptyBody}</p>
                 </div>
               )}
             </div>
             <div className="insight-input">
-              <textarea placeholder="Type a word or phrase from Clara Ruiz" aria-label="Word lookup" />
+              <textarea placeholder={copy.lookupPlaceholder} aria-label={copy.lookupLabel} />
               <div className="insight-actions">
                 <button type="button">
                   <Volume2 size={16} aria-hidden="true" />
-                  Listen
+                  {copy.listen}
                 </button>
-                <button className="translate" type="button" onClick={() => setInsightMode("Translate")}>
+                <button className="translate" type="button" onClick={() => setInsightMode("translate")}>
                   <Languages size={16} aria-hidden="true" />
-                  Translate
+                  {copy.insightTranslate}
                 </button>
-                <button className="grammar" type="button" onClick={() => setInsightMode("Grammar")}>
+                <button className="grammar" type="button" onClick={() => setInsightMode("grammar")}>
                   <Brain size={16} aria-hidden="true" />
-                  Grammar
+                  {copy.insightGrammar}
                 </button>
               </div>
             </div>
@@ -787,7 +940,7 @@ export function WorkbenchPage() {
 
         <div className="workbench-footer-note">
           <PanelRight size={15} aria-hidden="true" />
-          Your conversation is private and saved to your account.
+          {copy.privateNote}
           <ArrowRight size={14} aria-hidden="true" />
         </div>
       </section>
@@ -802,6 +955,7 @@ export function WorkbenchPage() {
           onLevelChange={setLevel}
           onSave={() => void saveLanguageSettings()}
           onClose={() => setLanguageModalOpen(false)}
+          copy={copy}
         />
       ) : null}
     </main>
@@ -921,7 +1075,8 @@ function LanguageSetupModal({
   onLearningLanguageChange,
   onLevelChange,
   onSave,
-  onClose
+  onClose,
+  copy
 }: {
   nativeLanguage: string;
   learningLanguage: string;
@@ -931,47 +1086,46 @@ function LanguageSetupModal({
   onLevelChange: (value: string) => void;
   onSave: () => void;
   onClose: () => void;
+  copy: ProductCopy["workbench"];
 }) {
-  const languages = ["Chinese", "English", "Spanish", "Japanese", "French", "Korean"];
-  const levels = ["Auto-detect", "Beginner", "Intermediate", "Advanced"];
+  const languages = Object.keys(copy.languageNames);
+  const levels = Object.keys(copy.levels);
 
   return (
     <div className="language-modal-backdrop" role="presentation">
       <section className="language-modal" role="dialog" aria-modal="true" aria-labelledby="language-modal-title">
-        <button className="language-modal-close" type="button" onClick={onClose} aria-label="Close language setup">
+        <button className="language-modal-close" type="button" onClick={onClose} aria-label={copy.modal.close}>
           <X size={18} aria-hidden="true" />
         </button>
         <span className="language-modal-icon">
           <Globe2 size={25} aria-hidden="true" />
         </span>
-        <span className="panel-label">GET STARTED</span>
-        <h2 id="language-modal-title">Choose your languages</h2>
-        <p className="language-modal-lead">
-          Tell your tutor what you already speak and what you want to practice. You can change this later.
-        </p>
+        <span className="panel-label">{copy.modal.eyebrow}</span>
+        <h2 id="language-modal-title">{copy.modal.title}</h2>
+        <p className="language-modal-lead">{copy.modal.lead}</p>
 
         <div className="language-form-grid">
           <label>
-            <span>I speak</span>
+            <span>{copy.modal.native}</span>
             <select value={nativeLanguage} onChange={(event) => onNativeLanguageChange(event.target.value)}>
               {languages.map((language) => (
-                <option key={language}>{language}</option>
+                <option key={language} value={language}>{copy.languageNames[language] ?? language}</option>
               ))}
             </select>
           </label>
           <label>
-            <span>I&apos;m learning</span>
+            <span>{copy.modal.learning}</span>
             <select value={learningLanguage} onChange={(event) => onLearningLanguageChange(event.target.value)}>
               {languages.map((language) => (
-                <option key={language}>{language}</option>
+                <option key={language} value={language}>{copy.languageNames[language] ?? language}</option>
               ))}
             </select>
           </label>
           <label>
-            <span>My level</span>
+            <span>{copy.modal.level}</span>
             <select value={level} onChange={(event) => onLevelChange(event.target.value)}>
               {levels.map((item) => (
-                <option key={item}>{item}</option>
+                <option key={item} value={item}>{copy.levels[item] ?? item}</option>
               ))}
             </select>
           </label>
@@ -979,10 +1133,10 @@ function LanguageSetupModal({
 
         <div className="language-modal-actions">
           <button className="language-modal-secondary" type="button" onClick={onClose}>
-            I&apos;ll choose later
+            {copy.modal.later}
           </button>
           <button className="language-modal-primary" type="button" onClick={onSave}>
-            Start talking
+            {copy.modal.start}
             <ArrowRight size={17} aria-hidden="true" />
           </button>
         </div>

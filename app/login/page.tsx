@@ -12,7 +12,7 @@ export default function Page() {
   return (
     <>
       <HomePage dictionary={getDictionary("en")} locale="en" />
-      <LoginPage />
+      <LoginPage dictionary={getDictionary("en")} locale="en" />
     </>
   );
 }

@@ -65,7 +65,7 @@ async function forward(request: NextRequest, segments: string[]) {
     Accept: request.headers.get("Accept") || "application/json",
     "X-Request-Id": id
   });
-  for (const headerName of ["Authorization", "Content-Type", "Idempotency-Key"]) {
+  for (const headerName of ["Authorization", "Content-Type", "Idempotency-Key", "X-Site-Key"]) {
     const value = request.headers.get(headerName);
     if (value) headers.set(headerName, value);
   }
@@ -113,4 +113,3 @@ export function PATCH(request: NextRequest, context: RouteContext) {
 export function DELETE(request: NextRequest, context: RouteContext) {
   return context.params.then(({ path }) => forward(request, path));
 }
-
