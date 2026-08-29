@@ -42,6 +42,16 @@ function isAllowed(method: string, segments: string[]) {
   return false;
 }
 
+function isProductionHost(request: NextRequest) {
+  try {
+    const configuredHost = new URL(getProductSiteUrl()).hostname.toLowerCase().replace(/^www\./, "");
+    const requestHost = request.nextUrl.hostname.toLowerCase().replace(/^www\./, "");
+    return requestHost === configuredHost;
+  } catch {
+    return false;
+  }
+}
+
 function requestId(request: NextRequest) {
   return request.headers.get("X-Request-Id") || `req_${crypto.randomUUID()}`;
 }
@@ -55,6 +65,10 @@ async function forward(request: NextRequest, segments: string[]) {
       { error: { code: "NOT_FOUND", message: "Product API route not found." }, requestId: id },
       { status: 404, headers: { "X-Request-Id": id } }
     );
+  }
+
+  if (segments.join("/") === "track" && !isProductionHost(request)) {
+    return new Response(null, { status: 204, headers: { "X-Request-Id": id } });
   }
 
   const target = new URL(`${getCentralEndpoint()}/api/${segments.map(encodeURIComponent).join("/")}`);
