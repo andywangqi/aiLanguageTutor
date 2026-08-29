@@ -1,5 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import type { LandingDictionary } from "@/lib/i18n/types";
 import type { Locale } from "@/lib/i18n/config";
 import { localizedPath, localePath } from "@/lib/i18n/config";
@@ -22,6 +25,7 @@ function scrollToSection(id: string) {
 
 export function Header({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
   const copy = labels[locale];
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <header className="site-header home-v1-header">
@@ -54,7 +58,51 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
           >
             {copy.start}
           </Link>
-          <button className="home-v1-menu" type="button" aria-label="Open menu"><Menu size={18} /></button>
+          <button
+            className="home-v1-menu"
+            type="button"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((value) => !value)}
+          >
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
+      </div>
+
+      <div className={`home-v1-mobile-menu ${mobileMenuOpen ? "is-open" : ""}`} hidden={!mobileMenuOpen}>
+        <div className="home-v1-mobile-menu-section">
+          <LanguageSwitcher currentLocale={locale} />
+        </div>
+
+        <nav className="home-v1-mobile-nav" aria-label={dictionary.nav.product}>
+          <button type="button" onClick={() => { scrollToSection("home-features"); setMobileMenuOpen(false); }}>{copy.how}</button>
+          <button type="button" onClick={() => { scrollToSection("home-languages"); setMobileMenuOpen(false); }}>{copy.languages}</button>
+          <Link href={localizedPath(locale, "/pricing")} onClick={() => setMobileMenuOpen(false)}>{copy.pricing}</Link>
+          <Link href={localizedPath(locale, "/contact")} onClick={() => setMobileMenuOpen(false)}>{copy.blog}</Link>
+        </nav>
+
+        <div className="home-v1-mobile-actions">
+          <Link
+            className="home-v1-sign-in"
+            href={localizedPath(locale, "/login")}
+            onClick={() => {
+              void trackEvent("home_cta_clicked", { placement: "header_mobile", cta: "sign_in", destination: "login", locale });
+              setMobileMenuOpen(false);
+            }}
+          >
+            {copy.signIn}
+          </Link>
+          <Link
+            className="home-v1-start"
+            href={localizedPath(locale, "/login")}
+            onClick={() => {
+              void trackEvent("home_cta_clicked", { placement: "header_mobile", cta: "start_free", destination: "login", locale });
+              setMobileMenuOpen(false);
+            }}
+          >
+            {copy.start}
+          </Link>
         </div>
       </div>
     </header>
