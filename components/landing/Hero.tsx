@@ -25,10 +25,10 @@ export function Hero({ dictionary, locale }: { dictionary: LandingDictionary; lo
               <ArrowRight aria-hidden="true" size={18} />
             </ButtonLink>
             <ButtonLink
-              href="#method"
+              href={localizedPath(locale, "/pricing")}
               variant="secondary"
               eventName="home_cta_clicked"
-              eventProperties={{ placement: "hero", cta: "secondary", destination: "method", locale }}
+              eventProperties={{ placement: "hero", cta: "secondary", destination: "pricing", locale }}
             >
               {dictionary.hero.secondaryCta}
             </ButtonLink>
