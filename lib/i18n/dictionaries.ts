@@ -14,7 +14,7 @@ const baseEn: LandingDictionary = {
     method: "How it works",
     languages: "Languages",
     faq: "FAQ",
-    app: "Open App"
+    app: "Start Talking"
   },
   hero: {
     eyebrow: "AI Language Tutor + speaking practice",
@@ -182,9 +182,10 @@ const baseEn: LandingDictionary = {
     brand: "AI Language Tutor",
     rights: "© 2026 AI Language Tutor. All rights reserved.",
     columns: [
-      { title: "Product", links: ["Talk", "Get Help", "Corrections", "Open App"] },
-      { title: "Learn", links: ["Conversation Practice", "Speaking Practice", "Pronunciation Practice", "Review"] },
-      { title: "Company", links: ["Contact", "Privacy", "Terms"] }
+      { title: "Practice", links: ["Talk", "Get Help", "Pronunciation", "Vocabulary"] },
+      { title: "Learn", links: ["Conversation Topics", "Learning Tips", "Practice Guide", "Blog"] },
+      { title: "Company", links: ["About Us", "Contact", "Careers"] },
+      { title: "Legal", links: ["Privacy Policy", "Terms of Service", "Cookies"] }
     ]
   },
   product: getProductCopy("en")

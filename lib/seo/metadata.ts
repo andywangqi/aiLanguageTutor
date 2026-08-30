@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { localeLabels, localeUrl, locales, type Locale } from "@/lib/i18n/config";
+import { localeLabels, localizedPath, localeUrl, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 const defaultSiteUrl = "https://ailanguagetutor.online";
@@ -71,6 +71,51 @@ export function createPageMetadata(locale: Locale): Metadata {
   };
 }
 
+
+export function createLocalizedPageMetadata(locale: Locale, path: string, title: string, description: string): Metadata {
+  const canonicalPath = localizedPath(locale, path);
+  const canonical = `${siteUrl}${canonicalPath}`;
+  const languages = Object.fromEntries(
+    locales.map((item) => [localeLabels[item].hreflang, `${siteUrl}${localizedPath(item, path)}`])
+  );
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title,
+    description,
+    alternates: {
+      canonical,
+      languages: {
+        ...languages,
+        "x-default": `${siteUrl}${path}`
+      }
+    },
+    openGraph: {
+      type: "website",
+      url: canonical,
+      title,
+      description,
+      siteName: "AI Language Tutor",
+      locale
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1
+      }
+    }
+  };
+}
 export function createFaqSchema(locale: Locale) {
   const dictionary = getDictionary(locale);
 

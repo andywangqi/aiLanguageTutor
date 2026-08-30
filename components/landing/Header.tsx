@@ -39,7 +39,7 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
           <button type="button" onClick={() => scrollToSection("home-features")}>{copy.how}</button>
           <button type="button" onClick={() => scrollToSection("home-languages")}>{copy.languages}</button>
           <Link href={localizedPath(locale, "/pricing")}>{copy.pricing}</Link>
-          <Link href={localizedPath(locale, "/contact")}>{copy.blog}</Link>
+          <Link href={localizedPath(locale, "/learn/blog")}>{copy.blog}</Link>
         </nav>
 
         <div className="home-v1-header-actions">
@@ -79,7 +79,7 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
           <button type="button" onClick={() => { scrollToSection("home-features"); setMobileMenuOpen(false); }}>{copy.how}</button>
           <button type="button" onClick={() => { scrollToSection("home-languages"); setMobileMenuOpen(false); }}>{copy.languages}</button>
           <Link href={localizedPath(locale, "/pricing")} onClick={() => setMobileMenuOpen(false)}>{copy.pricing}</Link>
-          <Link href={localizedPath(locale, "/contact")} onClick={() => setMobileMenuOpen(false)}>{copy.blog}</Link>
+          <Link href={localizedPath(locale, "/learn/blog")} onClick={() => setMobileMenuOpen(false)}>{copy.blog}</Link>
         </nav>
 
         <div className="home-v1-mobile-actions">
