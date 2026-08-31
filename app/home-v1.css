@@ -1241,6 +1241,8 @@
 }
 
 .home-v1-language-visual.has-image {
+  width: 100%;
+  height: auto;
   aspect-ratio: 4 / 3;
   min-height: 0;
   padding: 0;
@@ -1280,19 +1282,9 @@
   display: none;
 }
 
-@media (max-width: 768px) {
-  .home-v1-language-visual.has-image {
-    min-height: 144px;
-  }
-}
-
 @media (max-width: 480px) {
   .home-v1-language-card {
     padding-left: 0;
     padding-right: 0;
-  }
-
-  .home-v1-language-visual.has-image {
-    min-height: 156px;
   }
 }
