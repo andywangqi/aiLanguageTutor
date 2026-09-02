@@ -35,13 +35,13 @@ type LanguageDetail = {
 };
 
 const languageDetails: LanguageDetail[] = [
-  { key: "english", code: "EN", className: "language-english", imageSrc: "/images/languages/english-speaking-practice.webp" },
-  { key: "spanish", code: "ES", className: "language-spanish", imageSrc: "/images/languages/spanish-speaking-practice.webp" },
-  { key: "japanese", code: "JP", className: "language-japanese", imageSrc: "/images/languages/japanese-speaking-practice.webp" },
-  { key: "french", code: "FR", className: "language-french", imageSrc: "/images/languages/french-speaking-practice.webp" },
-  { key: "german", code: "DE", className: "language-german", imageSrc: "/images/languages/german-speaking-practice.webp" },
-  { key: "korean", code: "KR", className: "language-korean", imageSrc: "/images/languages/korean-speaking-practice.webp" },
-  { key: "chinese", code: "ZH", className: "language-chinese", imageSrc: "/images/languages/chinese-speaking-practice.webp" }
+  { key: "english", code: "EN", className: "language-english", imageSrc: "/images/languages/english-speaking-practice-v2.webp" },
+  { key: "spanish", code: "ES", className: "language-spanish", imageSrc: "/images/languages/spanish-speaking-practice-v2.webp" },
+  { key: "japanese", code: "JP", className: "language-japanese", imageSrc: "/images/languages/japanese-speaking-practice-v2.webp" },
+  { key: "french", code: "FR", className: "language-french", imageSrc: "/images/languages/french-speaking-practice-v2.webp" },
+  { key: "german", code: "DE", className: "language-german", imageSrc: "/images/languages/german-speaking-practice-v2.webp" },
+  { key: "korean", code: "KR", className: "language-korean", imageSrc: "/images/languages/korean-speaking-practice-v2.webp" },
+  { key: "chinese", code: "ZH", className: "language-chinese", imageSrc: "/images/languages/chinese-speaking-practice-v2.webp" }
 ];
 
 const languageCardCopy: Record<Locale, Record<LanguageCardKey, { name: string; description: string }>> = {
@@ -114,64 +114,64 @@ const languageImageAltCopy: Record<Locale, Record<LanguageCardKey, string>> = {
   en: {
     english: "Learner practicing English speaking with AI Language Tutor on a laptop in a cafe",
     spanish: "Learner practicing Spanish speaking with a phone at a Barcelona cafe",
-    japanese: "Learner practicing Japanese speaking with a phone in a Tokyo cafe",
+    japanese: "Learner practicing Japanese speaking with a phone in a modern cafe",
     french: "Learner practicing French speaking with a phone in a Paris cafe",
-    german: "Learner practicing German speaking with earbuds in a Berlin cafe setting",
-    korean: "Learner practicing Korean speaking with a phone in a modern Seoul cafe",
+    german: "Learner practicing German speaking with a phone in a modern cafe",
+    korean: "Learner practicing Korean speaking with a phone in a modern cafe",
     chinese: "Learner practicing Mandarin Chinese speaking with a phone in a Shanghai cafe"
   },
   ja: {
     english: "カフェでノートパソコンを使い、AI Language Tutorで英会話を練習する学習者",
     spanish: "バルセロナのカフェでスマートフォンを使い、スペイン語会話を練習する学習者",
-    japanese: "東京のカフェでスマートフォンを使い、日本語会話を練習する学習者",
+    japanese: "モダンなカフェでスマートフォンを使い、日本語会話を練習する学習者",
     french: "パリのカフェでスマートフォンを使い、フランス語会話を練習する学習者",
-    german: "ベルリンのカフェでイヤホンを使い、ドイツ語会話を練習する学習者",
-    korean: "ソウルのモダンなカフェで韓国語会話を練習する学習者",
+    german: "モダンなカフェでスマートフォンを使い、ドイツ語会話を練習する学習者",
+    korean: "モダンなカフェでスマートフォンを使い、韓国語会話を練習する学習者",
     chinese: "上海のカフェでスマートフォンを使い、中国語会話を練習する学習者"
   },
   th: {
     english: "ผู้เรียนฝึกพูดภาษาอังกฤษกับ AI Language Tutor บนแล็ปท็อปในคาเฟ่",
     spanish: "ผู้เรียนฝึกพูดภาษาสเปนด้วยโทรศัพท์ในคาเฟ่สไตล์บาร์เซโลนา",
-    japanese: "ผู้เรียนฝึกพูดภาษาญี่ปุ่นด้วยโทรศัพท์ในคาเฟ่สไตล์โตเกียว",
+    japanese: "ผู้เรียนฝึกพูดภาษาญี่ปุ่นด้วยโทรศัพท์ในคาเฟ่สมัยใหม่",
     french: "ผู้เรียนฝึกพูดภาษาฝรั่งเศสด้วยโทรศัพท์ในคาเฟ่สไตล์ปารีส",
-    german: "ผู้เรียนฝึกพูดภาษาเยอรมันพร้อมหูฟังในคาเฟ่สไตล์เบอร์ลิน",
-    korean: "ผู้เรียนฝึกพูดภาษาเกาหลีในคาเฟ่สมัยใหม่สไตล์โซล",
+    german: "ผู้เรียนฝึกพูดภาษาเยอรมันพร้อมโทรศัพท์ในคาเฟ่สมัยใหม่",
+    korean: "ผู้เรียนฝึกพูดภาษาเกาหลีด้วยโทรศัพท์ในคาเฟ่สมัยใหม่",
     chinese: "ผู้เรียนฝึกพูดภาษาจีนกลางด้วยโทรศัพท์ในคาเฟ่สไตล์เซี่ยงไฮ้"
   },
   ko: {
     english: "카페에서 노트북으로 AI Language Tutor와 영어 말하기를 연습하는 학습자",
     spanish: "바르셀로나 카페에서 휴대전화로 스페인어 말하기를 연습하는 학습자",
-    japanese: "도쿄 카페에서 휴대전화로 일본어 말하기를 연습하는 학습자",
+    japanese: "모던한 카페에서 휴대전화로 일본어 말하기를 연습하는 학습자",
     french: "파리 카페에서 휴대전화로 프랑스어 말하기를 연습하는 학습자",
-    german: "베를린 분위기의 카페에서 이어버드로 독일어 말하기를 연습하는 학습자",
-    korean: "서울의 모던한 카페에서 한국어 말하기를 연습하는 학습자",
+    german: "모던한 카페에서 휴대전화로 독일어 말하기를 연습하는 학습자",
+    korean: "모던한 카페에서 휴대전화로 한국어 말하기를 연습하는 학습자",
     chinese: "상하이 분위기의 카페에서 휴대전화로 중국어 말하기를 연습하는 학습자"
   },
   "zh-CN": {
     english: "学习者在咖啡馆用笔记本电脑跟 AI Language Tutor 练习英语口语",
     spanish: "学习者在巴塞罗那风格的咖啡馆用手机练习西班牙语口语",
-    japanese: "学习者在东京风格的咖啡馆用手机练习日语口语",
+    japanese: "学习者在现代咖啡馆用手机练习日语口语",
     french: "学习者在巴黎风格的咖啡馆用手机练习法语口语",
-    german: "学习者在柏林风格的咖啡馆戴耳机练习德语口语",
-    korean: "学习者在首尔风格的现代咖啡馆练习韩语口语",
+    german: "学习者在现代咖啡馆用手机练习德语口语",
+    korean: "学习者在现代咖啡馆用手机练习韩语口语",
     chinese: "学习者在上海风格的咖啡馆用手机练习中文口语"
   },
   "zh-TW": {
     english: "學習者在咖啡館用筆記型電腦跟 AI Language Tutor 練習英語口說",
     spanish: "學習者在巴塞隆納風格的咖啡館用手機練習西班牙語口說",
-    japanese: "學習者在東京風格的咖啡館用手機練習日語口說",
+    japanese: "學習者在現代咖啡館用手機練習日語口說",
     french: "學習者在巴黎風格的咖啡館用手機練習法語口說",
-    german: "學習者在柏林風格的咖啡館戴耳機練習德語口說",
-    korean: "學習者在首爾風格的現代咖啡館練習韓語口說",
+    german: "學習者在現代咖啡館用手機練習德語口說",
+    korean: "學習者在現代咖啡館用手機練習韓語口說",
     chinese: "學習者在上海風格的咖啡館用手機練習中文口說"
   },
   es: {
     english: "Persona practicando conversación en inglés con AI Language Tutor en una laptop dentro de una cafetería",
     spanish: "Persona practicando conversación en español con un teléfono en una cafetería de estilo Barcelona",
-    japanese: "Persona practicando conversación en japonés con un teléfono en una cafetería de estilo Tokio",
+    japanese: "Persona practicando conversación en japonés con un teléfono en una cafetería moderna",
     french: "Persona practicando conversación en francés con un teléfono en una cafetería de estilo París",
-    german: "Persona practicando conversación en alemán con auriculares en una cafetería de estilo Berlín",
-    korean: "Persona practicando conversación en coreano en una cafetería moderna de estilo Seúl",
+    german: "Persona practicando conversación en alemán con un teléfono en una cafetería moderna",
+    korean: "Persona practicando conversación en coreano en una cafetería moderna",
     chinese: "Persona practicando conversación en chino mandarín con un teléfono en una cafetería de estilo Shanghái"
   }
 };

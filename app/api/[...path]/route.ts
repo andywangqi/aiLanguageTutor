@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCentralEndpoint, getProductSiteUrl } from "@/lib/site-config";
+import { handleLocalProductApi } from "@/lib/api/local-product";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,9 @@ function requestId(request: NextRequest) {
 async function forward(request: NextRequest, segments: string[]) {
   const method = request.method.toUpperCase();
   const id = requestId(request);
+
+  const localResponse = await handleLocalProductApi(request, segments, id);
+  if (localResponse) return localResponse;
 
   if (!supportedMethods.has(method) || !isAllowed(method, segments)) {
     return Response.json(

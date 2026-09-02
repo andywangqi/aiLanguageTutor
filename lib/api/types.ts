@@ -58,6 +58,9 @@ export type TutorConversation = {
   id: string;
   mode?: "say_it" | "talk" | string;
   status?: string;
+  nativeLanguageCode?: string;
+  learningLanguageCode?: string;
+  levelCode?: string;
   messages?: TutorMessage[];
   createdAt?: string;
 };
@@ -97,4 +100,3 @@ export type CheckoutResponse = {
   url?: string;
   orderId?: string;
 };
-
