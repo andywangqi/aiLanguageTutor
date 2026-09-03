@@ -33,7 +33,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { trackEvent, trackEventOnce } from "@/lib/analytics/client";
 import { paymentEventForStatus } from "@/lib/analytics/events";
-import { ApiError, type TutorConversation, type TutorMessage, type WorkbenchData } from "@/lib/api/types";
+import { ApiError, type JsonObject, type TutorConversation, type TutorMessage, type TutorPartner, type WorkbenchData } from "@/lib/api/types";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { LandingDictionary, ProductCopy } from "@/lib/i18n/types";
@@ -46,6 +46,12 @@ type Message = {
   id: string;
   role: "tutor" | "user";
   text: string;
+};
+
+type InsightResult = {
+  content?: string | { text?: string; note?: string; explanation?: string; suggestion?: string };
+  audioUrl?: string | null;
+  signedUrl?: string | null;
 };
 
 type SpeechRecognitionResultEvent = {
@@ -223,6 +229,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [voiceNotice, setVoiceNotice] = useState("");
   const [apiNotice, setApiNotice] = useState("");
   const [isRemoteSession, setIsRemoteSession] = useState(false);
+  const [isRemoteUnavailable, setIsRemoteUnavailable] = useState(false);
   const [isApiBusy, setIsApiBusy] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -242,8 +249,19 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     };
   }, []);
   const [selectedPhrase, setSelectedPhrase] = useState("");
+  const [insightText, setInsightText] = useState("");
+  const [isInsightBusy, setIsInsightBusy] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [profile, setProfile] = useState<JsonObject | null>(null);
+  const [entitlement, setEntitlement] = useState<JsonObject | null>(null);
+  const [partner, setPartner] = useState<TutorPartner | null>(null);
+  const [partners, setPartners] = useState<TutorPartner[]>([]);
+  const [recentConversations, setRecentConversations] = useState<TutorConversation[]>([]);
+  const [cards, setCards] = useState<JsonObject[]>([]);
+  const [todayMessageCount, setTodayMessageCount] = useState(0);
+  const voiceStartedAtRef = useRef<number | null>(null);
+  const voiceCancelledRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -272,15 +290,45 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       }
 
       if (!active) return;
-      setIsRemoteSession(true);
-
       try {
         await api.auth.sync();
         const workbench = await api.workbench.get();
         if (!active) return;
+        setIsRemoteSession(true);
+        setIsRemoteUnavailable(false);
         applyWorkbenchData(workbench);
-      } catch {
-        if (active) setApiNotice(copy.remoteUnavailable);
+        const paymentParams = new URLSearchParams(window.location.search);
+        const orderId = paymentParams.get("orderId");
+        if (paymentParams.get("payment") === "success" && orderId) {
+          try {
+            for (let attempt = 0; attempt < 6 && active; attempt += 1) {
+              const order = await api.billing.order(orderId);
+              if (order.status === "paid") {
+                const billing = await api.billing.me();
+                if (active) setEntitlement(billing.entitlement as unknown as JsonObject);
+                await trackEventOnce(`payment_succeeded:${orderId}`, "payment_succeeded", {
+                  locale,
+                  order_id: orderId,
+                  plan_code: order.planCode
+                });
+                break;
+              }
+              await wait(2000);
+            }
+          } catch {
+            // The conversation workspace remains usable when billing refresh is delayed.
+          }
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.code === "UNAUTHENTICATED") {
+          await supabase.auth.signOut();
+          router.replace(localizedPath(locale, "/login"));
+          return;
+        }
+        if (active) {
+          setIsRemoteUnavailable(true);
+          setApiNotice(copy.remoteUnavailable);
+        }
       }
     }
 
@@ -300,6 +348,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const selectedMessage = messages.find((message) => message.role === "tutor" && message.text === selectedPhrase);
 
   function applyWorkbenchData(workbench: WorkbenchData) {
+    setProfile(workbench.profile || null);
+    setEntitlement(workbench.entitlement || null);
+    setPartner(asTutorPartner(workbench.partner));
+    const currentPartner = asTutorPartner(workbench.partner);
+    if (currentPartner) setPartners([currentPartner]);
+    setCards(workbench.cards || []);
+    setRecentConversations(workbench.recentConversations || []);
+    setTodayMessageCount(numberValue(workbench.todayMessageCount));
     const settings = workbench.settings;
     if (settings?.nativeLanguageCode) setNativeLanguage(languageName(settings.nativeLanguageCode));
     if (settings?.learningLanguageCode) setLearningLanguage(languageName(settings.learningLanguageCode));
@@ -314,6 +370,28 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     }
   }
 
+  async function selectNav(nextNav: NavItem) {
+    setActiveNav(nextNav);
+    if (!isRemoteSession) return;
+
+    try {
+      if (nextNav === "cards") {
+        const result = await api.cards.list();
+        setCards(jsonArray(result, "cards"));
+      }
+      if (nextNav === "partners") {
+        const result = await api.workbench.partners();
+        setPartners(jsonArray(result, "partners").map(asTutorPartner).filter((item): item is TutorPartner => Boolean(item)));
+      }
+      if (nextNav === "history") {
+        const result = await api.conversations.list("limit=20");
+        setRecentConversations(Array.isArray(result.items) ? result.items : jsonArray(result, "conversations") as unknown as TutorConversation[]);
+      }
+    } catch {
+      setApiNotice(copy.learningToolError);
+    }
+  }
+
   function resetDemoConversation(nextMode = mode) {
     setMessages([
       {
@@ -323,6 +401,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       }
     ]);
     setSelectedPhrase("");
+    setInsightText("");
     setInput("");
   }
 
@@ -386,6 +465,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     setApiNotice("");
 
     if (!isRemoteSession) {
+      if (isRemoteUnavailable) {
+        setApiNotice(copy.remoteUnavailable);
+        return;
+      }
       setMessages((current) => [
         ...current,
         {
@@ -403,12 +486,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     setIsApiBusy(true);
     try {
       const currentConversationId = await getOrCreateConversation();
-      const sourceLanguageCode = inputType === "voice" && mode === "talk" ? languageCode(learningLanguage) : languageCode(nativeLanguage);
+      const sourceLanguageCode = mode === "talk" ? languageCode(learningLanguage) : languageCode(nativeLanguage);
       if (inputType === "voice") {
         let audioId: string | undefined;
+        let transcript = trimmed;
 
-        if (audioBlob) {
-          const mimeType = audioBlob.type || "audio/webm";
+        if (audioBlob && audioBlob.size <= 10 * 1024 * 1024) {
+          const mimeType = (audioBlob.type || "audio/webm").split(";", 1)[0];
           const upload = await api.voice.uploadUrl({ mimeType });
           const uploadUrl = stringValue(upload.uploadUrl) || stringValue(upload.signedUrl) || stringValue(upload.url);
           const audioPath = stringValue(upload.audioPath) || stringValue(upload.path) || stringValue(upload.objectPath);
@@ -425,25 +509,48 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               conversationId: currentConversationId,
               audioPath,
               mimeType,
-              durationMs: 0
+              durationMs: Math.max(1, Date.now() - (voiceStartedAtRef.current || Date.now())),
+              languageCode: sourceLanguageCode
             });
             audioId = stringValue(voiceInput.id) || stringValue(voiceInput.audioId);
+            if (audioId) {
+              let transcription = await api.voice.transcribe(audioId);
+              for (let attempt = 0; ["pending", "processing"].includes(transcription.status) && attempt < 8; attempt += 1) {
+                await wait(1000);
+                transcription = await api.voice.get(audioId);
+              }
+              if (transcription.status === "failed") throw new Error(transcription.error || "Voice transcription failed.");
+              if (transcription.status !== "succeeded" || !transcription.transcript?.trim()) throw new Error("Voice transcription is still processing.");
+              transcript = transcription.transcript.trim();
+            }
           }
         }
 
-        await api.conversations.sendVoiceMessage(currentConversationId, {
+        const messageBody = {
           clientMessageId,
-          transcript: trimmed,
+          transcript,
           ...(audioId ? { audioId } : {}),
           sourceLanguageCode
-        });
+        };
+        let result = await api.conversations.sendVoiceMessage(currentConversationId, messageBody);
+        for (let attempt = 0; result.processing && attempt < 4; attempt += 1) {
+          await wait(1500);
+          result = await api.conversations.sendVoiceMessage(currentConversationId, messageBody);
+        }
+        if (result.processing) setApiNotice(copy.providerError);
       } else {
-        await api.conversations.sendMessage(currentConversationId, {
+        const messageBody = {
           clientMessageId,
           content: trimmed,
           inputType,
           sourceLanguageCode
-        });
+        };
+        let result = await api.conversations.sendMessage(currentConversationId, messageBody);
+        for (let attempt = 0; result.processing && attempt < 4; attempt += 1) {
+          await wait(1500);
+          result = await api.conversations.sendMessage(currentConversationId, messageBody);
+        }
+        if (result.processing) setApiNotice(copy.providerError);
       }
       const conversation = await api.conversations.get(currentConversationId);
       const remoteMessages = getConversationMessages(conversation);
@@ -473,6 +580,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     }
 
     const recognition = new Recognition();
+    voiceCancelledRef.current = false;
+    voiceStartedAtRef.current = Date.now();
     recognition.lang = mode === "sayIt" ? getSpeechLocale(nativeLanguage) : getSpeechLocale(learningLanguage);
     recognition.continuous = false;
     recognition.interimResults = true;
@@ -512,6 +621,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     if (!recognitionRef.current) return;
     recognitionRef.current.stop();
     setVoiceNotice(copy.sending);
+  }
+
+  function cancelVoiceInput() {
+    if (!recognitionRef.current) return;
+    voiceCancelledRef.current = true;
+    recognitionRef.current.stop();
+    setVoiceNotice("");
   }
 
   async function startAudioCapture() {
@@ -568,11 +684,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     const transcript = voiceTranscriptRef.current.trim();
     voiceTranscriptRef.current = "";
     const audioBlob = await finishAudioCapture();
+    const cancelled = voiceCancelledRef.current;
+    voiceCancelledRef.current = false;
 
-    if (transcript) {
+    if (transcript && !cancelled) {
       await sendMessageText(transcript, "voice", audioBlob);
       setVoiceNotice(copy.sent);
     }
+    voiceStartedAtRef.current = null;
   }
 
   async function saveLanguageSettings() {
@@ -617,16 +736,77 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     router.replace(localizedPath(locale, "/"));
   }
 
+  function speakText(text: string, rate = 0.9) {
+    const phrase = text.trim();
+    if (!phrase || typeof window === "undefined" || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    utterance.lang = getSpeechLocale(learningLanguage);
+    utterance.rate = rate;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function runInsight(kind: "translate" | "grammar", message?: Message) {
+    const targetMessage = message || selectedMessage;
+    const phrase = (message?.text || selectedPhrase).trim();
+    if (!phrase) return;
+
+    setInsightMode(kind);
+    setIsInsightBusy(true);
+    setInsightText("");
+    try {
+      if (!isRemoteSession || targetMessage?.id.startsWith("demo-")) {
+        setInsightText(kind === "translate" ? `A clear meaning for '${phrase}' will appear here.` : "This phrase is clear and ready to practice in context.");
+        return;
+      }
+      const result = targetMessage
+        ? (kind === "translate" ? await api.messages.translate(targetMessage.id) : await api.messages.grammar(targetMessage.id)) as InsightResult
+        : (kind === "translate"
+          ? await api.messages.translateText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })
+          : await api.messages.grammarText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })) as InsightResult;
+      setInsightText(insightContent(result.content));
+    } catch {
+      setApiNotice(copy.learningToolError);
+    } finally {
+      setIsInsightBusy(false);
+    }
+  }
+
   async function requestMessageHelp(message: Message, kind: "translate" | "grammar" | "audio" | "card") {
     setSelectedPhrase(message.text);
+    setInsightText("");
+    if (kind === "audio") {
+      if (!isRemoteSession || message.id.startsWith("demo-")) {
+        speakText(message.text);
+        return;
+      }
+      try {
+        const result = await api.messages.audio(message.id) as InsightResult;
+        const audioUrl = result.signedUrl || result.audioUrl;
+        if (audioUrl) {
+          await new Audio(audioUrl).play();
+        } else {
+          speakText(message.text);
+        }
+      } catch {
+        speakText(message.text);
+        setApiNotice(copy.learningToolError);
+      }
+      return;
+    }
+    if (kind === "translate" || kind === "grammar") {
+      await runInsight(kind, message);
+      return;
+    }
     if (!isRemoteSession || message.id.startsWith("demo-")) return;
 
     try {
-      if (kind === "translate") await api.messages.translate(message.id);
-      if (kind === "grammar") await api.messages.grammar(message.id);
-      if (kind === "audio") await api.messages.audio(message.id);
       if (kind === "card") {
-        await api.messages.saveCard(message.id);
+        await api.messages.saveCard(message.id, {
+          phrase: message.text,
+          languageCode: languageCode(learningLanguage),
+          cardType: "phrase"
+        });
         await trackEvent("learning_card_saved", { messageId: message.id });
       }
     } catch {
@@ -644,7 +824,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               className={activeNav === key ? "active" : ""}
               key={key}
               type="button"
-              onClick={() => setActiveNav(key)}
+              onClick={() => void selectNav(key)}
             >
               <Icon size={21} aria-hidden="true" />
               <span>{copy.nav[key]}</span>
@@ -652,10 +832,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           ))}
         </nav>
         <button className="workbench-account" type="button" onClick={() => void handleLogout()} disabled={isSigningOut} aria-label={copy.signOut}>
-          <span className="account-avatar">A</span>
-          <span>
-            <strong>alex.tutor</strong>
-            <small>{copy.accountPlan}</small>
+            <span className="account-avatar">{profileName(profile).slice(0, 1).toUpperCase()}</span>
+            <span>
+              <strong>{profileName(profile)}</strong>
+              <small>{planName(entitlement, copy.accountPlan)}</small>
           </span>
           {isSigningOut ? <span className="account-signout-status">{copy.signingOut}</span> : <LogOut size={17} aria-hidden="true" />}
         </button>
@@ -682,15 +862,16 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           </div>
         </header>
 
+        {activeNav === "home" ? <>
         <section className="partner-banner">
           <div className="partner-identity">
             <div className="partner-avatar">
               <span>✦</span>
             </div>
             <div>
-              <h2>Clara Ruiz</h2>
-              <strong>{copy.partnerGenderOrigin}</strong>
-              <p>{copy.partnerDescription}</p>
+               <h2>{partner?.name || "Clara Ruiz"}</h2>
+               <strong>{partner ? partnerMeta(partner, copy.partnerGenderOrigin) : copy.partnerGenderOrigin}</strong>
+               <p>{partner?.description || copy.partnerDescription}</p>
             </div>
           </div>
           <div className="partner-actions">
@@ -698,7 +879,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               <Settings2 size={17} aria-hidden="true" />
               {copy.customize}
             </button>
-            <button type="button" onClick={() => setPartnerOpen(true)}>
+            <button type="button" onClick={() => { setPartnerOpen(false); void selectNav("partners"); }}>
               <Users size={17} aria-hidden="true" />
               {copy.changePartner}
             </button>
@@ -754,15 +935,15 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   <span>✦</span>
                 </div>
                 <div>
-                  <strong>Clara Ruiz</strong>
+                   <strong>{partner?.name || "Clara Ruiz"}</strong>
                   <span>{copy.tutorLabel}</span>
                 </div>
               </div>
               <div className="conversation-stats">
-                <Stat value="1" label={copy.stats[0]} />
-                <Stat value={String(messages.length)} label={copy.stats[1]} />
-                <Stat value="0" label={copy.stats[2]} />
-                <Stat value="8" label={copy.stats[3]} />
+                 <Stat value={String(usageNumber(entitlement, ["minutesUsed", "minutes_used"]))} label={copy.stats[0]} />
+                 <Stat value={String(todayMessageCount || messages.filter((message) => message.role === "user").length)} label={copy.stats[1]} />
+                 <Stat value={String(messages.filter((message) => message.role === "user").length)} label={copy.stats[2]} />
+                 <Stat value={String(messages.filter((message) => message.role === "user").reduce((total, message) => total + message.text.split(/\s+/).filter(Boolean).length, 0))} label={copy.stats[3]} />
               </div>
               <button className="new-conversation" type="button" onClick={startConversation} disabled={isApiBusy}>
                 <RotateCcw size={17} aria-hidden="true" />
@@ -783,7 +964,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                         <button
                           className="phrase-button"
                           type="button"
-                          onClick={() => setSelectedPhrase(message.text)}
+                          onClick={() => { setSelectedPhrase(message.text); setInsightText(""); }}
                         >
                           {message.text}
                         </button>
@@ -796,7 +977,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             <Volume2 size={15} aria-hidden="true" />
                             {copy.listen}
                           </button>
-                          <button type="button">
+                          <button type="button" onClick={() => void speakText(message.text, 0.65)}>
                             <Clock3 size={15} aria-hidden="true" />
                             {copy.slow}
                           </button>
@@ -818,15 +999,15 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
             <div className="conversation-footer">
               <div className="conversation-shortcuts">
-                <button className="lost" type="button">
+                 <button className="lost" type="button" onClick={() => setInput("Could you say that more slowly?")}>
                   <AlertCircle size={16} aria-hidden="true" />
                   {copy.lost}
                 </button>
-                <button className="got-it" type="button">
+                 <button className="got-it" type="button" onClick={() => setInput("I got it. Let me try.")}>
                   <Brain size={16} aria-hidden="true" />
                   {copy.gotIt}
                 </button>
-                <button className="show-hints" type="button">
+                 <button className="show-hints" type="button" onClick={() => { const tutorMessage = [...messages].reverse().find((message) => message.role === "tutor"); if (tutorMessage) void runInsight("grammar", tutorMessage); }}>
                   {copy.showHints}
                 </button>
               </div>
@@ -854,10 +1035,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                 <button
                   className={isListening ? "voice-button listening" : "voice-button"}
                   type="button"
-                  onPointerDown={startVoiceInput}
-                  onPointerUp={stopVoiceInput}
-                  onPointerCancel={stopVoiceInput}
-                  onPointerLeave={stopVoiceInput}
+                   onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); startVoiceInput(); }}
+                   onPointerUp={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); stopVoiceInput(); }}
+                   onPointerCancel={cancelVoiceInput}
+                   onPointerLeave={cancelVoiceInput}
                   aria-label={copy.holdToSpeak}
                   aria-pressed={isListening}
                   title={copy.holdToSpeak}
@@ -900,9 +1081,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   </span>
                   <span className="panel-label">{insightMode === "translate" ? copy.insightTranslate : copy.insightGrammar}</span>
                   <h2>{selectedPhrase}</h2>
-                  <p>
-                    {insightMode === "translate" ? copy.selectedTranslateBody : copy.selectedGrammarBody}
-                  </p>
+                  <p>{insightText || (insightMode === "translate" ? copy.selectedTranslateBody : copy.selectedGrammarBody)}</p>
                   <button type="button" onClick={() => selectedMessage && void requestMessageHelp(selectedMessage, "card")}>
                     <Plus size={17} aria-hidden="true" />
                     {copy.saveCard}
@@ -919,17 +1098,22 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               )}
             </div>
             <div className="insight-input">
-              <textarea placeholder={copy.lookupPlaceholder} aria-label={copy.lookupLabel} />
+              <textarea
+                value={selectedPhrase}
+                onChange={(event) => setSelectedPhrase(event.target.value)}
+                placeholder={copy.lookupPlaceholder}
+                aria-label={copy.lookupLabel}
+              />
               <div className="insight-actions">
-                <button type="button">
+                <button type="button" onClick={() => void speakText(selectedPhrase)} disabled={!selectedPhrase.trim()}>
                   <Volume2 size={16} aria-hidden="true" />
                   {copy.listen}
                 </button>
-                <button className="translate" type="button" onClick={() => setInsightMode("translate")}>
+                <button className="translate" type="button" onClick={() => void runInsight("translate")} disabled={!selectedPhrase.trim() || isInsightBusy}>
                   <Languages size={16} aria-hidden="true" />
                   {copy.insightTranslate}
                 </button>
-                <button className="grammar" type="button" onClick={() => setInsightMode("grammar")}>
+                <button className="grammar" type="button" onClick={() => void runInsight("grammar")} disabled={!selectedPhrase.trim() || isInsightBusy}>
                   <Brain size={16} aria-hidden="true" />
                   {copy.insightGrammar}
                 </button>
@@ -943,6 +1127,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           {copy.privateNote}
           <ArrowRight size={14} aria-hidden="true" />
         </div>
+        </> : <WorkbenchNavView activeNav={activeNav} copy={copy} conversations={recentConversations} cards={cards} partners={partners} onChoosePartner={(nextPartner) => { setPartner(nextPartner); setActiveNav("home"); }} />}
       </section>
 
       {languageModalOpen ? (
@@ -970,6 +1155,101 @@ function MessageCircleIcon() {
   );
 }
 
+function jsonArray(value: unknown, key: string) {
+  if (Array.isArray(value)) return value as JsonObject[];
+  if (value && typeof value === "object" && key in value) {
+    const nested = (value as JsonObject)[key];
+    return Array.isArray(nested) ? nested as JsonObject[] : [];
+  }
+  return [];
+}
+
+function asTutorPartner(value: unknown): TutorPartner | null {
+  if (!value || typeof value !== "object") return null;
+  const item = value as JsonObject;
+  const id = stringValue(item.id);
+  const name = stringValue(item.name);
+  if (!id || !name) return null;
+  return {
+    id,
+    name,
+    gender: stringValue(item.gender),
+    location: stringValue(item.location),
+    description: stringValue(item.description),
+    avatarUrl: stringValue(item.avatarUrl) || stringValue(item.avatar_url)
+  };
+}
+
+function profileName(profile: JsonObject | null) {
+  return stringValue(profile?.displayName) || stringValue(profile?.display_name) || stringValue(profile?.name) || stringValue(profile?.email) || "Learner";
+}
+
+function planName(entitlement: JsonObject | null, fallback: string) {
+  return stringValue(entitlement?.planName) || stringValue(entitlement?.plan_name) || stringValue(entitlement?.plan) || fallback;
+}
+
+function numberValue(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function usageNumber(value: JsonObject | null, keys: string[]) {
+  for (const key of keys) {
+    const number = numberValue(value?.[key]);
+    if (number > 0) return number;
+  }
+  return 0;
+}
+
+function partnerMeta(partner: TutorPartner, fallback: string) {
+  const details = [partner.gender, partner.location ? `From ${partner.location}` : undefined].filter(Boolean);
+  return details.length > 0 ? details.join(" · ") : fallback;
+}
+
+function cardText(card: JsonObject) {
+  return stringValue(card.phrase) || stringValue(card.content) || stringValue(card.text) || stringValue(card.front) || "Saved learning card";
+}
+
+function WorkbenchNavView({
+  activeNav,
+  copy,
+  conversations,
+  cards,
+  partners,
+  onChoosePartner
+}: {
+  activeNav: NavItem;
+  copy: ProductCopy["workbench"];
+  conversations: TutorConversation[];
+  cards: JsonObject[];
+  partners: TutorPartner[];
+  onChoosePartner: (partner: TutorPartner) => void;
+}) {
+  if (activeNav === "history") {
+    return (
+      <section className="workbench-secondary-view">
+        <div className="secondary-view-heading"><History size={22} aria-hidden="true" /><div><span className="panel-label">{copy.nav.history}</span><h2>{copy.nav.history}</h2></div></div>
+        {conversations.length > 0 ? <div className="secondary-view-list">{conversations.map((conversation) => <article className="secondary-view-item" key={conversation.id}><strong>{conversation.mode === "talk" ? copy.talkMode : copy.sayItMode}</strong><span>{conversation.createdAt ? new Date(conversation.createdAt).toLocaleDateString() : copy.today}</span><small>{conversation.messages?.length || 0} {copy.stats[1].toLowerCase()}</small></article>)}</div> : <p className="secondary-view-empty">{copy.privateNote}</p>}
+      </section>
+    );
+  }
+
+  if (activeNav === "cards") {
+    return (
+      <section className="workbench-secondary-view">
+        <div className="secondary-view-heading"><BookOpen size={22} aria-hidden="true" /><div><span className="panel-label">{copy.nav.cards}</span><h2>{copy.nav.cards}</h2></div></div>
+        {cards.length > 0 ? <div className="secondary-view-list">{cards.map((card, index) => <article className="secondary-view-item" key={stringValue(card.id) || `card-${index}`}><strong>{cardText(card)}</strong><span>{stringValue(card.translation) || stringValue(card.meaning) || copy.selectedTranslateBody}</span></article>)}</div> : <p className="secondary-view-empty">{copy.insightEmptyBody}</p>}
+      </section>
+    );
+  }
+
+  return (
+    <section className="workbench-secondary-view">
+      <div className="secondary-view-heading"><Users size={22} aria-hidden="true" /><div><span className="panel-label">{copy.nav.partners}</span><h2>{copy.nav.partners}</h2></div></div>
+      {partners.length > 0 ? <div className="secondary-view-list">{partners.map((item) => <article className="secondary-view-item partner-item" key={item.id}><div><strong>{item.name}</strong><span>{[item.gender, item.location].filter(Boolean).join(" · ") || copy.partnerGenderOrigin}</span><small>{item.description || copy.partnerDescription}</small></div><button type="button" onClick={() => onChoosePartner(item)}>{copy.changePartner}</button></article>)}</div> : <p className="secondary-view-empty">{copy.partnerReady}</p>}
+    </section>
+  );
+}
+
 function getSpeechLocale(language: string) {
   const locales: Record<string, string> = {
     Chinese: "zh-CN",
@@ -977,7 +1257,8 @@ function getSpeechLocale(language: string) {
     Spanish: "es-ES",
     Japanese: "ja-JP",
     French: "fr-FR",
-    Korean: "ko-KR"
+    Korean: "ko-KR",
+    German: "de-DE"
   };
 
   return locales[language] ?? "en-US";
@@ -987,6 +1268,15 @@ function stringValue(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function insightContent(content: InsightResult["content"]) {
+  if (typeof content === "string") return content;
+  return content?.text || content?.suggestion || content?.explanation || content?.note || "No extra explanation was returned.";
+}
+
+function wait(milliseconds: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
 function languageCode(language: string) {
   const codes: Record<string, string> = {
     Chinese: "zh-CN",
@@ -994,7 +1284,8 @@ function languageCode(language: string) {
     Spanish: "es",
     Japanese: "ja",
     French: "fr",
-    Korean: "ko"
+    Korean: "ko",
+    German: "de"
   };
 
   return codes[language] || "en";
@@ -1013,7 +1304,9 @@ function languageName(code: string) {
     fr: "French",
     "fr-FR": "French",
     ko: "Korean",
-    "ko-KR": "Korean"
+    "ko-KR": "Korean",
+    de: "German",
+    "de-DE": "German"
   };
 
   return names[code] || "English";
@@ -1088,7 +1381,7 @@ function LanguageSetupModal({
   onClose: () => void;
   copy: ProductCopy["workbench"];
 }) {
-  const languages = Object.keys(copy.languageNames);
+   const languages = Array.from(new Set([...Object.keys(copy.languageNames), "German"]));
   const levels = Object.keys(copy.levels);
 
   return (

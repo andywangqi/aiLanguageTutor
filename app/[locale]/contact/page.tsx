@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { InfoPage } from "@/components/site/InfoPage";
 import { getInfoCopy } from "@/lib/i18n/info-copy";
 import { isLocale, locales, localizedPath, type Locale } from "@/lib/i18n/config";
+import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
 
 type LocalePageProps = { params: Promise<{ locale: string }> };
 
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   const { locale } = await params;
   if (!isLocale(locale) || locale === "en") return {};
   const copy = getInfoCopy(locale);
-  return { title: `${copy.contact.title} | AI Language Tutor`, description: copy.contact.lead };
+  return createLocalizedPageMetadata(locale, "/contact", `${copy.contact.title} | AI Language Tutor`, copy.contact.lead);
 }
 
 export default async function LocaleContactPage({ params }: LocalePageProps) {

@@ -214,7 +214,9 @@ const baseProduct: ProductCopy = {
     annualCta: "Get Pro",
     supabaseNotice: "Add Supabase environment variables before starting a paid checkout.",
     pendingNotice: "Checkout is waiting for the Waffo merchant configuration.",
-    checkoutNotice: "We could not start checkout. Please try again."
+    checkoutNotice: "We could not start checkout. Please try again.",
+    popupBlockedNotice: "Your browser blocked the checkout tab.",
+    openCheckout: "Open secure checkout"
   },
   workbench: {
     nav: { home: "Home", history: "Chat history", cards: "Saved cards", partners: "Partners", aria: "Workbench" },

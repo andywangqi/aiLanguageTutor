@@ -4,12 +4,21 @@ import { getBrowserIdentity } from "@/lib/analytics/client";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
   ApiEnvelope,
+  BillingMe,
+  BillingOrder,
   BillingPlan,
   BillingPlansResponse,
+  BillingSubscription,
   CheckoutResponse,
+  ConversationList,
   JsonObject,
   LanguageSettings,
+  LearningCard,
+  MessageOutput,
+  SendMessageResult,
   TutorConversation,
+  VoiceInput,
+  VoiceUpload,
   WorkbenchData
 } from "./types";
 import { ApiError } from "./types";
@@ -80,14 +89,12 @@ export const api = {
       const identity = getBrowserIdentity();
       return request<JsonObject>("auth/sync", {
         method: "POST",
-        body: { ...identity, path: window.location.pathname },
-        idempotencyKey: createIdempotencyKey("auth_sync")
+        body: { ...identity, path: window.location.pathname }
       });
     },
     async logout() {
       return request<JsonObject>("auth/logout", {
-        method: "POST",
-        idempotencyKey: createIdempotencyKey("auth_logout")
+        method: "POST"
       });
     }
   },
@@ -120,28 +127,25 @@ export const api = {
     create(body: JsonObject) {
       return request<TutorConversation>("conversations", {
         method: "POST",
-        body,
-        idempotencyKey: createIdempotencyKey("conversation")
+        body
       });
     },
     list(query = "") {
-      return request<JsonObject>(`conversations${query ? `?${query}` : ""}`);
+      return request<ConversationList>(`conversations${query ? `?${query}` : ""}`);
     },
     get(id: string) {
       return request<TutorConversation>(`conversations/${encodeURIComponent(id)}`);
     },
     sendMessage(id: string, body: JsonObject) {
-      return request<TutorConversation>(`conversations/${encodeURIComponent(id)}/messages`, {
+      return request<SendMessageResult>(`conversations/${encodeURIComponent(id)}/messages`, {
         method: "POST",
-        body,
-        idempotencyKey: createIdempotencyKey("message")
+        body
       });
     },
     sendVoiceMessage(id: string, body: JsonObject) {
-      return request<TutorConversation>(`conversations/${encodeURIComponent(id)}/messages/from-voice`, {
+      return request<SendMessageResult>(`conversations/${encodeURIComponent(id)}/messages/from-voice`, {
         method: "POST",
-        body,
-        idempotencyKey: createIdempotencyKey("voice_message")
+        body
       });
     },
     end(id: string) {
@@ -150,33 +154,47 @@ export const api = {
     reset(id: string, body: JsonObject = {}) {
       return request<TutorConversation>(`conversations/${encodeURIComponent(id)}/reset`, {
         method: "POST",
-        body,
-        idempotencyKey: createIdempotencyKey("conversation_reset")
+        body
       });
     }
   },
   voice: {
     uploadUrl(body: JsonObject) {
-      return request<JsonObject>("voice/upload-url", { method: "POST", body });
+      return request<VoiceUpload>("voice/upload-url", { method: "POST", body });
     },
     registerInput(body: JsonObject) {
-      return request<JsonObject>("voice/inputs", { method: "POST", body });
+      return request<VoiceInput>("voice/inputs", { method: "POST", body });
+    },
+    get(id: string) {
+      return request<VoiceInput>(`voice/inputs/${encodeURIComponent(id)}`);
+    },
+    transcribe(id: string) {
+      return request<VoiceInput>(`voice/inputs/${encodeURIComponent(id)}/transcribe`, { method: "POST" });
     }
   },
   messages: {
     translate(id: string) {
-      return request<JsonObject>(`messages/${encodeURIComponent(id)}/translate`, { method: "POST" });
+      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/translate`, { method: "POST" });
+    },
+    translateText(body: JsonObject) {
+      return request<MessageOutput>("messages/translate", { method: "POST", body });
     },
     grammar(id: string) {
-      return request<JsonObject>(`messages/${encodeURIComponent(id)}/grammar`, { method: "POST" });
+      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/grammar`, { method: "POST" });
+    },
+    grammarText(body: JsonObject) {
+      return request<MessageOutput>("messages/grammar", { method: "POST", body });
+    },
+    naturalExpression(id: string) {
+      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/natural-expression`, { method: "POST" });
     },
     audio(id: string) {
       return request<JsonObject>(`messages/${encodeURIComponent(id)}/audio`, { method: "POST" });
     },
-    saveCard(id: string) {
-      return request<JsonObject>(`messages/${encodeURIComponent(id)}/cards`, {
+    saveCard(id: string, body: JsonObject) {
+      return request<LearningCard>(`messages/${encodeURIComponent(id)}/cards`, {
         method: "POST",
-        idempotencyKey: createIdempotencyKey("learning_card")
+        body
       });
     }
   },
@@ -197,23 +215,30 @@ export const api = {
       return Array.isArray(response) ? response : response?.plans || [];
     },
     me() {
-      return request<JsonObject>("billing/me");
+      return request<BillingMe>("billing/me");
+    },
+    order(orderId: string) {
+      return request<BillingOrder>(`billing/orders/${encodeURIComponent(orderId)}`);
     },
     checkout(planCode: string, paths: { successPath?: string; cancelPath?: string } = {}) {
       return request<CheckoutResponse>("billing/checkout", {
         method: "POST",
         body: {
           planCode,
-          successPath: paths.successPath || "/app?payment=success",
+          successPath: paths.successPath || "/app",
           cancelPath: paths.cancelPath || "/pricing?payment=cancelled"
         },
         idempotencyKey: createIdempotencyKey("checkout")
       });
     },
     cancel(subscriptionId: string) {
-      return request<JsonObject>(`billing/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, {
-        method: "POST",
-        idempotencyKey: createIdempotencyKey("subscription_cancel")
+      return request<BillingSubscription>(`billing/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, {
+        method: "POST"
+      });
+    },
+    resume(subscriptionId: string) {
+      return request<BillingSubscription>(`billing/subscriptions/${encodeURIComponent(subscriptionId)}/resume`, {
+        method: "POST"
       });
     }
   }

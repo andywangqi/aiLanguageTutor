@@ -38,7 +38,7 @@ The default English page is available at `http://127.0.0.1:3000/`.
 
 Set `NEXT_PUBLIC_SITE_URL` before deploying so canonical URLs, language alternates, sitemap, and JSON-LD point to the production domain. If the variable is missing or empty, the app safely falls back to `https://ailanguagetutor.online`; on Vercel, either remove an empty variable or set it to the real production URL.
 
-For API integration, copy `.env.example` to `.env.local` and configure the Supabase values plus the public central endpoint and write key. Keep `ZHYADMIN_SERVER_KEY`, Supabase service-role credentials, AI credentials, and Waffo credentials server-only. The browser calls the same-origin `/api/*` proxy, which forwards the documented product routes with `siteUrl`, bearer token, request ID, and idempotency headers. Payment buttons submit only `planCode`; checkout remains unavailable until the central Waffo merchant adapter is configured.
+For API integration, copy `.env.example` to `.env.local` and configure the Supabase values plus the public central endpoint and write key. Keep Supabase service-role, OpenAI, and Waffo credentials on the central `zhyadmin` backend. The browser calls the same-origin `/api/*` proxy, which forwards only documented product routes with `siteUrl`, bearer token, request ID, and checkout idempotency key. Payment buttons submit only `planCode`; the workbench confirms the returned `orderId` before treating a checkout return as paid.
 
 ## Verification
 

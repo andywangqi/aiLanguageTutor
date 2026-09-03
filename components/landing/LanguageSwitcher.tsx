@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { Globe2 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { localeLabels, localePath, locales, type Locale } from "@/lib/i18n/config";
 import { trackEvent } from "@/lib/analytics/client";
 
 export function LanguageSwitcher({ currentLocale }: { currentLocale: Locale }) {
   const pathname = usePathname() || localePath(currentLocale);
   const localizedPagePath = pathname.replace(/^\/(ja|th|ko|zh-CN|zh-TW|es)(?=\/|$)/, "") || "/";
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    setQuery(window.location.search.replace(/^\?/, ""));
+  }, [pathname]);
   const labels: Record<Locale, string> = {
     en: "Choose language",
     ja: "言語を選択",
@@ -26,17 +32,20 @@ export function LanguageSwitcher({ currentLocale }: { currentLocale: Locale }) {
         <span>{localeLabels[currentLocale].nativeName}</span>
       </summary>
       <div className="language-menu">
-        {locales.map((locale) => (
-          <Link
-            aria-current={locale === currentLocale ? "page" : undefined}
-            href={locale === "en" ? localizedPagePath : `/${locale}${localizedPagePath === "/" ? "" : localizedPagePath}`}
+          {locales.map((locale) => {
+            const destination = locale === "en" ? localizedPagePath : `/${locale}${localizedPagePath === "/" ? "" : localizedPagePath}`;
+            const href = query ? `${destination}?${query}` : destination;
+            return (
+            <Link
+              aria-current={locale === currentLocale ? "page" : undefined}
+            href={href}
             onClick={() => {
               if (locale !== currentLocale) {
                 void trackEvent("language_switched", {
                   from_locale: currentLocale,
                   to_locale: locale,
                   from_path: pathname,
-                  to_path: locale === "en" ? localizedPagePath : `/${locale}${localizedPagePath === "/" ? "" : localizedPagePath}`
+                  to_path: href
                 });
               }
             }}
@@ -44,8 +53,9 @@ export function LanguageSwitcher({ currentLocale }: { currentLocale: Locale }) {
           >
             <span>{localeLabels[locale].nativeName}</span>
             <small>{localeLabels[locale].label}</small>
-          </Link>
-        ))}
+            </Link>
+            );
+          })}
       </div>
     </details>
   );

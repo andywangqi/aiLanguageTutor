@@ -79,6 +79,7 @@ type GlobalWithMemory = typeof globalThis & {
 };
 
 const localRoots = new Set(["auth", "me", "workbench", "partners", "conversations", "messages", "cards", "voice", "billing"]);
+const protectedLocalRoots = new Set(["workbench", "conversations", "messages", "cards", "voice"]);
 const defaultPartner = {
   id: "clara-ruiz",
   slug: "clara-ruiz",
@@ -170,6 +171,10 @@ export async function handleLocalProductApi(request: Request, segments: string[]
     userId: "guest"
   };
   context.userId = context.user?.id || guestId(request);
+
+  if (protectedLocalRoots.has(segments[0] || "") && !context.user) {
+    return apiError("UNAUTHORIZED", "Sign in to use tutor practice data.", requestId, 401);
+  }
 
   if (context.user) await ensureProfile(context.user, requestId);
 
@@ -543,19 +548,8 @@ async function getConversation(context: RequestContext, id: string): Promise<Tut
 }
 
 async function resetConversation(context: RequestContext, id: string, body: JsonObject) {
-  const existing = memory().conversations.get(id);
-  const base: LocalConversation = existing || {
-    id,
-    userId: context.userId,
-    mode: modeField(body.mode),
-    nativeLanguageCode: stringField(body.nativeLanguageCode, "zh-CN"),
-    learningLanguageCode: stringField(body.learningLanguageCode, "en"),
-    levelCode: stringField(body.levelCode, "auto"),
-    status: "active",
-    startedAt: now(),
-    updatedAt: now(),
-    messages: []
-  };
+  const current = await getConversation(context, id);
+  const base = toLocalConversation(current, context.userId);
   base.mode = modeField(body.mode);
   base.nativeLanguageCode = stringField(body.nativeLanguageCode, base.nativeLanguageCode);
   base.learningLanguageCode = stringField(body.learningLanguageCode, base.learningLanguageCode);
@@ -583,11 +577,14 @@ async function resetConversation(context: RequestContext, id: string, body: Json
 }
 
 async function endConversation(context: RequestContext, id: string) {
-  const conversation = memory().conversations.get(id);
-  if (conversation) {
-    conversation.status = "completed";
-    conversation.updatedAt = now();
-  }
+  const current = await getConversation(context, id);
+  const localConversation = memory().conversations.get(id);
+  const conversation = localConversation && localConversation.userId === context.userId
+    ? localConversation
+    : toLocalConversation(current, context.userId);
+  conversation.status = "completed";
+  conversation.updatedAt = now();
+  memory().conversations.set(id, conversation);
 
   const supabase = createSupabaseAdminClient();
   if (context.user && supabase) {
@@ -661,7 +658,7 @@ async function sendConversationMessage(context: RequestContext, id: string, body
       }, { onConflict: "message_id,output_type" });
     }
     if (inputType === "voice" && body.audioId) {
-      await supabase.from("voice_inputs").update({ message_id: dbUserMessage?.id || userMessage.id, transcript: content, status: "completed", updated_at: now() }).eq("id", body.audioId as string);
+      await supabase.from("voice_inputs").update({ message_id: dbUserMessage?.id || userMessage.id, transcript: content, status: "completed", updated_at: now() }).eq("id", body.audioId as string).eq("user_id", context.user.id);
     }
   }
 
@@ -876,7 +873,8 @@ async function updateCard(context: RequestContext, id: string, body: JsonObject)
 }
 
 async function deleteCard(context: RequestContext, id: string) {
-  memory().cards.delete(id);
+  const card = memory().cards.get(id);
+  if (card && card.userId === context.userId) memory().cards.delete(id);
   const supabase = createSupabaseAdminClient();
   if (context.user && supabase) {
     await supabase.from("learning_cards").update({ archived_at: now(), updated_at: now() }).eq("id", id).eq("user_id", context.user.id);

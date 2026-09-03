@@ -5,7 +5,8 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export const metadata: Metadata = {
   title: "Sign in | AI Language Tutor",
-  description: "Sign in to continue your AI-guided speaking practice."
+  description: "Sign in to continue your AI-guided speaking practice.",
+  robots: { index: false, follow: false }
 };
 
 export default function Page() {

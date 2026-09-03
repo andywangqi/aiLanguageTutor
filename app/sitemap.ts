@@ -22,6 +22,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: locale === "en" ? 0.7 : 0.55
     })),
+    {
+      url: `${siteUrl}/english-reading-practice`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8
+    },
     ...contentPaths.flatMap((path) =>
       locales.map((locale) => ({
         url: `${siteUrl}${localizedPath(locale, path)}`,

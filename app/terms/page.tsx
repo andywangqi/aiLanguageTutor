@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoPage } from "@/components/site/InfoPage";
+import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Terms of Service | AI Language Tutor",
-  description: "Read the terms for using AI Language Tutor conversation and speaking practice features."
-};
+export const metadata: Metadata = createLocalizedPageMetadata("en", "/terms", "Terms of Service | AI Language Tutor", "Read the terms for using AI Language Tutor conversation and speaking practice features.");
 
 export default function TermsPage() {
   return (

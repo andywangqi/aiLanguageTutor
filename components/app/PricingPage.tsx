@@ -22,10 +22,28 @@ function planCode(plan: BillingPlan, fallback: string) {
   return plan.planCode || plan.code || fallback;
 }
 
+function planNumericAmount(plan: BillingPlan) {
+  if (typeof plan.amount === "number" && Number.isFinite(plan.amount)) return plan.amount;
+  if (typeof plan.price === "number" && Number.isFinite(plan.price)) return plan.price;
+  return null;
+}
+
+function formatCurrency(amount: number, currency = "USD") {
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount);
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
+}
+
 function planAmount(plan: BillingPlan, fallback: string) {
-  if (typeof plan.amount === "number") return `$${plan.amount.toFixed(2)}`;
-  if (typeof plan.price === "number") return `$${plan.price.toFixed(2)}`;
+  const amount = planNumericAmount(plan);
+  if (amount !== null) return formatCurrency(amount, plan.currency || "USD");
   return fallback;
+}
+
+function replacePercentage(copy: string, percentage: number) {
+  return /\d+%/.test(copy) ? copy.replace(/\d+%/, `${percentage}%`) : copy;
 }
 
 export function PricingPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
@@ -33,6 +51,10 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
   const [plans, setPlans] = useState<BillingPlan[]>(fallbackPlans);
   const [checkoutPlan, setCheckoutPlan] = useState("");
   const [notice, setNotice] = useState("");
+  const [pendingCheckoutUrl, setPendingCheckoutUrl] = useState("");
+  const [paymentUnavailable, setPaymentUnavailable] = useState(false);
+  const [checkoutInProgress, setCheckoutInProgress] = useState(false);
+  const checkoutInFlight = useRef(false);
   const paymentStatusTracked = useRef("");
 
   useEffect(() => {
@@ -73,9 +95,18 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
 
   const monthlyPlan = plans.find((plan) => (plan.interval || "").toLowerCase().includes("month")) || plans[0] || fallbackPlans[0];
   const annualPlan = plans.find((plan) => (plan.interval || "").toLowerCase().includes("year")) || plans[1] || fallbackPlans[1];
+  const monthlyAmount = planNumericAmount(monthlyPlan);
+  const annualAmount = planNumericAmount(annualPlan);
+  const annualOriginal = monthlyAmount === null ? null : monthlyAmount * 12;
+  const annualSavingsPercent = annualOriginal && annualAmount !== null
+    ? Math.max(0, Math.round((1 - annualAmount / annualOriginal) * 100))
+    : null;
 
   async function startCheckout(plan: BillingPlan, fallbackCode: string) {
+    if (checkoutInFlight.current) return;
+    checkoutInFlight.current = true;
     setNotice("");
+    setPendingCheckoutUrl("");
     const code = planCode(plan, fallbackCode);
     void trackEvent("pricing_cta_clicked", {
       locale,
@@ -87,11 +118,16 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
     if (!supabase || !isSupabaseConfigured()) {
       void trackEvent("checkout_failed", { locale, plan_code: code, stage: "configuration" });
       setNotice(copy.supabaseNotice);
+      checkoutInFlight.current = false;
       return;
     }
 
+    const popup = window.open("about:blank", "_blank");
+    if (popup) popup.opener = null;
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
+      popup?.close();
+      checkoutInFlight.current = false;
       const next = localizedPath(locale, `/pricing?plan=${encodeURIComponent(code)}`);
       window.location.assign(`${localizedPath(locale, "/login")}?next=${encodeURIComponent(next)}`);
       return;
@@ -106,25 +142,39 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
     });
     try {
       const checkout = await api.billing.checkout(code, {
-        successPath: localizedPath(locale, `/app?payment=success&plan=${encodeURIComponent(code)}`),
+        successPath: localizedPath(locale, "/app"),
         cancelPath: localizedPath(locale, `/pricing?payment=cancelled&plan=${encodeURIComponent(code)}`)
       });
       const checkoutUrl = checkout.checkoutUrl || checkout.url;
       if (!checkoutUrl) {
         void trackEvent("checkout_failed", { locale, plan_code: code, stage: "missing_checkout_url" });
         setNotice(copy.pendingNotice);
+        popup?.close();
         return;
       }
-      window.location.assign(checkoutUrl);
+      if (popup) popup.location.href = checkoutUrl;
+      else {
+        setPendingCheckoutUrl(checkoutUrl);
+        setNotice(copy.popupBlockedNotice);
+      }
     } catch (error) {
+      popup?.close();
       void trackEvent("checkout_failed", {
         locale,
         plan_code: code,
         stage: "request",
         error_code: error instanceof ApiError ? error.code : "UNKNOWN_ERROR"
       });
-      setNotice(error instanceof ApiError && error.code === "PAYMENT_PENDING" ? copy.pendingNotice : copy.checkoutNotice);
+      const errorCode = error instanceof ApiError ? error.code : "";
+      if (errorCode === "PAYMENT_NOT_CONFIGURED" || errorCode === "PRODUCT_NOT_CONFIGURED") setPaymentUnavailable(true);
+      if (errorCode === "CHECKOUT_IN_PROGRESS") setCheckoutInProgress(true);
+      setNotice(
+        ["PAYMENT_NOT_CONFIGURED", "PRODUCT_NOT_CONFIGURED", "CHECKOUT_IN_PROGRESS", "CHECKOUT_ALREADY_CREATED"].includes(errorCode)
+          ? copy.pendingNotice
+          : copy.checkoutNotice
+      );
     } finally {
+      checkoutInFlight.current = false;
       setCheckoutPlan("");
     }
   }
@@ -192,7 +242,7 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
                 </li>
               ))}
             </ul>
-            <button className="pricing-lite-button pricing-lite-button-primary" type="button" onClick={() => startCheckout(monthlyPlan, "pro_monthly")} disabled={Boolean(checkoutPlan)}>
+            <button className="pricing-lite-button pricing-lite-button-primary" type="button" onClick={() => startCheckout(monthlyPlan, "pro_monthly")} disabled={Boolean(checkoutPlan) || paymentUnavailable || checkoutInProgress}>
               {checkoutPlan === planCode(monthlyPlan, "pro_monthly") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
               {copy.proCta}
             </button>
@@ -206,17 +256,20 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
             <p>{copy.annualDescription}</p>
           </div>
           <div className="pricing-lite-annual-price">
-            <del>$155.88</del>
-            <strong>{planAmount(annualPlan, copy.annualFallbackPrice)}</strong>
-            <span>/ {copy.year} · {copy.monthEquivalent}</span>
-          </div>
-          <div className="pricing-lite-annual-savings">{copy.annualSavings}</div>
-          <button className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" type="button" onClick={() => startCheckout(annualPlan, "pro_annual")} disabled={Boolean(checkoutPlan)}>
+             {annualOriginal !== null && annualAmount !== null && annualOriginal > annualAmount ? <del>{formatCurrency(annualOriginal, annualPlan.currency || monthlyPlan.currency || "USD")}</del> : null}
+             <strong>{planAmount(annualPlan, copy.annualFallbackPrice)}</strong>
+             <span>/ {copy.year}{annualAmount !== null ? ` · ${formatCurrency(annualAmount / 12, annualPlan.currency || "USD")} / ${copy.month}` : ` · ${copy.monthEquivalent}`}</span>
+           </div>
+           <div className="pricing-lite-annual-savings">{annualSavingsPercent !== null ? replacePercentage(copy.annualSavings, annualSavingsPercent) : copy.annualSavings}</div>
+          <button className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" type="button" onClick={() => startCheckout(annualPlan, "pro_annual")} disabled={Boolean(checkoutPlan) || paymentUnavailable || checkoutInProgress}>
             {checkoutPlan === planCode(annualPlan, "pro_annual") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
             {copy.annualCta}
           </button>
         </section>
-        {notice ? <p className="pricing-lite-notice" role="status">{notice}</p> : null}
+        {notice ? <p className="pricing-lite-notice" role="status">
+          {notice}
+          {pendingCheckoutUrl ? <> <a href={pendingCheckoutUrl} target="_blank" rel="noopener noreferrer">{copy.openCheckout}</a></> : null}
+        </p> : null}
       </div>
     </main>
   );

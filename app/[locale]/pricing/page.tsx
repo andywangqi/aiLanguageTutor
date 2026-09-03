@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PricingPage } from "@/components/app/PricingPage";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
 
 type LocalePageProps = {
   params: Promise<{ locale: string }>;
@@ -17,10 +18,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   if (!isLocale(locale)) return {};
 
   const dictionary = getDictionary(locale);
-  return {
-    title: `${dictionary.product.pricing.title} | AI Language Tutor`,
-    description: dictionary.product.pricing.lead
-  };
+  return createLocalizedPageMetadata(locale, "/pricing", `${dictionary.product.pricing.title} | AI Language Tutor`, dictionary.product.pricing.lead);
 }
 
 export default async function LocalePricingPage({ params }: LocalePageProps) {

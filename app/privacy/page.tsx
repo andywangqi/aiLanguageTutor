@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoPage } from "@/components/site/InfoPage";
+import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | AI Language Tutor",
-  description: "Learn how AI Language Tutor handles account, conversation, voice, and website information."
-};
+export const metadata: Metadata = createLocalizedPageMetadata("en", "/privacy", "Privacy Policy | AI Language Tutor", "Learn how AI Language Tutor handles account, conversation, voice, and website information.");
 
 export default function PrivacyPage() {
   return (

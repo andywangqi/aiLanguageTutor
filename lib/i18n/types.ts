@@ -109,6 +109,8 @@ export type ProductCopy = {
     supabaseNotice: string;
     pendingNotice: string;
     checkoutNotice: string;
+    popupBlockedNotice: string;
+    openCheckout: string;
   };
   workbench: {
     nav: { home: string; history: string; cards: string; partners: string; aria: string };

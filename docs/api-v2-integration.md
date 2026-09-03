@@ -16,19 +16,15 @@ NEXT_PUBLIC_ZHYADMIN_WRITE_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
-# Server only
-ZHYADMIN_SERVER_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-WAFFO_API_BASE_URL=
-WAFFO_API_KEY=
-WAFFO_API_SECRET=
-WAFFO_WEBHOOK_PUBLIC_KEY=
+# Route product calls through the documented zhyadmin API.
+PRODUCT_API_BACKEND=central
 ```
 
 The two Supabase public variables are required for real Google OAuth. The
 central endpoint and write key enable central plan reads and browser event
 tracking. The write key must belong to an active website registration in the
-central console; the server key is only available to server modules.
+central console. Supabase service-role, OpenAI, and Waffo credentials belong
+to `zhyadmin`; this website must not receive them.
 
 The browser client only sends analytics when the current hostname matches the
 configured production site URL (with an optional `www.` prefix). Localhost,
@@ -72,9 +68,9 @@ default settings, login event, and anonymous data merge.
 - auth sync and logout;
 - profile, settings, partner, workbench, and partner list;
 - conversations and messages;
-- voice upload registration;
-- translation, grammar, audio, and learning cards;
-- billing plans, checkout, and subscription cancellation;
+- voice upload registration, transcription, and status polling;
+- translation, grammar, natural-expression, audio, and learning cards;
+- billing plans, checkout, order status, and subscription cancellation/resume;
 - browser analytics tracking.
 
 The proxy adds `siteUrl` as a query parameter and forwards:
@@ -114,12 +110,15 @@ pointer up   -> stop recognition and recorder
               -> POST /api/voice/upload-url
               -> direct PUT to the signed upload URL
               -> POST /api/voice/inputs
+              -> POST /api/voice/inputs/:id/transcribe
+              -> GET /api/voice/inputs/:id until succeeded
               -> POST /api/conversations/:id/messages/from-voice
 ```
 
-If microphone recording is unavailable but browser speech recognition returns
-a transcript, the transcript still reaches the voice-message endpoint without
-an uploaded audio object.
+Uploaded audio is limited to 10 MiB, and the API receives the normalized base
+audio MIME type. If recording is unavailable but browser speech recognition
+returns a transcript, the transcript can still reach the voice-message
+endpoint without an uploaded audio object.
 
 ## 6. Billing and Waffo
 
@@ -134,15 +133,16 @@ Checkout submits only a plan code:
 ```json
 {
   "planCode": "pro_monthly",
-  "successPath": "/app?payment=success",
+  "successPath": "/app",
   "cancelPath": "/pricing?payment=cancelled"
 }
 ```
 
-The frontend never submits an amount. Until the official Waffo merchant
-checkout and webhook signing contract is configured in the central backend,
-the UI reports that checkout is pending instead of sending an invented payment
-payload.
+The frontend never submits an amount. It opens the returned checkout URL in a
+new tab and never logs or persists it. On the success return, the workbench
+polls `GET /api/billing/orders/:orderId`. It refreshes the entitlement and
+records payment success only after the order becomes `paid`; the browser
+return alone is not proof of payment.
 
 ## 7. Central server sync
 

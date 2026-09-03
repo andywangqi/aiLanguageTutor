@@ -20,7 +20,8 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   const dictionary = getDictionary(locale);
   return {
     title: `${dictionary.product.auth.title} | AI Language Tutor`,
-    description: dictionary.product.auth.lead
+    description: dictionary.product.auth.lead,
+    robots: { index: false, follow: false }
   };
 }
 

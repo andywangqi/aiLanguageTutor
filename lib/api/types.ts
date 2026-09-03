@@ -36,6 +36,51 @@ export type LanguageSettings = {
   partnerId?: string | null;
 };
 
+export type Profile = {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  timezone: string | null;
+  planCode: string;
+};
+
+export type Settings = {
+  nativeLanguageCode: string;
+  learningLanguageCode: string;
+  levelCode: string;
+  partnerId: string | null;
+  partnerPreferences: JsonObject;
+};
+
+export type Entitlement = {
+  planCode: string;
+  planName: string;
+  status: string;
+  canStartConversation: boolean;
+  canUseVoice: boolean;
+  currentPeriodEnd?: string;
+  limits: {
+    messagesPerDay: number | null;
+    voiceSecondsPerDay: number | null;
+    insightsPerDay: number | null;
+  };
+};
+
+export type Partner = {
+  id: string;
+  slug: string;
+  name: string;
+  displayName: string;
+  gender: string | null;
+  location: string | null;
+  description: string | null;
+  personality: string | null;
+  avatarUrl: string | null;
+  supportedModes: string[];
+  configuration: JsonObject;
+};
+
 export type TutorPartner = {
   id: string;
   name: string;
@@ -47,11 +92,16 @@ export type TutorPartner = {
 
 export type TutorMessage = {
   id: string;
+  clientMessageId?: string;
   role: "user" | "tutor" | "assistant" | string;
   content?: string;
   text?: string;
   inputType?: string;
   createdAt?: string;
+  contentType?: string;
+  processingStatus?: "pending" | "generating" | "succeeded" | "failed" | null;
+  metadata?: JsonObject;
+  occurredAt?: string;
 };
 
 export type TutorConversation = {
@@ -63,10 +113,29 @@ export type TutorConversation = {
   levelCode?: string;
   messages?: TutorMessage[];
   createdAt?: string;
+  title?: string | null;
+  language?: string | null;
+  summary?: string | null;
+  metadata?: JsonObject;
+  startedAt?: string;
+  lastMessageAt?: string | null;
+  updatedAt?: string;
+};
+
+export type ConversationList = {
+  items: TutorConversation[];
+  nextCursor: string | null;
+};
+
+export type SendMessageResult = {
+  userMessage: TutorMessage;
+  tutorMessage: TutorMessage | null;
+  idempotent: boolean;
+  processing?: boolean;
 };
 
 export type WorkbenchData = {
-  profile?: JsonObject;
+  profile?: Profile | JsonObject;
   settings?: LanguageSettings;
   entitlement?: JsonObject;
   partner?: TutorPartner | JsonObject | null;
@@ -75,9 +144,13 @@ export type WorkbenchData = {
   recentConversations?: TutorConversation[];
   cards?: JsonObject[];
   todayMessageCount?: number;
+  today?: { messageCount: number };
+  savedCards?: LearningCard[];
+  notices?: unknown[];
 };
 
 export type BillingPlan = {
+  id?: string;
   code?: string;
   planCode?: string;
   name?: string;
@@ -86,9 +159,13 @@ export type BillingPlan = {
   amount?: number;
   price?: number;
   interval?: string;
+  billingInterval?: string | null;
+  providerProductId?: string | null;
   description?: string;
   features?: string[];
   popular?: boolean;
+  entitlements?: JsonObject;
+  isActive?: boolean;
 };
 
 export type BillingPlansResponse = {
@@ -99,4 +176,86 @@ export type CheckoutResponse = {
   checkoutUrl?: string;
   url?: string;
   orderId?: string;
+  status?: "checkout_opened";
+  sessionId?: string;
+  expiresAt?: string;
+  replayed?: boolean;
+};
+
+export type LearningCard = {
+  id: string;
+  prompt: string;
+  answer: string | null;
+  language: string | null;
+  cardType: string;
+  status: "active" | "paused" | "mastered" | "archived";
+  reviewCount: number;
+  nextReviewAt: string | null;
+  lastReviewedAt: string | null;
+  metadata: JsonObject;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MessageOutput = {
+  id: string;
+  type: "translation" | "grammar" | "natural_expression";
+  content: string | JsonObject;
+  generatedAt: string;
+};
+
+export type VoiceUpload = {
+  bucket: string;
+  path: string;
+  signedUrl: string;
+  token: string;
+  expiresIn: number;
+  uploadUrl?: string;
+  url?: string;
+  audioPath?: string;
+  objectPath?: string;
+};
+
+export type VoiceInput = {
+  id: string;
+  audioId?: string;
+  conversationId: string;
+  status: "pending" | "processing" | "succeeded" | "failed";
+  transcript: string | null;
+  languageCode: string | null;
+  durationMs: number;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BillingOrder = {
+  id: string;
+  externalOrderId: string;
+  planCode: string;
+  name: string;
+  provider: "waffo";
+  status: string;
+  currency: string;
+  amount: number;
+  paidAt: string | null;
+  occurredAt: string;
+};
+
+export type BillingSubscription = {
+  id: string;
+  externalSubscriptionId: string;
+  planCode: string;
+  provider: "waffo";
+  status: string;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  updatedAt: string;
+};
+
+export type BillingMe = {
+  entitlement: Entitlement;
+  orders: BillingOrder[];
+  subscriptions: BillingSubscription[];
 };

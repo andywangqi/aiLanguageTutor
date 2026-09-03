@@ -19,7 +19,6 @@ export const analyticsEvents = {
 export type AnalyticsEvent = (typeof analyticsEvents)[keyof typeof analyticsEvents];
 
 export function paymentEventForStatus(status: string | null) {
-  if (status === "success") return analyticsEvents.paymentSucceeded;
   if (status === "cancelled" || status === "canceled") return analyticsEvents.paymentCancelled;
   if (status === "failed" || status === "error") return analyticsEvents.paymentFailed;
   return null;

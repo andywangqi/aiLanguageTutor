@@ -21,7 +21,7 @@ export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionar
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedPath = params.get("next");
-    if (requestedPath?.startsWith("/") && !requestedPath.startsWith("//")) setNextPath(requestedPath);
+    if (requestedPath?.startsWith("/") && !requestedPath.startsWith("//") && !requestedPath.includes("\\") && !requestedPath.includes("://")) setNextPath(requestedPath);
     setCallbackError(params.get("error") === "auth_callback");
   }, []);
 

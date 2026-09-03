@@ -26,19 +26,27 @@ function isAllowed(method: string, segments: string[]) {
     if (segments.length === 4 && segments[2] === "messages" && segments[3] === "from-voice") return method === "POST";
   }
   if (segments[0] === "messages" && isId(segments[1]) && segments.length === 3) {
-    return method === "POST" && ["translate", "grammar", "audio", "cards"].includes(segments[2]);
+    return method === "POST" && ["translate", "grammar", "natural-expression", "audio", "cards"].includes(segments[2]);
   }
+  if (path === "messages/translate" || path === "messages/grammar") return method === "POST";
   if (path === "cards") return method === "GET";
   if (segments[0] === "cards" && isId(segments[1]) && segments.length === 2) {
     return method === "PATCH" || method === "DELETE";
   }
   if (path === "billing/plans" || path === "billing/me") return method === "GET";
   if (path === "billing/checkout") return method === "POST";
-  if (segments[0] === "billing" && segments[1] === "subscriptions" && isId(segments[2]) && segments[3] === "cancel") {
-    return method === "POST";
+  if (segments[0] === "billing" && segments[1] === "orders" && isId(segments[2]) && segments.length === 3) {
+    return method === "GET";
+  }
+  if (segments[0] === "billing" && segments[1] === "subscriptions" && isId(segments[2]) && segments.length === 4) {
+    return method === "POST" && ["cancel", "resume"].includes(segments[3]);
   }
   if (segments[0] === "voice" && ["upload-url", "inputs"].includes(segments[1]) && segments.length === 2) {
     return method === "POST";
+  }
+  if (segments[0] === "voice" && segments[1] === "inputs" && isId(segments[2])) {
+    if (segments.length === 3) return method === "GET";
+    if (segments.length === 4 && segments[3] === "transcribe") return method === "POST";
   }
   return false;
 }
@@ -61,15 +69,15 @@ async function forward(request: NextRequest, segments: string[]) {
   const method = request.method.toUpperCase();
   const id = requestId(request);
 
-  const localResponse = await handleLocalProductApi(request, segments, id);
-  if (localResponse) return localResponse;
-
   if (!supportedMethods.has(method) || !isAllowed(method, segments)) {
     return Response.json(
       { error: { code: "NOT_FOUND", message: "Product API route not found." }, requestId: id },
       { status: 404, headers: { "X-Request-Id": id } }
     );
   }
+
+  const localResponse = await handleLocalProductApi(request, segments, id);
+  if (localResponse) return localResponse;
 
   if (segments.join("/") === "track" && !isProductionHost(request)) {
     return new Response(null, { status: 204, headers: { "X-Request-Id": id } });

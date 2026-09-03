@@ -18,6 +18,11 @@ export function isLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
 }
 
+export function localeFromPathname(pathname: string | null | undefined): Locale {
+  const firstSegment = pathname?.split("/")[1] || "";
+  return isLocale(firstSegment) ? firstSegment : defaultLocale;
+}
+
 export function localePath(locale: Locale): string {
   return locale === defaultLocale ? "/" : `/${locale}`;
 }

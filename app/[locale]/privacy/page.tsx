@@ -4,6 +4,7 @@ import { InfoPage } from "@/components/site/InfoPage";
 import { InfoSections } from "@/components/site/InfoSections";
 import { getInfoCopy } from "@/lib/i18n/info-copy";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
 
 type LocalePageProps = { params: Promise<{ locale: string }> };
 
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   const { locale } = await params;
   if (!isLocale(locale) || locale === "en") return {};
   const copy = getInfoCopy(locale);
-  return { title: `${copy.privacy.title} | AI Language Tutor`, description: copy.privacy.lead };
+  return createLocalizedPageMetadata(locale, "/privacy", `${copy.privacy.title} | AI Language Tutor`, copy.privacy.lead);
 }
 
 export default async function LocalePrivacyPage({ params }: LocalePageProps) {

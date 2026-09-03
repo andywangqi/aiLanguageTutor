@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoPage } from "@/components/site/InfoPage";
+import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Contact | AI Language Tutor",
-  description: "Get help with AI Language Tutor, share product feedback, or ask about partnerships."
-};
+export const metadata: Metadata = createLocalizedPageMetadata("en", "/contact", "Contact | AI Language Tutor", "Get help with AI Language Tutor, share product feedback, or ask about partnerships.");
 
 export default function ContactPage() {
   return (
