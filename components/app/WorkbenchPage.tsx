@@ -39,7 +39,7 @@ import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { LandingDictionary, ProductCopy } from "@/lib/i18n/types";
 import { BrandMark } from "./BrandMark";
 
-type NavItem = "home" | "history" | "cards" | "partners";
+type NavItem = "home" | "history" | "cards";
 type WorkbenchMode = "sayIt" | "talk";
 type InsightMode = "translate" | "grammar";
 type Message = {
@@ -92,8 +92,7 @@ declare global {
 const navItems: Array<{ key: NavItem; icon: typeof Home }> = [
   { key: "home", icon: Home },
   { key: "history", icon: History },
-  { key: "cards", icon: BookOpen },
-  { key: "partners", icon: Users }
+  { key: "cards", icon: BookOpen }
 ];
 
 type WorkbenchUiMessages = Pick<
@@ -107,7 +106,22 @@ type WorkbenchUiMessages = Pick<
   | "messageError"
   | "settingsError"
   | "learningToolError"
-> & { signOut: string; signingOut: string };
+> & {
+  signOut: string;
+  signingOut: string;
+  paymentPending: string;
+  learnerName: string;
+  savedCardFallback: string;
+  noExplanation: string;
+  demoMeaning: string;
+  demoGrammar: string;
+  fromLocation: string;
+  femaleGender: string;
+  maleGender: string;
+  nonBinaryGender: string;
+};
+
+type WorkbenchCopy = ProductCopy["workbench"] & WorkbenchUiMessages;
 
 const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
   en: {
@@ -120,6 +134,16 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     messageError: "Your message could not be sent. Please try again.",
     settingsError: "Your language settings could not be saved. Please try again.",
     learningToolError: "That learning tool is temporarily unavailable. Please try again.",
+    paymentPending: "Payment is still being confirmed. Your access will update after confirmation.",
+    learnerName: "Learner",
+    savedCardFallback: "Saved learning card",
+    noExplanation: "No additional explanation was returned.",
+    demoMeaning: "A clear meaning for “{phrase}” will appear here.",
+    demoGrammar: "This phrase is clear and ready to practice in context.",
+    fromLocation: "From {location}",
+    femaleGender: "Female",
+    maleGender: "Male",
+    nonBinaryGender: "Non-binary",
     signOut: "Sign out",
     signingOut: "Signing out…"
   },
@@ -133,6 +157,16 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     messageError: "メッセージを送信できませんでした。もう一度お試しください。",
     settingsError: "言語設定を保存できませんでした。もう一度お試しください。",
     learningToolError: "学習ツールを一時的に利用できません。もう一度お試しください。",
+    paymentPending: "お支払いを確認中です。確認後にアクセス権が更新されます。",
+    learnerName: "学習者",
+    savedCardFallback: "保存した学習カード",
+    noExplanation: "追加の説明はありません。",
+    demoMeaning: "「{phrase}」の分かりやすい意味がここに表示されます。",
+    demoGrammar: "このフレーズは自然で、会話の中ですぐに練習できます。",
+    fromLocation: "{location}出身",
+    femaleGender: "女性",
+    maleGender: "男性",
+    nonBinaryGender: "ノンバイナリー",
     signOut: "ログアウト",
     signingOut: "ログアウト中…"
   },
@@ -146,6 +180,16 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     messageError: "ส่งข้อความไม่ได้ ลองอีกครั้งนะ",
     settingsError: "บันทึกการตั้งค่าภาษาไม่ได้ ลองอีกครั้งนะ",
     learningToolError: "เครื่องมือการเรียนรู้ยังไม่พร้อมใช้งานชั่วคราว ลองอีกครั้งนะ",
+    paymentPending: "กำลังยืนยันการชำระเงิน ระบบจะอัปเดตสิทธิ์หลังยืนยันสำเร็จ",
+    learnerName: "ผู้เรียน",
+    savedCardFallback: "การ์ดการเรียนรู้ที่บันทึกไว้",
+    noExplanation: "ไม่มีคำอธิบายเพิ่มเติม",
+    demoMeaning: "คำอธิบายความหมายของ “{phrase}” จะแสดงที่นี่",
+    demoGrammar: "วลีนี้ชัดเจนและพร้อมนำไปฝึกใช้ในบริบทจริง",
+    fromLocation: "จาก {location}",
+    femaleGender: "ผู้หญิง",
+    maleGender: "ผู้ชาย",
+    nonBinaryGender: "นอนไบนารี",
     signOut: "ออกจากระบบ",
     signingOut: "กำลังออกจากระบบ…"
   },
@@ -159,6 +203,16 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     messageError: "메시지를 보내지 못했습니다. 다시 시도해 주세요.",
     settingsError: "언어 설정을 저장하지 못했습니다. 다시 시도해 주세요.",
     learningToolError: "학습 도구를 잠시 사용할 수 없습니다. 다시 시도해 주세요.",
+    paymentPending: "결제를 확인하고 있습니다. 확인이 끝나면 이용 권한이 업데이트됩니다.",
+    learnerName: "학습자",
+    savedCardFallback: "저장한 학습 카드",
+    noExplanation: "추가 설명이 제공되지 않았습니다.",
+    demoMeaning: "“{phrase}”의 명확한 뜻이 여기에 표시됩니다.",
+    demoGrammar: "이 표현은 자연스러우며 문맥 속에서 바로 연습할 수 있습니다.",
+    fromLocation: "{location} 출신",
+    femaleGender: "여성",
+    maleGender: "남성",
+    nonBinaryGender: "논바이너리",
     signOut: "로그아웃",
     signingOut: "로그아웃 중…"
   },
@@ -172,6 +226,16 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     messageError: "消息发送失败，请再试一次。",
     settingsError: "语言设置保存失败，请再试一次。",
     learningToolError: "学习工具暂时不可用，请再试一次。",
+    paymentPending: "支付仍在确认中，确认完成后会自动更新使用权限。",
+    learnerName: "学习者",
+    savedCardFallback: "已保存的学习卡片",
+    noExplanation: "没有返回更多解释。",
+    demoMeaning: "这里会显示“{phrase}”的清晰含义。",
+    demoGrammar: "这个短语表达清楚，可以放到具体语境中练习。",
+    fromLocation: "来自{location}",
+    femaleGender: "女性",
+    maleGender: "男性",
+    nonBinaryGender: "非二元性别",
     signOut: "退出登录",
     signingOut: "正在退出…"
   },
@@ -185,6 +249,16 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     messageError: "訊息傳送失敗，請再試一次。",
     settingsError: "語言設定儲存失敗，請再試一次。",
     learningToolError: "學習工具暫時無法使用，請再試一次。",
+    paymentPending: "付款仍在確認中，確認完成後會自動更新使用權限。",
+    learnerName: "學習者",
+    savedCardFallback: "已儲存的學習卡片",
+    noExplanation: "沒有傳回更多解釋。",
+    demoMeaning: "這裡會顯示「{phrase}」的清楚含義。",
+    demoGrammar: "這個片語表達清楚，可以放到具體語境中練習。",
+    fromLocation: "來自{location}",
+    femaleGender: "女性",
+    maleGender: "男性",
+    nonBinaryGender: "非二元性別",
     signOut: "登出",
     signingOut: "正在登出…"
   },
@@ -198,6 +272,16 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     messageError: "No se pudo enviar el mensaje. Vuelve a intentarlo.",
     settingsError: "No se pudo guardar la configuración de idiomas. Vuelve a intentarlo.",
     learningToolError: "La herramienta de aprendizaje no está disponible ahora. Vuelve a intentarlo.",
+    paymentPending: "El pago aún se está confirmando. El acceso se actualizará después de la confirmación.",
+    learnerName: "Estudiante",
+    savedCardFallback: "Tarjeta de aprendizaje guardada",
+    noExplanation: "No se recibió ninguna explicación adicional.",
+    demoMeaning: "Aquí aparecerá una explicación clara de “{phrase}”.",
+    demoGrammar: "Esta frase es clara y está lista para practicarla en contexto.",
+    fromLocation: "De {location}",
+    femaleGender: "Mujer",
+    maleGender: "Hombre",
+    nonBinaryGender: "No binario",
     signOut: "Cerrar sesión",
     signingOut: "Cerrando sesión…"
   }
@@ -240,10 +324,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
   const audioCapturePromiseRef = useRef<Promise<void> | null>(null);
+  const voiceFinishingRef = useRef(false);
+  const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
+      if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
       if (mediaRecorderRef.current?.state !== "inactive") mediaRecorderRef.current?.stop();
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     };
@@ -256,7 +343,6 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [profile, setProfile] = useState<JsonObject | null>(null);
   const [entitlement, setEntitlement] = useState<JsonObject | null>(null);
   const [partner, setPartner] = useState<TutorPartner | null>(null);
-  const [partners, setPartners] = useState<TutorPartner[]>([]);
   const [recentConversations, setRecentConversations] = useState<TutorConversation[]>([]);
   const [cards, setCards] = useState<JsonObject[]>([]);
   const [todayMessageCount, setTodayMessageCount] = useState(0);
@@ -300,10 +386,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         const paymentParams = new URLSearchParams(window.location.search);
         const orderId = paymentParams.get("orderId");
         if (paymentParams.get("payment") === "success" && orderId) {
+          let confirmed = false;
           try {
-            for (let attempt = 0; attempt < 6 && active; attempt += 1) {
+            for (let attempt = 0; attempt < 15 && active; attempt += 1) {
               const order = await api.billing.order(orderId);
               if (order.status === "paid") {
+                confirmed = true;
                 const billing = await api.billing.me();
                 if (active) setEntitlement(billing.entitlement as unknown as JsonObject);
                 await trackEventOnce(`payment_succeeded:${orderId}`, "payment_succeeded", {
@@ -316,8 +404,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               await wait(2000);
             }
           } catch {
-            // The conversation workspace remains usable when billing refresh is delayed.
+            // The conversation workspace remains usable while billing catches up.
           }
+          if (active && !confirmed) setApiNotice(copy.paymentPending);
         }
       } catch (error) {
         if (error instanceof ApiError && error.code === "UNAUTHENTICATED") {
@@ -342,7 +431,6 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const workspaceTitle = useMemo(() => {
     if (activeNav === "history") return copy.nav.history;
     if (activeNav === "cards") return copy.nav.cards;
-    if (activeNav === "partners") return copy.nav.partners;
     return copy.title;
   }, [activeNav, copy]);
   const selectedMessage = messages.find((message) => message.role === "tutor" && message.text === selectedPhrase);
@@ -351,8 +439,6 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     setProfile(workbench.profile || null);
     setEntitlement(workbench.entitlement || null);
     setPartner(asTutorPartner(workbench.partner));
-    const currentPartner = asTutorPartner(workbench.partner);
-    if (currentPartner) setPartners([currentPartner]);
     setCards(workbench.cards || []);
     setRecentConversations(workbench.recentConversations || []);
     setTodayMessageCount(numberValue(workbench.todayMessageCount));
@@ -379,16 +465,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         const result = await api.cards.list();
         setCards(jsonArray(result, "cards"));
       }
-      if (nextNav === "partners") {
-        const result = await api.workbench.partners();
-        setPartners(jsonArray(result, "partners").map(asTutorPartner).filter((item): item is TutorPartner => Boolean(item)));
-      }
       if (nextNav === "history") {
         const result = await api.conversations.list("limit=20");
         setRecentConversations(Array.isArray(result.items) ? result.items : jsonArray(result, "conversations") as unknown as TutorConversation[]);
       }
-    } catch {
-      setApiNotice(copy.learningToolError);
+    } catch (error) {
+      setApiNotice(apiErrorMessage(error, copy.learningToolError));
     }
   }
 
@@ -426,8 +508,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       const remoteMessages = getConversationMessages(conversation);
       if (remoteMessages.length > 0) setMessages(remoteMessages);
       await trackEvent("conversation_started", { mode: nextMode });
-    } catch {
-      setApiNotice(copy.newConversationError);
+    } catch (error) {
+      setApiNotice(apiErrorMessage(error, copy.newConversationError));
     } finally {
       setIsApiBusy(false);
     }
@@ -457,16 +539,22 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
   async function sendMessageText(text: string, inputType: "text" | "voice" = "text", audioBlob?: Blob | null) {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !(inputType === "voice" && audioBlob)) return;
     const clientMessageId = crypto.randomUUID();
-    const userMessage: Message = { id: clientMessageId, role: "user", text: trimmed };
-    setMessages((current) => [...current, userMessage]);
+    if (trimmed) {
+      const userMessage: Message = { id: clientMessageId, role: "user", text: trimmed };
+      setMessages((current) => [...current, userMessage]);
+    }
     setInput("");
     setApiNotice("");
 
     if (!isRemoteSession) {
       if (isRemoteUnavailable) {
         setApiNotice(copy.remoteUnavailable);
+        return;
+      }
+      if (!trimmed) {
+        setVoiceNotice(copy.voiceUnclear);
         return;
       }
       setMessages((current) => [
@@ -509,7 +597,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               conversationId: currentConversationId,
               audioPath,
               mimeType,
-              durationMs: Math.max(1, Date.now() - (voiceStartedAtRef.current || Date.now())),
+              durationMs: Math.min(600000, Math.max(1, Date.now() - (voiceStartedAtRef.current || Date.now()))),
               languageCode: sourceLanguageCode
             });
             audioId = stringValue(voiceInput.id) || stringValue(voiceInput.audioId);
@@ -524,6 +612,11 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               transcript = transcription.transcript.trim();
             }
           }
+        }
+
+        if (!transcript) throw new Error("Voice transcription did not return text.");
+        if (!trimmed) {
+          setMessages((current) => [...current, { id: clientMessageId, role: "user", text: transcript }]);
         }
 
         const messageBody = {
@@ -559,7 +652,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     } catch (error) {
       const message = error instanceof ApiError && error.code === "AI_PROVIDER_ERROR"
         ? copy.providerError
-        : copy.messageError;
+        : apiErrorMessage(error, copy.messageError);
       setApiNotice(message);
     } finally {
       setIsApiBusy(false);
@@ -574,23 +667,33 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     if (isListening) return;
 
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!Recognition) {
+    const canRecord = "mediaDevices" in navigator && typeof MediaRecorder !== "undefined";
+    if (!Recognition && !canRecord) {
       setVoiceNotice(copy.voiceUnsupported);
       return;
     }
 
-    const recognition = new Recognition();
     voiceCancelledRef.current = false;
+    voiceFinishingRef.current = false;
     voiceStartedAtRef.current = Date.now();
+    voiceTranscriptRef.current = "";
+    setVoiceNotice(copy.releaseToSend);
+    setIsListening(true);
+    void trackEvent("voice_recording_started", { mode });
+    audioCapturePromiseRef.current = canRecord ? startAudioCapture() : Promise.resolve();
+    voiceTimeoutRef.current = setTimeout(() => {
+      setVoiceNotice(copy.sending);
+      if (recognitionRef.current) recognitionRef.current.stop();
+      else void finishVoiceInput();
+    }, 600000);
+
+    if (!Recognition) return;
+
+    const recognition = new Recognition();
     recognition.lang = mode === "sayIt" ? getSpeechLocale(nativeLanguage) : getSpeechLocale(learningLanguage);
     recognition.continuous = false;
     recognition.interimResults = true;
-    voiceTranscriptRef.current = "";
-    recognition.onstart = () => {
-      setVoiceNotice(copy.releaseToSend);
-      setIsListening(true);
-      void trackEvent("voice_recording_started", { mode });
-    };
+    recognition.onstart = null;
     recognition.onresult = (event) => {
       const transcript = Array.from({ length: event.results.length }, (_, index) => event.results[index][0].transcript)
         .join(" ")
@@ -599,9 +702,6 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       setInput(transcript);
     };
     recognition.onerror = (event) => {
-      setIsListening(false);
-      voiceTranscriptRef.current = "";
-      void finishAudioCapture();
       setVoiceNotice(
         event.error === "not-allowed"
           ? copy.micDenied
@@ -612,22 +712,25 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       void finishVoiceInput();
     };
     recognitionRef.current = recognition;
-    setVoiceNotice("");
-    audioCapturePromiseRef.current = startAudioCapture();
-    recognition.start();
+    try {
+      recognition.start();
+    } catch {
+      recognitionRef.current = null;
+    }
   }
 
   function stopVoiceInput() {
-    if (!recognitionRef.current) return;
-    recognitionRef.current.stop();
+    if (!isListening) return;
     setVoiceNotice(copy.sending);
+    if (recognitionRef.current) recognitionRef.current.stop();
+    else void finishVoiceInput();
   }
 
   function cancelVoiceInput() {
-    if (!recognitionRef.current) return;
     voiceCancelledRef.current = true;
-    recognitionRef.current.stop();
     setVoiceNotice("");
+    if (recognitionRef.current) recognitionRef.current.stop();
+    else void finishVoiceInput();
   }
 
   async function startAudioCapture() {
@@ -679,19 +782,29 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   async function finishVoiceInput() {
+    if (voiceFinishingRef.current) return;
+    voiceFinishingRef.current = true;
     setIsListening(false);
     recognitionRef.current = null;
+    if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
+    voiceTimeoutRef.current = null;
     const transcript = voiceTranscriptRef.current.trim();
     voiceTranscriptRef.current = "";
     const audioBlob = await finishAudioCapture();
     const cancelled = voiceCancelledRef.current;
     voiceCancelledRef.current = false;
 
-    if (transcript && !cancelled) {
-      await sendMessageText(transcript, "voice", audioBlob);
-      setVoiceNotice(copy.sent);
+    try {
+      if ((transcript || audioBlob) && !cancelled) {
+        await sendMessageText(transcript, "voice", audioBlob);
+        setVoiceNotice(copy.sent);
+      } else if (!cancelled) {
+        setVoiceNotice(copy.voiceUnclear);
+      }
+    } finally {
+      voiceFinishingRef.current = false;
+      voiceStartedAtRef.current = null;
     }
-    voiceStartedAtRef.current = null;
   }
 
   async function saveLanguageSettings() {
@@ -705,8 +818,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         levelCode: levelCode(level)
       });
       setApiNotice("");
-    } catch {
-      setApiNotice(copy.settingsError);
+    } catch (error) {
+      setApiNotice(apiErrorMessage(error, copy.settingsError));
     }
   }
 
@@ -756,7 +869,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     setInsightText("");
     try {
       if (!isRemoteSession || targetMessage?.id.startsWith("demo-")) {
-        setInsightText(kind === "translate" ? `A clear meaning for '${phrase}' will appear here.` : "This phrase is clear and ready to practice in context.");
+        setInsightText(kind === "translate" ? copy.demoMeaning.replace("{phrase}", phrase) : copy.demoGrammar);
         return;
       }
       const result = targetMessage
@@ -764,9 +877,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         : (kind === "translate"
           ? await api.messages.translateText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })
           : await api.messages.grammarText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })) as InsightResult;
-      setInsightText(insightContent(result.content));
-    } catch {
-      setApiNotice(copy.learningToolError);
+      setInsightText(insightContent(result.content, copy.noExplanation));
+    } catch (error) {
+      setApiNotice(apiErrorMessage(error, copy.learningToolError));
     } finally {
       setIsInsightBusy(false);
     }
@@ -788,9 +901,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         } else {
           speakText(message.text);
         }
-      } catch {
+      } catch (error) {
         speakText(message.text);
-        setApiNotice(copy.learningToolError);
+        setApiNotice(apiErrorMessage(error, copy.learningToolError));
       }
       return;
     }
@@ -809,15 +922,15 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         });
         await trackEvent("learning_card_saved", { messageId: message.id });
       }
-    } catch {
-      setApiNotice(copy.learningToolError);
+    } catch (error) {
+      setApiNotice(apiErrorMessage(error, copy.learningToolError));
     }
   }
 
   return (
     <main className="workbench-shell">
       <aside className="workbench-sidebar">
-        <BrandMark href={localizedPath(locale, "/")} />
+        <BrandMark href={localizedPath(locale, "/")} locale={locale} />
         <nav className="workbench-nav" aria-label={copy.nav.aria}>
           {navItems.map(({ key, icon: Icon }) => (
             <button
@@ -832,9 +945,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           ))}
         </nav>
         <button className="workbench-account" type="button" onClick={() => void handleLogout()} disabled={isSigningOut} aria-label={copy.signOut}>
-            <span className="account-avatar">{profileName(profile).slice(0, 1).toUpperCase()}</span>
+            <span className="account-avatar">{profileName(profile, copy.learnerName).slice(0, 1).toUpperCase()}</span>
             <span>
-              <strong>{profileName(profile)}</strong>
+              <strong>{profileName(profile, copy.learnerName)}</strong>
               <small>{planName(entitlement, copy.accountPlan)}</small>
           </span>
           {isSigningOut ? <span className="account-signout-status">{copy.signingOut}</span> : <LogOut size={17} aria-hidden="true" />}
@@ -870,18 +983,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
             </div>
             <div>
                <h2>{partner?.name || "Clara Ruiz"}</h2>
-               <strong>{partner ? partnerMeta(partner, copy.partnerGenderOrigin) : copy.partnerGenderOrigin}</strong>
-               <p>{partner?.description || copy.partnerDescription}</p>
+               <strong>{partner ? partnerMeta(partner, copy) : copy.partnerGenderOrigin}</strong>
+               <p>{localizedPartnerDescription(partner?.description, copy.partnerDescription)}</p>
             </div>
           </div>
           <div className="partner-actions">
             <button type="button" onClick={() => setPartnerOpen((open) => !open)}>
               <Settings2 size={17} aria-hidden="true" />
               {copy.customize}
-            </button>
-            <button type="button" onClick={() => { setPartnerOpen(false); void selectNav("partners"); }}>
-              <Users size={17} aria-hidden="true" />
-              {copy.changePartner}
             </button>
           </div>
         </section>
@@ -1127,7 +1236,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           {copy.privateNote}
           <ArrowRight size={14} aria-hidden="true" />
         </div>
-        </> : <WorkbenchNavView activeNav={activeNav} copy={copy} conversations={recentConversations} cards={cards} partners={partners} onChoosePartner={(nextPartner) => { setPartner(nextPartner); setActiveNav("home"); }} />}
+        </> : <WorkbenchNavView activeNav={activeNav} copy={copy} locale={locale} conversations={recentConversations} cards={cards} />}
       </section>
 
       {languageModalOpen ? (
@@ -1180,12 +1289,13 @@ function asTutorPartner(value: unknown): TutorPartner | null {
   };
 }
 
-function profileName(profile: JsonObject | null) {
-  return stringValue(profile?.displayName) || stringValue(profile?.display_name) || stringValue(profile?.name) || stringValue(profile?.email) || "Learner";
+function profileName(profile: JsonObject | null, fallback: string) {
+  return stringValue(profile?.displayName) || stringValue(profile?.display_name) || stringValue(profile?.name) || stringValue(profile?.email) || fallback;
 }
 
 function planName(entitlement: JsonObject | null, fallback: string) {
-  return stringValue(entitlement?.planName) || stringValue(entitlement?.plan_name) || stringValue(entitlement?.plan) || fallback;
+  const name = stringValue(entitlement?.planName) || stringValue(entitlement?.plan_name) || stringValue(entitlement?.plan);
+  return !name || name.toLowerCase() === "free" ? fallback : name;
 }
 
 function numberValue(value: unknown) {
@@ -1200,35 +1310,47 @@ function usageNumber(value: JsonObject | null, keys: string[]) {
   return 0;
 }
 
-function partnerMeta(partner: TutorPartner, fallback: string) {
-  const details = [partner.gender, partner.location ? `From ${partner.location}` : undefined].filter(Boolean);
-  return details.length > 0 ? details.join(" · ") : fallback;
+function partnerMeta(partner: TutorPartner, copy: WorkbenchCopy) {
+  const genderLabels: Record<string, string> = {
+    female: copy.femaleGender,
+    woman: copy.femaleGender,
+    male: copy.maleGender,
+    man: copy.maleGender,
+    "non-binary": copy.nonBinaryGender,
+    nonbinary: copy.nonBinaryGender
+  };
+  const gender = partner.gender ? genderLabels[partner.gender.toLowerCase()] || partner.gender : undefined;
+  const location = partner.location ? copy.fromLocation.replace("{location}", partner.location) : undefined;
+  const details = [gender, location].filter(Boolean);
+  return details.length > 0 ? details.join(" · ") : copy.partnerGenderOrigin;
 }
 
-function cardText(card: JsonObject) {
-  return stringValue(card.phrase) || stringValue(card.content) || stringValue(card.text) || stringValue(card.front) || "Saved learning card";
+function localizedPartnerDescription(description: string | undefined, fallback: string) {
+  return !description || description.toLowerCase() === "calm, observant, gently witty" ? fallback : description;
+}
+
+function cardText(card: JsonObject, fallback: string) {
+  return stringValue(card.phrase) || stringValue(card.content) || stringValue(card.text) || stringValue(card.front) || fallback;
 }
 
 function WorkbenchNavView({
   activeNav,
   copy,
+  locale,
   conversations,
-  cards,
-  partners,
-  onChoosePartner
+  cards
 }: {
   activeNav: NavItem;
-  copy: ProductCopy["workbench"];
+  copy: WorkbenchCopy;
+  locale: Locale;
   conversations: TutorConversation[];
   cards: JsonObject[];
-  partners: TutorPartner[];
-  onChoosePartner: (partner: TutorPartner) => void;
 }) {
   if (activeNav === "history") {
     return (
       <section className="workbench-secondary-view">
         <div className="secondary-view-heading"><History size={22} aria-hidden="true" /><div><span className="panel-label">{copy.nav.history}</span><h2>{copy.nav.history}</h2></div></div>
-        {conversations.length > 0 ? <div className="secondary-view-list">{conversations.map((conversation) => <article className="secondary-view-item" key={conversation.id}><strong>{conversation.mode === "talk" ? copy.talkMode : copy.sayItMode}</strong><span>{conversation.createdAt ? new Date(conversation.createdAt).toLocaleDateString() : copy.today}</span><small>{conversation.messages?.length || 0} {copy.stats[1].toLowerCase()}</small></article>)}</div> : <p className="secondary-view-empty">{copy.privateNote}</p>}
+        {conversations.length > 0 ? <div className="secondary-view-list">{conversations.map((conversation) => <article className="secondary-view-item" key={conversation.id}><strong>{conversation.mode === "talk" ? copy.talkMode : copy.sayItMode}</strong><span>{conversation.createdAt ? new Date(conversation.createdAt).toLocaleDateString(locale) : copy.today}</span><small>{conversation.messages?.length || 0} {copy.stats[1].toLowerCase()}</small></article>)}</div> : <p className="secondary-view-empty">{copy.privateNote}</p>}
       </section>
     );
   }
@@ -1237,17 +1359,12 @@ function WorkbenchNavView({
     return (
       <section className="workbench-secondary-view">
         <div className="secondary-view-heading"><BookOpen size={22} aria-hidden="true" /><div><span className="panel-label">{copy.nav.cards}</span><h2>{copy.nav.cards}</h2></div></div>
-        {cards.length > 0 ? <div className="secondary-view-list">{cards.map((card, index) => <article className="secondary-view-item" key={stringValue(card.id) || `card-${index}`}><strong>{cardText(card)}</strong><span>{stringValue(card.translation) || stringValue(card.meaning) || copy.selectedTranslateBody}</span></article>)}</div> : <p className="secondary-view-empty">{copy.insightEmptyBody}</p>}
+        {cards.length > 0 ? <div className="secondary-view-list">{cards.map((card, index) => <article className="secondary-view-item" key={stringValue(card.id) || `card-${index}`}><strong>{cardText(card, copy.savedCardFallback)}</strong><span>{stringValue(card.translation) || stringValue(card.meaning) || copy.selectedTranslateBody}</span></article>)}</div> : <p className="secondary-view-empty">{copy.insightEmptyBody}</p>}
       </section>
     );
   }
 
-  return (
-    <section className="workbench-secondary-view">
-      <div className="secondary-view-heading"><Users size={22} aria-hidden="true" /><div><span className="panel-label">{copy.nav.partners}</span><h2>{copy.nav.partners}</h2></div></div>
-      {partners.length > 0 ? <div className="secondary-view-list">{partners.map((item) => <article className="secondary-view-item partner-item" key={item.id}><div><strong>{item.name}</strong><span>{[item.gender, item.location].filter(Boolean).join(" · ") || copy.partnerGenderOrigin}</span><small>{item.description || copy.partnerDescription}</small></div><button type="button" onClick={() => onChoosePartner(item)}>{copy.changePartner}</button></article>)}</div> : <p className="secondary-view-empty">{copy.partnerReady}</p>}
-    </section>
-  );
+  return null;
 }
 
 function getSpeechLocale(language: string) {
@@ -1268,9 +1385,17 @@ function stringValue(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function insightContent(content: InsightResult["content"]) {
+function insightContent(content: InsightResult["content"], fallback: string) {
   if (typeof content === "string") return content;
-  return content?.text || content?.suggestion || content?.explanation || content?.note || "No extra explanation was returned.";
+  return content?.text || content?.suggestion || content?.explanation || content?.note || fallback;
+}
+
+function apiErrorMessage(error: unknown, fallback: string) {
+  if (!(error instanceof ApiError)) return fallback;
+  if (["QUOTA_EXCEEDED", "FORBIDDEN", "VALIDATION_ERROR", "CENTRAL_API_UNAVAILABLE"].includes(error.code)) {
+    return error.message;
+  }
+  return fallback;
 }
 
 function wait(milliseconds: number) {

@@ -2422,6 +2422,7 @@ h1 {
 }
 
 .auth-dialog-google:disabled,
+.auth-dialog-email button:disabled,
 .pricing-lite-button:disabled,
 .new-conversation:disabled,
 .send-button:disabled {
@@ -2440,6 +2441,76 @@ h1 {
   background: #ffffff;
   font-size: 14px;
   font-weight: 1000;
+}
+
+.auth-dialog-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+  color: #a0a2a6;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: lowercase;
+}
+
+.auth-dialog-divider::before,
+.auth-dialog-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: #e9dfd5;
+}
+
+.auth-dialog-email {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-dialog-email label {
+  color: #5f646c;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.auth-dialog-email input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #ddd3c9;
+  border-radius: 12px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.auth-dialog-email input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(36, 68, 255, 0.1);
+}
+
+.auth-dialog-email button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  border: 1px solid #d7cec4;
+  border-radius: 12px;
+  color: var(--ink);
+  background: #fffaf3;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.auth-dialog-email button:hover {
+  border-color: var(--blue);
+  color: var(--blue);
 }
 
 .auth-dialog-note {
@@ -2471,7 +2542,8 @@ h1 {
 }
 
 .auth-dialog-status,
-.auth-dialog-error {
+.auth-dialog-error,
+.auth-dialog-success {
   margin: 12px 0 0;
   font-size: 12px;
   line-height: 1.45;
@@ -2484,6 +2556,10 @@ h1 {
 
 .auth-dialog-error {
   color: #bf4c3e;
+}
+
+.auth-dialog-success {
+  color: #287c58;
 }
 
 .spin {

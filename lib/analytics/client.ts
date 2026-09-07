@@ -43,6 +43,24 @@ export function getBrowserIdentity() {
   };
 }
 
+export function getScopedStorageKey(baseKey: string, scope: string | null | undefined) {
+  const normalizedScope = scope?.trim();
+  return `${baseKey}:${normalizedScope || "anonymous"}`;
+}
+
+export function getAnonymousMergeStorageKey(anonymousId: string, userId: string) {
+  return `ai-tutor-anonymous-merged:${anonymousId}:${userId}`;
+}
+
+export function markAnonymousIdentityMerged(anonymousId: string, userId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(getAnonymousMergeStorageKey(anonymousId, userId), "1");
+  } catch {
+    // Storage failures must not block a successful login or merge.
+  }
+}
+
 export async function trackEvent(event: string, properties: Record<string, unknown> = {}) {
   const writeKey = process.env.NEXT_PUBLIC_ZHYADMIN_WRITE_KEY?.trim();
   if (!writeKey || !isProductionSite()) return false;

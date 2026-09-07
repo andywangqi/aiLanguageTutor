@@ -68,6 +68,14 @@ export type ProductCopy = {
     lead: string;
     google: string;
     googleLoading: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    emailCta: string;
+    emailSending: string;
+    emailSent: string;
+    invalidEmail: string;
+    emailError: string;
+    orContinueWith: string;
     accountNote: string;
     demoMode: string;
     callbackError: string;

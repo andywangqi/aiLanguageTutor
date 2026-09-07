@@ -25,7 +25,7 @@ export function InfoPage({ eyebrow, title, lead, updated, locale = "en", copy, c
     <div className="info-page">
       <header className="info-header">
         <div className="container info-header-inner">
-          <BrandMark href={localizedPath(locale, "/")} />
+          <BrandMark href={localizedPath(locale, "/")} locale={locale} />
           <div className="info-header-actions">
             <LanguageSwitcher currentLocale={locale} />
             <Link className="info-home-link" href={localizedPath(locale, "/")}>

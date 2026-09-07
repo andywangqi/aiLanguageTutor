@@ -1,6 +1,7 @@
 "use client";
 
 import { getBrowserIdentity } from "@/lib/analytics/client";
+import { localeFromPathname, localizedPath } from "@/lib/i18n/config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
   ApiEnvelope,
@@ -15,6 +16,11 @@ import type {
   LanguageSettings,
   LearningCard,
   MessageOutput,
+  ReadingAudio,
+  ReadingAttempt,
+  ReadingMaterialBundle,
+  ReadingProgress,
+  ReadingUpload,
   SendMessageResult,
   TutorConversation,
   VoiceInput,
@@ -45,6 +51,10 @@ async function request<T>(path: string, options: RequestOptions = {}) {
     "X-Request-Id": `req_${crypto.randomUUID()}`
   });
 
+  const identity = getBrowserIdentity();
+  if (identity.anonymousId) headers.set("X-Browser-Id", identity.anonymousId);
+  if (identity.sessionId) headers.set("X-Session-Id", identity.sessionId);
+
   if (token) headers.set("Authorization", `Bearer ${token}`);
   if (options.idempotencyKey) headers.set("Idempotency-Key", options.idempotencyKey);
 
@@ -65,11 +75,19 @@ async function request<T>(path: string, options: RequestOptions = {}) {
 
   if (!response.ok) {
     const envelope = payload && typeof payload === "object" && "error" in payload ? (payload as ApiEnvelope<T>) : undefined;
-    throw new ApiError(
+    const error = new ApiError(
       envelope?.error || { code: "HTTP_ERROR", message: "The request could not be completed." },
       response.status,
       envelope?.requestId
     );
+    if (path !== "auth/logout" && (error.code === "UNAUTHENTICATED" || error.status === 401)) {
+      const supabase = createSupabaseBrowserClient();
+      await supabase?.auth.signOut();
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      const loginPath = localizedPath(localeFromPathname(window.location.pathname), "/login");
+      window.location.assign(`${loginPath}?next=${encodeURIComponent(currentPath)}`);
+    }
+    throw error;
   }
 
   if (payload && typeof payload === "object" && "data" in payload) {
@@ -87,9 +105,15 @@ export const api = {
   auth: {
     async sync() {
       const identity = getBrowserIdentity();
+      const supabase = createSupabaseBrowserClient();
+      const session = await supabase?.auth.getSession();
+      const userId = session?.data.session?.user.id;
       return request<JsonObject>("auth/sync", {
         method: "POST",
-        body: { ...identity, path: window.location.pathname }
+        body: { ...identity, path: window.location.pathname },
+        idempotencyKey: identity.anonymousId && userId
+          ? `auth_sync:${identity.anonymousId}:${userId}`
+          : undefined
       });
     },
     async logout() {
@@ -240,6 +264,46 @@ export const api = {
       return request<BillingSubscription>(`billing/subscriptions/${encodeURIComponent(subscriptionId)}/resume`, {
         method: "POST"
       });
+    }
+  },
+  reading: {
+    sample(interfaceLocale: string) {
+      return request<ReadingMaterialBundle>(`reading/lessons/sample?interfaceLocale=${encodeURIComponent(interfaceLocale)}`);
+    },
+    createMaterial(body: JsonObject) {
+      return request<ReadingMaterialBundle>("reading/materials", {
+        method: "POST",
+        body,
+        idempotencyKey: createIdempotencyKey("reading_material")
+      });
+    },
+    getMaterial(id: string, interfaceLocale: string) {
+      return request<ReadingMaterialBundle>(`reading/materials/${encodeURIComponent(id)}?interfaceLocale=${encodeURIComponent(interfaceLocale)}`);
+    },
+    listMaterials(query = "") {
+      return request<JsonObject>(`reading/materials${query ? `?${query}` : ""}`);
+    },
+    saveNotes(id: string, content: string) {
+      return request<JsonObject>(`reading/materials/${encodeURIComponent(id)}/notes`, {
+        method: "PUT",
+        body: { content }
+      });
+    },
+    submitAttempt(id: string, answers: Array<{ questionId: string; optionIndex: number }>) {
+      return request<ReadingAttempt>(`reading/materials/${encodeURIComponent(id)}/attempts`, {
+        method: "POST",
+        body: { answers },
+        idempotencyKey: createIdempotencyKey("reading_attempt")
+      });
+    },
+    progress(id: string) {
+      return request<ReadingProgress>(`reading/materials/${encodeURIComponent(id)}/progress`);
+    },
+    uploadUrl(body: JsonObject) {
+      return request<ReadingUpload>("reading/uploads/upload-url", { method: "POST", body });
+    },
+    audio(id: string, body: JsonObject = {}) {
+      return request<ReadingAudio>(`reading/materials/${encodeURIComponent(id)}/audio`, { method: "POST", body });
     }
   }
 };

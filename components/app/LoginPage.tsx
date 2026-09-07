@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Check, LoaderCircle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { BrandMark } from "./BrandMark";
 import { trackEvent } from "@/lib/analytics/client";
 import { isSupabaseConfigured, createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -16,6 +16,8 @@ export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionar
   const [nextPath, setNextPath] = useState(localizedPath(locale, "/app"));
   const [callbackError, setCallbackError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -27,6 +29,7 @@ export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionar
 
   async function handleGoogleSignIn() {
     setError("");
+    setEmailSent(false);
     setIsLoading(true);
     await trackEvent("login_started", { provider: "google" });
 
@@ -50,6 +53,43 @@ export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionar
     }
   }
 
+  async function handleEmailSignIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setEmailSent(false);
+
+    const normalizedEmail = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError(copy.invalidEmail);
+      return;
+    }
+
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) {
+      setError(copy.emailError);
+      return;
+    }
+
+    setIsLoading(true);
+    await trackEvent("login_started", { provider: "email" });
+    const { error: signInError } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+      }
+    });
+
+    if (signInError) {
+      setError(copy.emailError);
+      void trackEvent("login_failed", { provider: "email", error_code: signInError.code || "EMAIL_OTP_ERROR" });
+    } else {
+      setEmailSent(true);
+      void trackEvent("email_login_link_sent", { provider: "email" });
+    }
+    setIsLoading(false);
+  }
+
   return (
     <main className="auth-modal-page" aria-label={copy.ariaLabel}>
       <div className="auth-dialog-card" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title">
@@ -57,7 +97,7 @@ export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionar
           <X size={18} aria-hidden="true" />
         </Link>
         <div className="auth-dialog-brand">
-          <BrandMark href={localizedPath(locale, "/")} />
+          <BrandMark href={localizedPath(locale, "/")} locale={locale} />
         </div>
 
         <div className="auth-dialog-copy">
@@ -73,6 +113,34 @@ export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionar
           {isLoading ? copy.googleLoading : copy.google}
           {isLoading ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}
         </button>
+
+        <div className="auth-dialog-divider"><span>{copy.orContinueWith}</span></div>
+
+        <form className="auth-dialog-email" onSubmit={handleEmailSignIn} noValidate>
+          <label htmlFor="auth-email">{copy.emailLabel}</label>
+          <input
+            id="auth-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            placeholder={copy.emailPlaceholder}
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (error) setError("");
+              if (emailSent) setEmailSent(false);
+            }}
+            aria-invalid={Boolean(error)}
+          />
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
+            {isLoading ? copy.emailSending : copy.emailCta}
+            {!isLoading ? <ArrowRight size={16} aria-hidden="true" /> : null}
+          </button>
+        </form>
+
+        {emailSent ? <p className="auth-dialog-success" role="status">{copy.emailSent}</p> : null}
 
         <div className="auth-dialog-note">
           <Check size={15} aria-hidden="true" />

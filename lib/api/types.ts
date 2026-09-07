@@ -259,3 +259,96 @@ export type BillingMe = {
   orders: BillingOrder[];
   subscriptions: BillingSubscription[];
 };
+
+export type ReadingMaterial = {
+  id: string;
+  kind: "sample" | "user_text" | string;
+  ownerUserId: string | null;
+  title: string;
+  content: string;
+  contentLanguageCode: string;
+  sourceFileName: string | null;
+  status: "ready" | "processing" | "failed" | string;
+  wordCount: number;
+  estimatedMinutes: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReadingVocabularyItem = {
+  id: string;
+  materialId: string;
+  word: string;
+  meaning: string;
+  example: string;
+  displayOrder: number;
+  audioUrl?: string | null;
+};
+
+export type ReadingQuestion = {
+  id: string;
+  materialId: string;
+  prompt: string;
+  options: string[];
+  displayOrder: number;
+  correctOptionIndex?: number;
+};
+
+export type ReadingNotes = {
+  materialId: string;
+  content: string;
+  updatedAt: string | null;
+};
+
+export type ReadingProgress = {
+  materialId: string;
+  readCompleted?: boolean;
+  vocabularyViewed?: boolean;
+  questionCount: number;
+  answeredCount: number;
+  correctCount: number;
+  notesUpdatedAt?: string | null;
+  lastOpenedAt?: string | null;
+};
+
+export type ReadingMaterialBundle = {
+  material: ReadingMaterial;
+  vocabulary: ReadingVocabularyItem[];
+  questions: ReadingQuestion[];
+  notes?: ReadingNotes | null;
+  progress?: ReadingProgress | null;
+  ui?: {
+    category?: string;
+    duration?: string;
+    keyIdea?: string;
+    tipTitle?: string;
+    tipBody?: string;
+  };
+};
+
+export type ReadingAttempt = {
+  attemptId: string;
+  materialId: string;
+  score: number;
+  total: number;
+  answers: Array<{
+    questionId: string;
+    selectedOptionIndex: number;
+    correct: boolean;
+    correctOptionIndex?: number;
+  }>;
+  completedAt: string;
+};
+
+export type ReadingUpload = {
+  signedUrl: string;
+  objectPath?: string;
+  path?: string;
+  bucket?: string;
+  expiresIn?: number;
+};
+
+export type ReadingAudio = {
+  audioUrl: string;
+  expiresAt?: string;
+};

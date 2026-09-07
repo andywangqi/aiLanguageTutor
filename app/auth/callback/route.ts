@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
   const locale = localeForPath(nextPath);
   const response = NextResponse.redirect(new URL(nextPath, request.url));
   const code = url.searchParams.get("code");
+  const tokenHash = url.searchParams.get("token_hash");
+  const otpType = url.searchParams.get("type");
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(errorUrl);
   }
 
-  if (!code || !supabaseUrl || !publishableKey) return response;
+  if ((!code && !tokenHash) || !supabaseUrl || !publishableKey) return response;
 
   const cookieStore = await cookies();
   const supabase = createServerClient(supabaseUrl, publishableKey, {
@@ -43,7 +45,14 @@ export async function GET(request: NextRequest) {
     }
   });
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = code
+    ? await supabase.auth.exchangeCodeForSession(code)
+    : await supabase.auth.verifyOtp({
+        token_hash: tokenHash!,
+        type: otpType === "signup" || otpType === "invite" || otpType === "magiclink" || otpType === "recovery" || otpType === "email_change" || otpType === "email"
+          ? otpType
+          : "email"
+      });
   if (error) {
     const errorUrl = new URL(localizedPath(locale, "/login"), request.url);
     errorUrl.searchParams.set("error", "auth_callback");

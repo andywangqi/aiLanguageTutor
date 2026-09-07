@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { getCentralEndpoint, getProductSiteUrl } from "@/lib/site-config";
-import { handleLocalProductApi } from "@/lib/api/local-product";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +47,21 @@ function isAllowed(method: string, segments: string[]) {
     if (segments.length === 3) return method === "GET";
     if (segments.length === 4 && segments[3] === "transcribe") return method === "POST";
   }
+  if (segments[0] === "reading" && segments[1] === "lessons" && segments[2] === "sample" && segments.length === 3) {
+    return method === "GET";
+  }
+  if (segments[0] === "reading" && segments[1] === "uploads" && segments[2] === "upload-url" && segments.length === 3) {
+    return method === "POST";
+  }
+  if (segments[0] === "reading" && segments[1] === "materials") {
+    if (segments.length === 2) return method === "GET" || method === "POST";
+    if (!isId(segments[2])) return false;
+    if (segments.length === 3) return method === "GET";
+    if (segments.length === 4 && segments[3] === "notes") return method === "PUT";
+    if (segments.length === 4 && segments[3] === "attempts") return method === "POST";
+    if (segments.length === 4 && segments[3] === "progress") return method === "GET";
+    if (segments.length === 4 && segments[3] === "audio") return method === "POST";
+  }
   return false;
 }
 
@@ -76,9 +90,6 @@ async function forward(request: NextRequest, segments: string[]) {
     );
   }
 
-  const localResponse = await handleLocalProductApi(request, segments, id);
-  if (localResponse) return localResponse;
-
   if (segments.join("/") === "track" && !isProductionHost(request)) {
     return new Response(null, { status: 204, headers: { "X-Request-Id": id } });
   }
@@ -91,7 +102,7 @@ async function forward(request: NextRequest, segments: string[]) {
     Accept: request.headers.get("Accept") || "application/json",
     "X-Request-Id": id
   });
-  for (const headerName of ["Authorization", "Content-Type", "Idempotency-Key", "X-Site-Key"]) {
+  for (const headerName of ["Authorization", "Content-Type", "Idempotency-Key", "X-Site-Key", "X-Browser-Id", "X-Session-Id"]) {
     const value = request.headers.get(headerName);
     if (value) headers.set(headerName, value);
   }

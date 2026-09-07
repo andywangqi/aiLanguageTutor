@@ -7,6 +7,7 @@ import type { LandingDictionary } from "@/lib/i18n/types";
 import type { Locale } from "@/lib/i18n/config";
 import { localizedPath, localePath } from "@/lib/i18n/config";
 import { trackEvent } from "@/lib/analytics/client";
+import { homeUiCopy } from "@/lib/i18n/home-ui-copy";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const labels: Record<Locale, { how: string; languages: string; pricing: string; blog: string; signIn: string; start: string }> = {
@@ -25,12 +26,13 @@ function scrollToSection(id: string) {
 
 export function Header({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
   const copy = labels[locale];
+  const ui = homeUiCopy[locale];
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <header className="site-header home-v1-header">
       <div className="container home-v1-header-inner">
-        <Link className="home-v1-brand" href={localePath(locale)} aria-label={`${dictionary.footer.brand} home`}>
+        <Link className="home-v1-brand" href={localePath(locale)} aria-label={ui.brandHome}>
           <span className="home-v1-brand-mark"><img src="/arno.svg" alt="" /></span>
           <span>AI Language Tutor</span>
         </Link>
@@ -61,7 +63,7 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
           <button
             className="home-v1-menu"
             type="button"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileMenuOpen ? ui.closeMenu : ui.openMenu}
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((value) => !value)}
           >

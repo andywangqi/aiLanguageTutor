@@ -706,6 +706,14 @@ Content-Type: application/json
 }
 ```
 
+The preferred browser flow is `POST /api/auth/sync` after Supabase session
+creation. It carries the anonymous identity and uses a stable idempotency key
+per `(siteType, anonymousId, authenticated user)`. The server must derive the
+authenticated user from the bearer token, merge the anonymous records
+atomically, and consume or rebind the source identity after success. A later
+request made with the source anonymous identity must not expose the merged
+records. The merge must never move records between two authenticated users.
+
 ### 8.5 中央后台给本站的回包约定
 
 建议中央后台对所有写接口返回：

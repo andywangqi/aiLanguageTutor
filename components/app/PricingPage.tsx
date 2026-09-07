@@ -28,22 +28,37 @@ function planNumericAmount(plan: BillingPlan) {
   return null;
 }
 
-function formatCurrency(amount: number, currency = "USD") {
+function formatCurrency(amount: number, currency = "USD", locale: Locale = "en") {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount);
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
   } catch {
     return `${currency} ${amount.toFixed(2)}`;
   }
 }
 
-function planAmount(plan: BillingPlan, fallback: string) {
+function planAmount(plan: BillingPlan, fallback: string, locale: Locale) {
   const amount = planNumericAmount(plan);
-  if (amount !== null) return formatCurrency(amount, plan.currency || "USD");
+  if (amount !== null) return formatCurrency(amount, plan.currency || "USD", locale);
   return fallback;
 }
 
 function replacePercentage(copy: string, percentage: number) {
   return /\d+%/.test(copy) ? copy.replace(/\d+%/, `${percentage}%`) : copy;
+}
+
+function checkoutOrderId(details: unknown) {
+  if (!details || typeof details !== "object") return undefined;
+  const value = details as Record<string, unknown>;
+  if (typeof value.orderId === "string") return value.orderId;
+  if (value.order && typeof value.order === "object") {
+    const nestedId = (value.order as Record<string, unknown>).id;
+    if (typeof nestedId === "string") return nestedId;
+  }
+  return undefined;
+}
+
+function delay(milliseconds: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
 export function PricingPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
@@ -102,6 +117,32 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
     ? Math.max(0, Math.round((1 - annualAmount / annualOriginal) * 100))
     : null;
 
+  async function reconcileCheckout(details: unknown) {
+    setCheckoutInProgress(true);
+    let orderId = checkoutOrderId(details);
+
+    try {
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        if (orderId) {
+          const order = await api.billing.order(orderId);
+          if (order.status === "paid") {
+            window.location.assign(localizedPath(locale, "/app"));
+            return;
+          }
+        } else {
+          const billing = await api.billing.me();
+          const pendingOrder = billing.orders.find((order) => !["paid", "failed", "canceled", "cancelled", "refunded"].includes(order.status));
+          orderId = pendingOrder?.id;
+        }
+        await delay(2000);
+      }
+    } catch {
+      // Keep the documented pending notice visible and let the user retry explicitly.
+    } finally {
+      setCheckoutInProgress(false);
+    }
+  }
+
   async function startCheckout(plan: BillingPlan, fallbackCode: string) {
     if (checkoutInFlight.current) return;
     checkoutInFlight.current = true;
@@ -122,8 +163,7 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
       return;
     }
 
-    const popup = window.open("about:blank", "_blank");
-    if (popup) popup.opener = null;
+    const popup = window.open("", "_blank", "noopener,noreferrer");
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       popup?.close();
@@ -167,7 +207,7 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
       });
       const errorCode = error instanceof ApiError ? error.code : "";
       if (errorCode === "PAYMENT_NOT_CONFIGURED" || errorCode === "PRODUCT_NOT_CONFIGURED") setPaymentUnavailable(true);
-      if (errorCode === "CHECKOUT_IN_PROGRESS") setCheckoutInProgress(true);
+      if (errorCode === "CHECKOUT_IN_PROGRESS") await reconcileCheckout(error instanceof ApiError ? error.details : undefined);
       setNotice(
         ["PAYMENT_NOT_CONFIGURED", "PRODUCT_NOT_CONFIGURED", "CHECKOUT_IN_PROGRESS", "CHECKOUT_ALREADY_CREATED"].includes(errorCode)
           ? copy.pendingNotice
@@ -182,7 +222,7 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
   return (
     <main className="pricing-lite-page">
       <header className="pricing-lite-header">
-        <BrandMark href={localizedPath(locale, "/")} />
+        <BrandMark href={localizedPath(locale, "/")} locale={locale} />
         <div className="pricing-lite-header-actions">
           <LanguageSwitcher currentLocale={locale} />
           <Link className="pricing-lite-back" href={localizedPath(locale, "/app")}>
@@ -228,9 +268,9 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
           <article className="pricing-lite-card pricing-lite-card-pro">
             <span className="pricing-lite-pill">{copy.proBadge}</span>
             <span className="pricing-lite-kicker">{copy.proKicker}</span>
-            <h2>{monthlyPlan.name || copy.proName}</h2>
+            <h2>{copy.proName}</h2>
             <div className="pricing-lite-price">
-              <strong>{planAmount(monthlyPlan, copy.proFallbackPrice)}</strong>
+              <strong>{planAmount(monthlyPlan, copy.proFallbackPrice, locale)}</strong>
               <span>/ {copy.month}</span>
             </div>
             <p className="pricing-lite-subtitle">{copy.proSubtitle}</p>
@@ -252,13 +292,13 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
         <section className="pricing-lite-annual" aria-label={copy.annualName}>
           <div>
             <span className="pricing-lite-kicker">{copy.annualKicker}</span>
-            <h2>{annualPlan.name || copy.annualName}</h2>
+            <h2>{copy.annualName}</h2>
             <p>{copy.annualDescription}</p>
           </div>
           <div className="pricing-lite-annual-price">
-             {annualOriginal !== null && annualAmount !== null && annualOriginal > annualAmount ? <del>{formatCurrency(annualOriginal, annualPlan.currency || monthlyPlan.currency || "USD")}</del> : null}
-             <strong>{planAmount(annualPlan, copy.annualFallbackPrice)}</strong>
-             <span>/ {copy.year}{annualAmount !== null ? ` · ${formatCurrency(annualAmount / 12, annualPlan.currency || "USD")} / ${copy.month}` : ` · ${copy.monthEquivalent}`}</span>
+             {annualOriginal !== null && annualAmount !== null && annualOriginal > annualAmount ? <del>{formatCurrency(annualOriginal, annualPlan.currency || monthlyPlan.currency || "USD", locale)}</del> : null}
+             <strong>{planAmount(annualPlan, copy.annualFallbackPrice, locale)}</strong>
+             <span>/ {copy.year}{annualAmount !== null ? ` · ${formatCurrency(annualAmount / 12, annualPlan.currency || "USD", locale)} / ${copy.month}` : ` · ${copy.monthEquivalent}`}</span>
            </div>
            <div className="pricing-lite-annual-savings">{annualSavingsPercent !== null ? replacePercentage(copy.annualSavings, annualSavingsPercent) : copy.annualSavings}</div>
           <button className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" type="button" onClick={() => startCheckout(annualPlan, "pro_annual")} disabled={Boolean(checkoutPlan) || paymentUnavailable || checkoutInProgress}>

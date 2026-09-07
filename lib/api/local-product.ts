@@ -182,7 +182,7 @@ export async function handleLocalProductApi(request: Request, segments: string[]
     const method = request.method.toUpperCase();
     const path = segments.join("/");
 
-    if (path === "auth/sync" && method === "POST") return ok(await syncAuth(context), requestId);
+    if (path === "auth/sync" && method === "POST") return ok(await syncAuth(context, await readBody(request)), requestId);
     if (path === "auth/logout" && method === "POST") return ok(await logout(context), requestId);
     if (path === "me" && method === "GET") return ok(await getMe(context), requestId);
     if (path === "me" && method === "PATCH") return ok(await updateMe(context, await readBody(request)), requestId);
@@ -234,9 +234,13 @@ function paymentPending(requestId: string) {
   return apiError("PAYMENT_PENDING", "Waffo checkout is not configured yet.", requestId, 503);
 }
 
+function guestIdFromAnonymous(anonymousId: string) {
+  return `guest_${anonymousId.slice(0, 64)}`;
+}
+
 function guestId(request: Request) {
   const browserId = request.headers.get("X-Browser-Id") || request.headers.get("X-Session-Id");
-  return browserId ? `guest_${browserId.slice(0, 64)}` : "guest_local";
+  return browserId ? guestIdFromAnonymous(browserId) : `guest_request_${crypto.randomUUID()}`;
 }
 
 function now() {
@@ -320,10 +324,44 @@ async function ensureProfile(user: User, requestId: string) {
   await syncCentralSafely({ entityType: "profile", action: "upsert", userId: user.id, email: user.email }, `profile:${user.id}:${requestId}`);
 }
 
-async function syncAuth(context: RequestContext) {
+function mergeLocalAnonymousData(anonymousId: string, userId: string) {
+  const sourceUserId = guestIdFromAnonymous(anonymousId);
+  const state = memory();
+  let merged = false;
+
+  for (const conversation of state.conversations.values()) {
+    if (conversation.userId !== sourceUserId) continue;
+    conversation.userId = userId;
+    conversation.messages = conversation.messages.map((message) => ({ ...message, userId }));
+    merged = true;
+  }
+  for (const card of state.cards.values()) {
+    if (card.userId !== sourceUserId) continue;
+    card.userId = userId;
+    merged = true;
+  }
+  for (const voiceInput of state.voiceInputs.values()) {
+    if (voiceInput.userId !== sourceUserId) continue;
+    voiceInput.userId = userId;
+    merged = true;
+  }
+
+  const anonymousSettings = state.settingsByUser.get(sourceUserId);
+  if (anonymousSettings) {
+    if (!state.settingsByUser.has(userId)) state.settingsByUser.set(userId, anonymousSettings);
+    state.settingsByUser.delete(sourceUserId);
+    merged = true;
+  }
+  return merged;
+}
+
+async function syncAuth(context: RequestContext, body: JsonObject) {
   if (!context.user) {
     return { profileSynced: false, identitySynced: false, settingsCreated: false, mode: "guest" };
   }
+
+  const anonymousId = stringField(body.anonymousId);
+  const anonymousDataMerged = anonymousId ? mergeLocalAnonymousData(anonymousId, context.user.id) : false;
 
   const supabase = createSupabaseAdminClient();
   await supabase?.from("auth_login_events").insert({
@@ -338,7 +376,7 @@ async function syncAuth(context: RequestContext) {
 
   await syncCentralSafely({ entityType: "auth", action: "login_success", userId: context.user.id, email: context.user.email }, `auth:${context.user.id}:${context.requestId}`);
 
-  return { profileSynced: true, identitySynced: true, settingsCreated: true };
+  return { profileSynced: true, identitySynced: true, settingsCreated: true, anonymousDataMerged };
 }
 
 async function logout(context: RequestContext) {

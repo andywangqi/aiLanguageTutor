@@ -16,8 +16,6 @@ NEXT_PUBLIC_ZHYADMIN_WRITE_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
-# Route product calls through the documented zhyadmin API.
-PRODUCT_API_BACKEND=central
 ```
 
 The two Supabase public variables are required for real Google OAuth. The
@@ -51,15 +49,21 @@ https://<site-origin>/auth/callback?next=/app
 
 The callback exchanges the OAuth code for a Supabase session and writes the
 session cookies with `@supabase/ssr`. After the browser has a session, the
-workbench calls:
+workbench or reading page calls:
 
 ```text
 POST /api/auth/sync
 Authorization: Bearer <supabase-access-token>
 ```
 
-The central service is responsible for upserting the site user, identity,
-default settings, login event, and anonymous data merge.
+The request also carries the browser's stable `anonymousId`, `sessionId`, and
+`X-Browser-Id`/`X-Session-Id` headers. The central service is responsible for
+upserting the site user, identity, default settings, login event, and an
+idempotent anonymous-data merge. The destination user is always derived from
+the bearer token; a browser-supplied `userId` is never used for authorization.
+After the merge, the anonymous source must be consumed or rebound so it cannot
+be read as an independent identity. Different anonymous identities and
+different authenticated users remain isolated.
 
 ## 3. Same-origin API proxy
 
@@ -81,6 +85,8 @@ Content-Type
 X-Request-Id
 Idempotency-Key
 X-Site-Key (analytics only)
+X-Browser-Id
+X-Session-Id
 ```
 
 Admin endpoints and Waffo webhooks are intentionally not exposed through this
@@ -144,20 +150,7 @@ polls `GET /api/billing/orders/:orderId`. It refreshes the entitlement and
 records payment success only after the order becomes `paid`; the browser
 return alone is not proof of payment.
 
-## 7. Central server sync
-
-`lib/central/server.ts` contains the server-only helpers:
-
-- `registerCentralSite()`
-- `syncCentralEntity()`
-- `centralServerRequest()`
-
-They use `X-Site-Secret` and `ZHYADMIN_SERVER_KEY`. They are intentionally not
-imported into client components. Product conversation, user, billing, and
-voice records should be written through the central product API to avoid
-duplicating those records with a second client-side sync path.
-
-## 8. Analytics
+## 7. Analytics
 
 `lib/analytics/client.ts` creates stable anonymous and session identifiers in
 browser storage and posts events to the same-origin `/api/track` proxy. The
@@ -176,10 +169,31 @@ voice_transcribed
 learning_card_saved
 ```
 
+The reading practice page also emits:
+
+```text
+reading_page_viewed
+reading_lesson_loaded
+reading_tab_viewed
+reading_material_import_started
+reading_material_imported
+reading_material_import_failed
+reading_question_answered
+reading_attempt_submitted
+reading_note_saved
+reading_audio_played
+reading_vocabulary_audio_played
+```
+
+Reading event properties include the material id and kind where available,
+selected tab, file extension, import status, question and answer counts, score,
+note length, and whether audio came from browser speech synthesis or backend
+TTS. Analytics failures never interrupt reading practice.
+
 Analytics errors are deliberately ignored so tracking cannot interrupt a
 learning action.
 
-## 9. Verification
+## 8. Verification
 
 ```bash
 npm run typecheck
