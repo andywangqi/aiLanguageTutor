@@ -197,8 +197,8 @@ export const api = {
     }
   },
   messages: {
-    translate(id: string) {
-      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/translate`, { method: "POST" });
+    translate(id: string, body: JsonObject = {}) {
+      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/translate`, { method: "POST", body });
     },
     translateText(body: JsonObject) {
       return request<MessageOutput>("messages/translate", { method: "POST", body });

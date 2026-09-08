@@ -152,6 +152,10 @@ export type ProductCopy = {
     startingConversation: string;
     today: string;
     listen: string;
+    repeat: string;
+    repeatPrompt: string;
+    repeatUnsupported: string;
+    repeatRequired: string;
     slow: string;
     hide: string;
     translation: string;

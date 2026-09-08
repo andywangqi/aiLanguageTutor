@@ -202,7 +202,9 @@ export async function handleLocalProductApi(request: Request, segments: string[]
     }
     if (segments[0] === "conversations" && segments[1] && segments[2] === "reset" && method === "POST") return ok(await resetConversation(context, segments[1], await readBody(request)), requestId);
     if (segments[0] === "conversations" && segments[1] && segments[2] === "end" && method === "POST") return ok(await endConversation(context, segments[1]), requestId);
-    if (segments[0] === "messages" && segments[1] && segments.length === 3 && method === "POST") return ok(await messageAction(context, segments[1], segments[2]), requestId);
+    if (path === "messages/translate" && method === "POST") return ok(await textMessageAction(context, "translation", await readBody(request)), requestId);
+    if (path === "messages/grammar" && method === "POST") return ok(await textMessageAction(context, "grammar", await readBody(request)), requestId);
+    if (segments[0] === "messages" && segments[1] && segments.length === 3 && method === "POST") return ok(await messageAction(context, segments[1], segments[2], await readBody(request)), requestId);
     if (path === "cards" && method === "GET") return ok(await listCards(context), requestId);
     if (segments[0] === "cards" && segments[1] && method === "PATCH") return ok(await updateCard(context, segments[1], await readBody(request)), requestId);
     if (segments[0] === "cards" && segments[1] && method === "DELETE") return ok(await deleteCard(context, segments[1]), requestId);
@@ -826,7 +828,7 @@ async function findMessage(context: RequestContext, id: string) {
   throw new Error("Message not found.");
 }
 
-async function messageAction(context: RequestContext, id: string, action: string) {
+async function messageAction(context: RequestContext, id: string, action: string, body: JsonObject = {}) {
   const message = await findMessage(context, id);
   const text = stringField(message.content || message.text);
 
@@ -843,7 +845,9 @@ async function messageAction(context: RequestContext, id: string, action: string
   if (action === "cards") return saveCardFromMessage(context, message);
 
   const outputType = action === "grammar" ? "grammar" : "translation";
-  const result = await generateMessageInsight(outputType, text, "en");
+  const targetLanguageCode = stringField(body.targetLanguageCode, "en");
+  const nativeLanguageCode = stringField(body.nativeLanguageCode, "zh-CN");
+  const result = await generateMessageInsight(outputType, text, outputType === "translation" ? nativeLanguageCode : targetLanguageCode);
   const supabase = createSupabaseAdminClient();
   if (context.user && supabase) {
     await supabase.from("message_outputs").upsert({
@@ -854,6 +858,15 @@ async function messageAction(context: RequestContext, id: string, action: string
     }, { onConflict: "message_id,output_type" });
   }
   return { messageId: id, outputType, ...result };
+}
+
+async function textMessageAction(context: RequestContext, kind: "translation" | "grammar", body: JsonObject) {
+  const text = stringField(body.text);
+  if (!text) throw new Error("Text is required.");
+
+  const targetLanguageCode = stringField(body.targetLanguageCode, "zh-CN");
+  const result = await generateMessageInsight(kind, text, targetLanguageCode);
+  return { messageId: null, outputType: kind, ...result };
 }
 
 async function saveCardFromMessage(context: RequestContext, message: TutorMessage) {

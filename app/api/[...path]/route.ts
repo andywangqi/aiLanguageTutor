@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCentralEndpoint, getProductSiteUrl } from "@/lib/site-config";
+import { handleLocalProductApi } from "@/lib/api/local-product";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,6 +94,9 @@ async function forward(request: NextRequest, segments: string[]) {
   if (segments.join("/") === "track" && !isProductionHost(request)) {
     return new Response(null, { status: 204, headers: { "X-Request-Id": id } });
   }
+
+  const localResponse = await handleLocalProductApi(request, segments, id);
+  if (localResponse) return localResponse;
 
   const target = new URL(`${getCentralEndpoint()}/api/${segments.map(encodeURIComponent).join("/")}`);
   for (const [key, value] of request.nextUrl.searchParams.entries()) target.searchParams.append(key, value);

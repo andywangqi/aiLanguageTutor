@@ -123,6 +123,51 @@ type WorkbenchUiMessages = Pick<
 
 type WorkbenchCopy = ProductCopy["workbench"] & WorkbenchUiMessages;
 
+const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "repeat" | "repeatPrompt" | "repeatUnsupported" | "repeatRequired">> = {
+  en: {
+    repeat: "Repeat",
+    repeatPrompt: "Repeat the sentence aloud before continuing.",
+    repeatUnsupported: "Your browser cannot check repetition. Use Chrome or Edge and allow microphone access.",
+    repeatRequired: "Please repeat the tutor's sentence before continuing."
+  },
+  ja: {
+    repeat: "復唱",
+    repeatPrompt: "続ける前に、この文を声に出して復唱してください。",
+    repeatUnsupported: "お使いのブラウザでは復唱を確認できません。ChromeまたはEdgeでマイクの使用を許可してください。",
+    repeatRequired: "続ける前に、Tutorの文を復唱してください。"
+  },
+  th: {
+    repeat: "พูดตาม",
+    repeatPrompt: "พูดประโยคนี้ตามออกเสียงก่อนดำเนินการต่อ",
+    repeatUnsupported: "เบราว์เซอร์ของคุณไม่สามารถตรวจสอบการพูดตามได้ โปรดใช้ Chrome หรือ Edge และอนุญาตให้ใช้ไมโครโฟน",
+    repeatRequired: "โปรดพูดตามประโยคของ Tutor ก่อนดำเนินการต่อ"
+  },
+  ko: {
+    repeat: "따라 말하기",
+    repeatPrompt: "계속하기 전에 이 문장을 소리 내어 따라 말해 보세요.",
+    repeatUnsupported: "현재 브라우저에서는 따라 말하기를 확인할 수 없습니다. Chrome 또는 Edge에서 마이크 사용을 허용해 주세요.",
+    repeatRequired: "계속하기 전에 Tutor의 문장을 따라 말해 주세요."
+  },
+  "zh-CN": {
+    repeat: "复读",
+    repeatPrompt: "继续之前，请大声复读这句话。",
+    repeatUnsupported: "当前浏览器无法检测复读，请使用 Chrome 或 Edge 并允许麦克风权限。",
+    repeatRequired: "请先复读导师说的句子，然后再继续。"
+  },
+  "zh-TW": {
+    repeat: "複誦",
+    repeatPrompt: "繼續之前，請大聲複誦這句話。",
+    repeatUnsupported: "目前瀏覽器無法檢查複誦，請使用 Chrome 或 Edge 並允許麥克風權限。",
+    repeatRequired: "請先複誦 Tutor 的句子，再繼續。"
+  },
+  es: {
+    repeat: "Repetir",
+    repeatPrompt: "Repite esta frase en voz alta antes de continuar.",
+    repeatUnsupported: "Tu navegador no puede comprobar la repetición. Usa Chrome o Edge y permite el acceso al micrófono.",
+    repeatRequired: "Repite la frase del tutor antes de continuar."
+  }
+};
+
 const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
   en: {
     tutorLabel: "AI tutor",
@@ -295,10 +340,22 @@ const initialMessages: Message[] = [
   }
 ];
 
+function normalizeSpeech(text: string) {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+function isRepeatCloseEnough(spoken: string, target: string) {
+  const spokenWords = normalizeSpeech(spoken).split(/\s+/).filter(Boolean);
+  const targetWords = normalizeSpeech(target).split(/\s+/).filter(Boolean);
+  if (!spokenWords.length || !targetWords.length) return false;
+  const matched = targetWords.filter((word) => spokenWords.includes(word)).length;
+  return matched / targetWords.length >= (targetWords.length <= 5 ? 0.6 : 0.72);
+}
+
 export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
   const router = useRouter();
   const copy = useMemo(
-    () => ({ ...dictionary.product.workbench, ...localizedWorkbenchMessages[locale] }),
+    () => ({ ...dictionary.product.workbench, ...localizedWorkbenchMessages[locale], ...localizedRepeatMessages[locale] }),
     [dictionary.product.workbench, locale]
   );
   const [activeNav, setActiveNav] = useState<NavItem>("home");
@@ -311,6 +368,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [level, setLevel] = useState("Auto-detect");
   const [isListening, setIsListening] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState("");
+  const [isRepeatListening, setIsRepeatListening] = useState(false);
+  const [hasRepeatedLatestTutor, setHasRepeatedLatestTutor] = useState(false);
   const [apiNotice, setApiNotice] = useState("");
   const [isRemoteSession, setIsRemoteSession] = useState(false);
   const [isRemoteUnavailable, setIsRemoteUnavailable] = useState(false);
@@ -326,11 +385,15 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const audioCapturePromiseRef = useRef<Promise<void> | null>(null);
   const voiceFinishingRef = useRef(false);
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const repeatRecognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const repeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
+      repeatRecognitionRef.current?.stop();
       if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
+      if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
       if (mediaRecorderRef.current?.state !== "inactive") mediaRecorderRef.current?.stop();
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     };
@@ -434,6 +497,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     return copy.title;
   }, [activeNav, copy]);
   const selectedMessage = messages.find((message) => message.role === "tutor" && message.text === selectedPhrase);
+  const latestTutorMessage = [...messages].reverse().find((message) => message.role === "tutor");
+  const canContinueConversation = !latestTutorMessage || hasRepeatedLatestTutor;
 
   function applyWorkbenchData(workbench: WorkbenchData) {
     setProfile(workbench.profile || null);
@@ -452,6 +517,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       setConversationId(conversation.id);
       const remoteMessages = getConversationMessages(conversation);
       if (remoteMessages.length > 0) setMessages(remoteMessages);
+      setHasRepeatedLatestTutor(false);
       setLanguageModalOpen(false);
     }
   }
@@ -475,6 +541,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   function resetDemoConversation(nextMode = mode) {
+    setHasRepeatedLatestTutor(false);
     setMessages([
       {
         id: `demo-${Date.now()}`,
@@ -540,6 +607,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   async function sendMessageText(text: string, inputType: "text" | "voice" = "text", audioBlob?: Blob | null) {
     const trimmed = text.trim();
     if (!trimmed && !(inputType === "voice" && audioBlob)) return;
+    if (!canContinueConversation) {
+      setVoiceNotice(copy.repeatRequired);
+      return;
+    }
     const clientMessageId = crypto.randomUUID();
     if (trimmed) {
       const userMessage: Message = { id: clientMessageId, role: "user", text: trimmed };
@@ -568,6 +639,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               : copy.demoTalkReply
         }
       ]);
+      setHasRepeatedLatestTutor(false);
       return;
     }
 
@@ -647,7 +719,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       }
       const conversation = await api.conversations.get(currentConversationId);
       const remoteMessages = getConversationMessages(conversation);
-      if (remoteMessages.length > 0) setMessages(remoteMessages);
+      if (remoteMessages.length > 0) {
+        setMessages(remoteMessages);
+        if (remoteMessages.some((message) => message.role === "tutor")) setHasRepeatedLatestTutor(false);
+      }
       await trackEvent(inputType === "voice" ? "voice_transcribed" : "message_submitted", { mode });
     } catch (error) {
       const message = error instanceof ApiError && error.code === "AI_PROVIDER_ERROR"
@@ -665,6 +740,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
   function startVoiceInput() {
     if (isListening) return;
+    if (!canContinueConversation) {
+      setVoiceNotice(copy.repeatRequired);
+      return;
+    }
 
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     const canRecord = "mediaDevices" in navigator && typeof MediaRecorder !== "undefined";
@@ -859,6 +938,57 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     window.speechSynthesis.speak(utterance);
   }
 
+  function repeatTutorMessage(message: Message) {
+    if (message.id !== latestTutorMessage?.id || isRepeatListening) return;
+
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setVoiceNotice(copy.repeatUnsupported);
+      return;
+    }
+
+    repeatRecognitionRef.current?.stop();
+    if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
+
+    const recognition = new Recognition();
+    let transcript = "";
+    let finished = false;
+    const finish = (success: boolean) => {
+      if (finished) return;
+      finished = true;
+      if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
+      repeatTimeoutRef.current = null;
+      repeatRecognitionRef.current = null;
+      setIsRepeatListening(false);
+      setHasRepeatedLatestTutor(success);
+      setVoiceNotice(success ? copy.sent : copy.repeatRequired);
+    };
+
+    recognition.lang = getSpeechLocale(learningLanguage);
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      transcript = Array.from({ length: event.results.length }, (_, index) => event.results[index][0].transcript)
+        .join(" ")
+        .trim();
+      if (Array.from({ length: event.results.length }, (_, index) => event.results[index].isFinal).some(Boolean)) {
+        finish(isRepeatCloseEnough(transcript, message.text));
+      }
+    };
+    recognition.onerror = () => finish(false);
+    recognition.onend = () => finish(isRepeatCloseEnough(transcript, message.text));
+    repeatRecognitionRef.current = recognition;
+    setIsRepeatListening(true);
+    setVoiceNotice(copy.repeatPrompt);
+    repeatTimeoutRef.current = setTimeout(() => finish(isRepeatCloseEnough(transcript, message.text)), 12000);
+
+    try {
+      recognition.start();
+    } catch {
+      finish(false);
+    }
+  }
+
   async function runInsight(kind: "translate" | "grammar", message?: Message) {
     const targetMessage = message || selectedMessage;
     const phrase = (message?.text || selectedPhrase).trim();
@@ -868,17 +998,25 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     setIsInsightBusy(true);
     setInsightText("");
     try {
-      if (!isRemoteSession || targetMessage?.id.startsWith("demo-")) {
-        setInsightText(kind === "translate" ? copy.demoMeaning.replace("{phrase}", phrase) : copy.demoGrammar);
-        return;
-      }
       const result = targetMessage
-        ? (kind === "translate" ? await api.messages.translate(targetMessage.id) : await api.messages.grammar(targetMessage.id)) as InsightResult
+        ? (targetMessage.id.startsWith("demo-")
+          ? (kind === "translate"
+            ? await api.messages.translateText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })
+            : await api.messages.grammarText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) }))
+          : kind === "translate"
+          ? await api.messages.translate(targetMessage.id, {
+              targetLanguageCode: languageCode(nativeLanguage),
+              nativeLanguageCode: languageCode(learningLanguage)
+            })
+          : await api.messages.grammar(targetMessage.id)) as InsightResult
         : (kind === "translate"
           ? await api.messages.translateText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })
           : await api.messages.grammarText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })) as InsightResult;
       setInsightText(insightContent(result.content, copy.noExplanation));
     } catch (error) {
+      if (kind === "translate" && (!isRemoteSession || targetMessage?.id.startsWith("demo-"))) {
+        setInsightText(copy.demoMeaning.replace("{phrase}", phrase));
+      }
       setApiNotice(apiErrorMessage(error, copy.learningToolError));
     } finally {
       setIsInsightBusy(false);
@@ -1086,6 +1224,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             <Volume2 size={15} aria-hidden="true" />
                             {copy.listen}
                           </button>
+                          <button type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || message.id !== latestTutorMessage?.id}>
+                            <Mic size={15} aria-hidden="true" />
+                            {isRepeatListening && message.id === latestTutorMessage?.id ? copy.sending : copy.repeat}
+                          </button>
                           <button type="button" onClick={() => void speakText(message.text, 0.65)}>
                             <Clock3 size={15} aria-hidden="true" />
                             {copy.slow}
@@ -1140,6 +1282,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   }}
                   placeholder={mode === "sayIt" ? copy.typeSayIt : copy.typeTalk}
                   aria-label={copy.messageLabel}
+                  disabled={!canContinueConversation || isApiBusy || isRepeatListening}
                 />
                 <button
                   className={isListening ? "voice-button listening" : "voice-button"}
@@ -1151,10 +1294,11 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   aria-label={copy.holdToSpeak}
                   aria-pressed={isListening}
                   title={copy.holdToSpeak}
+                  disabled={!canContinueConversation || isApiBusy || isRepeatListening}
                 >
                   {isListening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
                 </button>
-                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={isApiBusy}>
+                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={!canContinueConversation || isApiBusy || isRepeatListening}>
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
