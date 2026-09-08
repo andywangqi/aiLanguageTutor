@@ -86,6 +86,7 @@ export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
   const copy = readingCopy[locale];
   const pagePath = localizedPath(locale, "/english-reading-practice");
   const loginPath = `${localizedPath(locale, "/login")}?next=${encodeURIComponent(pagePath)}`;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<ReaderTab>("read");
   const [articleText, setArticleText] = useState(sampleArticle.text);
   const [articleTitle, setArticleTitle] = useState(sampleArticle.title);
@@ -105,6 +106,25 @@ export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lessonEventsRef = useRef(new Set<string>());
   const attemptSignatureRef = useRef("");
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active) setIsAuthenticated(Boolean(data.session));
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(Boolean(session));
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -516,10 +536,9 @@ export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
             <a href="#how-it-works">{copy.nav.how}</a>
             <a href="#reader-workspace">{copy.nav.demo}</a>
             <LanguageSwitcher currentLocale={locale} />
-            <Link href={loginPath}>{copy.nav.signIn}</Link>
           </nav>
-          <Link className="reading-header-cta" href={loginPath}>
-            {copy.nav.start} <ChevronRight size={16} aria-hidden="true" />
+          <Link className="reading-header-cta" href={isAuthenticated ? localizedPath(locale, "/app") : loginPath}>
+            {isAuthenticated ? copy.nav.signedIn : copy.nav.start} <ChevronRight size={16} aria-hidden="true" />
           </Link>
         </div>
       </header>

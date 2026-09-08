@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import type { LandingDictionary } from "@/lib/i18n/types";
@@ -8,16 +8,17 @@ import type { Locale } from "@/lib/i18n/config";
 import { localizedPath, localePath } from "@/lib/i18n/config";
 import { trackEvent } from "@/lib/analytics/client";
 import { homeUiCopy } from "@/lib/i18n/home-ui-copy";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
-const labels: Record<Locale, { how: string; languages: string; pricing: string; blog: string; signIn: string; start: string }> = {
-  en: { how: "How It Works", languages: "Languages", pricing: "Pricing", blog: "Blog", signIn: "Sign In", start: "Start Free" },
-  ja: { how: "使い方", languages: "対応言語", pricing: "料金", blog: "ブログ", signIn: "ログイン", start: "無料で始める" },
-  th: { how: "วิธีใช้งาน", languages: "ภาษา", pricing: "ราคา", blog: "บล็อก", signIn: "เข้าสู่ระบบ", start: "เริ่มใช้ฟรี" },
-  ko: { how: "사용 방법", languages: "언어", pricing: "요금", blog: "블로그", signIn: "로그인", start: "무료로 시작" },
-  "zh-CN": { how: "使用方法", languages: "语言", pricing: "价格", blog: "博客", signIn: "登录", start: "免费开始" },
-  "zh-TW": { how: "使用方式", languages: "語言", pricing: "價格", blog: "部落格", signIn: "登入", start: "免費開始" },
-  es: { how: "Cómo funciona", languages: "Idiomas", pricing: "Precios", blog: "Blog", signIn: "Iniciar sesión", start: "Empezar gratis" }
+const labels: Record<Locale, { how: string; languages: string; pricing: string; blog: string; start: string; signedIn: string }> = {
+  en: { how: "How It Works", languages: "Languages", pricing: "Pricing", blog: "Blog", start: "Start Free", signedIn: "Open Tutor" },
+  ja: { how: "使い方", languages: "対応言語", pricing: "料金", blog: "ブログ", start: "無料で始める", signedIn: "Tutorを開く" },
+  th: { how: "วิธีใช้งาน", languages: "ภาษา", pricing: "ราคา", blog: "บล็อก", start: "เริ่มใช้ฟรี", signedIn: "เปิด Tutor" },
+  ko: { how: "사용 방법", languages: "언어", pricing: "요금", blog: "블로그", start: "무료로 시작", signedIn: "Tutor 열기" },
+  "zh-CN": { how: "使用方法", languages: "语言", pricing: "价格", blog: "博客", start: "免费开始", signedIn: "进入 Tutor" },
+  "zh-TW": { how: "使用方式", languages: "語言", pricing: "價格", blog: "部落格", start: "免費開始", signedIn: "進入 Tutor" },
+  es: { how: "Cómo funciona", languages: "Idiomas", pricing: "Precios", blog: "Blog", start: "Empezar gratis", signedIn: "Abrir Tutor" }
 };
 
 function scrollToSection(id: string) {
@@ -28,6 +29,32 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
   const copy = labels[locale];
   const ui = homeUiCopy[locale];
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active) setIsAuthenticated(Boolean(data.session));
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(Boolean(session));
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const startHref = isAuthenticated
+    ? localizedPath(locale, "/app")
+    : `${localizedPath(locale, "/login")}?next=${encodeURIComponent(localizedPath(locale, "/app"))}`;
+  const startLabel = isAuthenticated ? copy.signedIn : copy.start;
+  const startEvent = isAuthenticated ? "open_tutor" : "start_free";
 
   return (
     <header className="site-header home-v1-header">
@@ -47,18 +74,11 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
         <div className="home-v1-header-actions">
           <LanguageSwitcher currentLocale={locale} />
           <Link
-            className="home-v1-sign-in"
-            href={localizedPath(locale, "/login")}
-            onClick={() => void trackEvent("home_cta_clicked", { placement: "header", cta: "sign_in", destination: "login", locale })}
-          >
-            {copy.signIn}
-          </Link>
-          <Link
             className="home-v1-start"
-            href={localizedPath(locale, "/login")}
-            onClick={() => void trackEvent("home_cta_clicked", { placement: "header", cta: "start_free", destination: "login", locale })}
+            href={startHref}
+            onClick={() => void trackEvent("home_cta_clicked", { placement: "header", cta: startEvent, destination: isAuthenticated ? "app" : "login", locale })}
           >
-            {copy.start}
+            {startLabel}
           </Link>
           <button
             className="home-v1-menu"
@@ -86,24 +106,14 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
 
         <div className="home-v1-mobile-actions">
           <Link
-            className="home-v1-sign-in"
-            href={localizedPath(locale, "/login")}
-            onClick={() => {
-              void trackEvent("home_cta_clicked", { placement: "header_mobile", cta: "sign_in", destination: "login", locale });
-              setMobileMenuOpen(false);
-            }}
-          >
-            {copy.signIn}
-          </Link>
-          <Link
             className="home-v1-start"
-            href={localizedPath(locale, "/login")}
+            href={startHref}
             onClick={() => {
-              void trackEvent("home_cta_clicked", { placement: "header_mobile", cta: "start_free", destination: "login", locale });
+              void trackEvent("home_cta_clicked", { placement: "header_mobile", cta: startEvent, destination: isAuthenticated ? "app" : "login", locale });
               setMobileMenuOpen(false);
             }}
           >
-            {copy.start}
+            {startLabel}
           </Link>
         </div>
       </div>
