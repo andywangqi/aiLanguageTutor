@@ -2,6 +2,7 @@
 
 import { isLocale } from "@/lib/i18n/config";
 import { getProductSiteUrl } from "@/lib/site-config";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AnalyticsEvent } from "./events";
 
 const anonymousStorageKey = "ai-tutor-anonymous-id";
@@ -13,11 +14,16 @@ function createId(prefix: string) {
 }
 
 function getStoredId(storage: Storage, key: string, prefix: string) {
-  const existing = storage.getItem(key);
-  if (existing) return existing;
-  const created = createId(prefix);
-  storage.setItem(key, created);
-  return created;
+  try {
+    const existing = storage.getItem(key);
+    if (existing) return existing;
+    const created = createId(prefix);
+    storage.setItem(key, created);
+    return created;
+  } catch {
+    // A blocked browser storage must not prevent analytics from being sent.
+    return undefined;
+  }
 }
 
 function isProductionSite() {
@@ -66,6 +72,16 @@ export async function trackEvent(event: string, properties: Record<string, unkno
   if (!writeKey || !isProductionSite()) return false;
 
   const { anonymousId, sessionId } = getBrowserIdentity();
+  let accessToken: string | undefined;
+  let userId: string | null = null;
+  try {
+    const supabase = createSupabaseBrowserClient();
+    const session = await supabase?.auth.getSession();
+    accessToken = session?.data.session?.access_token;
+    userId = session?.data.session?.user.id || null;
+  } catch {
+    // Analytics must remain best effort if auth storage is unavailable.
+  }
   const path = window.location.pathname;
   const pathLocale = path.split("/")[1];
   const occurredAt = new Date().toISOString();
@@ -83,14 +99,15 @@ export async function trackEvent(event: string, properties: Record<string, unkno
       keepalive: true,
       headers: {
         "Content-Type": "application/json",
-        "X-Site-Key": writeKey
+        "X-Site-Key": writeKey,
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
       },
       body: JSON.stringify({
         eventName: event,
         siteUrl: getProductSiteUrl(),
         properties: enrichedProperties,
         anonymousId,
-        userId: null,
+        userId,
         sessionId,
         path: `${path}${window.location.search}`,
         referrer: document.referrer,
