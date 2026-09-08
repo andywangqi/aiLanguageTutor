@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ArrowRight, Check, LoaderCircle, X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { BrandMark } from "./BrandMark";
 import { trackEvent } from "@/lib/analytics/client";
@@ -11,7 +10,6 @@ import type { LandingDictionary } from "@/lib/i18n/types";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 
 export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
-  const router = useRouter();
   const copy = dictionary.product.auth;
   const [nextPath, setNextPath] = useState(localizedPath(locale, "/app"));
   const [callbackError, setCallbackError] = useState(false);
@@ -35,8 +33,9 @@ export function LoginPage({ dictionary, locale }: { dictionary: LandingDictionar
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
+      setError(copy.demoMode);
+      void trackEvent("login_failed", { provider: "google", error_code: "SUPABASE_NOT_CONFIGURED" });
       setIsLoading(false);
-      router.push(localizedPath(locale, "/app"));
       return;
     }
 
