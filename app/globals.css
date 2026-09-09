@@ -3281,6 +3281,121 @@ h1 {
   color: #9aa5b5;
 }
 
+.message-composer-locked {
+  border-color: #f2d2bd;
+  background: #fff8f3;
+}
+
+.message-composer input.message-input-locked {
+  cursor: not-allowed;
+  color: #9aa5b5;
+}
+
+.message-composer-locked .voice-button,
+.message-composer-locked .send-button {
+  color: #b5a69d;
+  background: #f2e9e3;
+}
+
+.repeat-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(23, 26, 38, 0.44);
+  backdrop-filter: blur(8px);
+}
+
+.repeat-modal {
+  position: relative;
+  width: min(100%, 510px);
+  padding: 34px;
+  border: 1px solid #f0dacb;
+  border-radius: 27px;
+  background: var(--surface);
+  box-shadow: 0 30px 70px rgba(23, 26, 38, 0.22);
+}
+
+.repeat-modal-close {
+  position: absolute;
+  top: 17px;
+  right: 17px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  background: #f7f7f7;
+}
+
+.repeat-modal-icon {
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 19px;
+  border-radius: 18px;
+  color: var(--orange);
+  background: #fff0e5;
+}
+
+.repeat-modal .panel-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--orange);
+}
+
+.repeat-modal h2 {
+  margin-bottom: 12px;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.repeat-modal p {
+  max-width: 440px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.repeat-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 27px;
+}
+
+.repeat-modal-actions button {
+  min-height: 47px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-weight: 950;
+}
+
+.repeat-modal-secondary {
+  border: 1px solid #e6ded5;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+.repeat-modal-primary {
+  border: 0;
+  color: #ffffff;
+  background: var(--orange);
+  box-shadow: 0 10px 20px rgba(255, 132, 71, 0.2);
+}
+
 .message-composer .voice-input-hidden {
   color: transparent;
   caret-color: transparent;
@@ -5118,6 +5233,23 @@ h1 {
   }
 
   .language-modal-actions button {
+    width: 100%;
+  }
+
+  .repeat-modal {
+    padding: 28px 20px 22px;
+    border-radius: 23px;
+  }
+
+  .repeat-modal h2 {
+    font-size: 28px;
+  }
+
+  .repeat-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .repeat-modal-actions button {
     width: 100%;
   }
 

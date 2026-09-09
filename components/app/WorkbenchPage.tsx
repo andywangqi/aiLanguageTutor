@@ -125,13 +125,20 @@ type WorkbenchUiMessages = Pick<
   nonBinaryGender: string;
 };
 
-type WorkbenchCopy = ProductCopy["workbench"] & WorkbenchUiMessages;
+type WorkbenchCopy = ProductCopy["workbench"] & WorkbenchUiMessages & RepeatUiMessages;
 type RepeatFeedbackState = {
   messageId: string;
   result: PronunciationFeedback;
 };
 
-const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "repeat" | "repeatPrompt" | "repeatChecking" | "repeatPassed" | "repeatTryAgain" | "repeatCorrection" | "repeatFeedbackError" | "repeatUnsupported" | "repeatRequired">> = {
+type RepeatUiMessages = Pick<ProductCopy["workbench"], "repeat" | "repeatPrompt" | "repeatChecking" | "repeatPassed" | "repeatTryAgain" | "repeatCorrection" | "repeatFeedbackError" | "repeatUnsupported" | "repeatRequired"> & {
+  repeatModalTitle: string;
+  repeatModalBody: string;
+  repeatModalAction: string;
+  repeatModalClose: string;
+};
+
+const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
   en: {
     repeat: "Repeat",
     repeatPrompt: "Repeat the sentence aloud before continuing.",
@@ -141,7 +148,11 @@ const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "re
     repeatCorrection: "Practice this sentence:",
     repeatFeedbackError: "We could not check the repetition. Please try again.",
     repeatUnsupported: "Your browser cannot check repetition. Use Chrome or Edge and allow microphone access.",
-    repeatRequired: "Please repeat the tutor's sentence before continuing."
+    repeatRequired: "Please repeat the tutor's sentence before continuing.",
+    repeatModalTitle: "Repeat before continuing",
+    repeatModalBody: "In Say It / Translate, repeat the tutor's English sentence and receive pronunciation feedback before starting the next turn.",
+    repeatModalAction: "Start repeating",
+    repeatModalClose: "Not now"
   },
   ja: {
     repeat: "復唱",
@@ -152,7 +163,11 @@ const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "re
     repeatCorrection: "この文を練習してください：",
     repeatFeedbackError: "復唱を確認できませんでした。もう一度お試しください。",
     repeatUnsupported: "お使いのブラウザでは復唱を確認できません。ChromeまたはEdgeでマイクの使用を許可してください。",
-    repeatRequired: "続ける前に、Tutorの文を復唱してください。"
+    repeatRequired: "続ける前に、Tutorの文を復唱してください。",
+    repeatModalTitle: "復唱してから続けましょう",
+    repeatModalBody: "Say It / Translate では、次のターンへ進む前に Tutor の英語表現を復唱し、発音フィードバックを受けてください。",
+    repeatModalAction: "復唱を始める",
+    repeatModalClose: "後で"
   },
   th: {
     repeat: "พูดตาม",
@@ -163,7 +178,11 @@ const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "re
     repeatCorrection: "ฝึกพูดประโยคนี้:",
     repeatFeedbackError: "ตรวจสอบการพูดตามไม่ได้ โปรดลองอีกครั้ง",
     repeatUnsupported: "เบราว์เซอร์ของคุณไม่สามารถตรวจสอบการพูดตามได้ โปรดใช้ Chrome หรือ Edge และอนุญาตให้ใช้ไมโครโฟน",
-    repeatRequired: "โปรดพูดตามประโยคของ Tutor ก่อนดำเนินการต่อ"
+    repeatRequired: "โปรดพูดตามประโยคของ Tutor ก่อนดำเนินการต่อ",
+    repeatModalTitle: "พูดตามก่อนดำเนินการต่อ",
+    repeatModalBody: "ในโหมด Say It / Translate โปรดพูดตามประโยคภาษาอังกฤษของ Tutor และรับคำแนะนำการออกเสียงก่อนเริ่มรอบถัดไป",
+    repeatModalAction: "เริ่มพูดตาม",
+    repeatModalClose: "ไว้ภายหลัง"
   },
   ko: {
     repeat: "따라 말하기",
@@ -174,7 +193,11 @@ const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "re
     repeatCorrection: "이 문장을 연습해 보세요:",
     repeatFeedbackError: "따라 말하기를 확인하지 못했습니다. 다시 시도해 주세요.",
     repeatUnsupported: "현재 브라우저에서는 따라 말하기를 확인할 수 없습니다. Chrome 또는 Edge에서 마이크 사용을 허용해 주세요.",
-    repeatRequired: "계속하기 전에 Tutor의 문장을 따라 말해 주세요."
+    repeatRequired: "계속하기 전에 Tutor의 문장을 따라 말해 주세요.",
+    repeatModalTitle: "따라 말한 후 계속하세요",
+    repeatModalBody: "Say It / Translate에서는 다음 대화를 시작하기 전에 Tutor의 영어 문장을 따라 말하고 발음 피드백을 받아야 합니다.",
+    repeatModalAction: "따라 말하기 시작",
+    repeatModalClose: "나중에"
   },
   "zh-CN": {
     repeat: "复读",
@@ -185,7 +208,11 @@ const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "re
     repeatCorrection: "请练习这句话：",
     repeatFeedbackError: "暂时无法检查复读，请再试一次。",
     repeatUnsupported: "当前浏览器无法检测复读，请使用 Chrome 或 Edge 并允许麦克风权限。",
-    repeatRequired: "请先复读导师说的句子，然后再继续。"
+    repeatRequired: "请先复读导师说的句子，然后再继续。",
+    repeatModalTitle: "完成复读后再继续",
+    repeatModalBody: "在 Say It / Translate 模式中，需要先复读导师给出的自然英文表达并获得发音纠正，才能开始下一轮。",
+    repeatModalAction: "开始复读",
+    repeatModalClose: "暂不复读"
   },
   "zh-TW": {
     repeat: "複誦",
@@ -196,7 +223,11 @@ const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "re
     repeatCorrection: "請練習這句話：",
     repeatFeedbackError: "暫時無法檢查複誦，請再試一次。",
     repeatUnsupported: "目前瀏覽器無法檢查複誦，請使用 Chrome 或 Edge 並允許麥克風權限。",
-    repeatRequired: "請先複誦 Tutor 的句子，再繼續。"
+    repeatRequired: "請先複誦 Tutor 的句子，再繼續。",
+    repeatModalTitle: "完成複誦後再繼續",
+    repeatModalBody: "在 Say It / Translate 模式中，需要先複誦 Tutor 提供的自然英文表達並取得發音修正，才能開始下一輪。",
+    repeatModalAction: "開始複誦",
+    repeatModalClose: "暫不複誦"
   },
   es: {
     repeat: "Repetir",
@@ -207,7 +238,11 @@ const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "re
     repeatCorrection: "Practica esta frase:",
     repeatFeedbackError: "No se pudo comprobar la repetición. Vuelve a intentarlo.",
     repeatUnsupported: "Tu navegador no puede comprobar la repetición. Usa Chrome o Edge y permite el acceso al micrófono.",
-    repeatRequired: "Repite la frase del tutor antes de continuar."
+    repeatRequired: "Repite la frase del tutor antes de continuar.",
+    repeatModalTitle: "Repite antes de continuar",
+    repeatModalBody: "En Say It / Translate, repite la frase en inglés del tutor y recibe correcciones de pronunciación antes de empezar el siguiente turno.",
+    repeatModalAction: "Empezar a repetir",
+    repeatModalClose: "Ahora no"
   }
 };
 
@@ -449,6 +484,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [level, setLevel] = useState("Auto-detect");
   const [isListening, setIsListening] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState("");
+  const [repeatRequiredModalOpen, setRepeatRequiredModalOpen] = useState(false);
   const [isRepeatListening, setIsRepeatListening] = useState(false);
   const [isRepeatChecking, setIsRepeatChecking] = useState(false);
   const [hasRepeatedLatestTutor, setHasRepeatedLatestTutor] = useState(false);
@@ -594,6 +630,19 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser);
   const canContinueConversation = !requiresRepeat || hasRepeatedLatestTutor;
 
+  useEffect(() => {
+    if (requiresRepeat && !hasRepeatedLatestTutor && !languageModalOpen) {
+      setRepeatRequiredModalOpen(true);
+    } else if (!requiresRepeat || hasRepeatedLatestTutor) {
+      setRepeatRequiredModalOpen(false);
+    }
+  }, [hasRepeatedLatestTutor, languageModalOpen, latestTutorMessage?.id, requiresRepeat]);
+
+  function showRepeatRequiredModal() {
+    setVoiceNotice("");
+    setRepeatRequiredModalOpen(true);
+  }
+
   function applyWorkbenchData(workbench: WorkbenchData) {
     setProfile(workbench.profile || null);
     setEntitlement(workbench.entitlement || null);
@@ -709,11 +758,11 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
   async function sendMessageText(text: string, inputType: "text" | "voice" = "text", audioBlob?: Blob | null) {
     const trimmed = text.trim();
-    if (!trimmed && !(inputType === "voice" && audioBlob)) return;
     if (!canContinueConversation) {
-      setVoiceNotice(copy.repeatRequired);
+      showRepeatRequiredModal();
       return;
     }
+    if (!trimmed && !(inputType === "voice" && audioBlob)) return;
     const clientMessageId = crypto.randomUUID();
     if (trimmed) {
       const userMessage: Message = { id: clientMessageId, role: "user", text: trimmed };
@@ -846,7 +895,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   function startVoiceInput() {
     if (isListening) return;
     if (!canContinueConversation) {
-      setVoiceNotice(copy.repeatRequired);
+      showRepeatRequiredModal();
       return;
     }
 
@@ -1103,6 +1152,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
   function repeatTutorMessage(message: Message) {
     if (message.id !== latestTutorMessage?.id || isRepeatListening || isRepeatChecking) return;
+
+    setRepeatRequiredModalOpen(false);
 
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Recognition) {
@@ -1440,7 +1491,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   {copy.showHints}
                 </button>
               </div>
-              <div className="message-composer">
+              <div className={`message-composer${!canContinueConversation ? " message-composer-locked" : ""}`}>
                 {isListening ? (
                   <div className="voice-wave-overlay" aria-live="polite">
                     <span className="voice-wave-label">{copy.releaseToSend}</span>
@@ -1452,15 +1503,17 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   </div>
                 ) : null}
                 <input
-                  className={isListening ? "voice-input-hidden" : ""}
+                  className={`${isListening ? "voice-input-hidden " : ""}${!canContinueConversation ? "message-input-locked" : ""}`}
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
+                  onFocus={() => { if (!canContinueConversation) showRepeatRequiredModal(); }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") sendMessage();
                   }}
                   placeholder={mode === "sayIt" ? copy.typeSayIt : copy.typeTalk}
                   aria-label={copy.messageLabel}
-                  disabled={!canContinueConversation || isApiBusy || isRepeatListening || isRepeatChecking}
+                  readOnly={!canContinueConversation}
+                  disabled={isApiBusy || isRepeatListening || isRepeatChecking}
                 />
                 <button
                   className={isListening ? "voice-button listening" : "voice-button"}
@@ -1472,11 +1525,11 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   aria-label={copy.holdToSpeak}
                   aria-pressed={isListening}
                   title={copy.holdToSpeak}
-                  disabled={!canContinueConversation || isApiBusy || isRepeatListening || isRepeatChecking}
+                  disabled={isApiBusy || isRepeatListening || isRepeatChecking}
                 >
                   {isListening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
                 </button>
-                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={!canContinueConversation || isApiBusy || isRepeatListening || isRepeatChecking}>
+                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={isApiBusy || isRepeatListening || isRepeatChecking}>
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
@@ -1574,6 +1627,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           onSave={() => void saveLanguageSettings()}
           onClose={() => setLanguageModalOpen(false)}
           copy={copy}
+        />
+      ) : null}
+      {repeatRequiredModalOpen && requiresRepeat && !hasRepeatedLatestTutor && latestTutorMessage ? (
+        <RepeatRequiredModal
+          copy={copy}
+          onClose={() => setRepeatRequiredModalOpen(false)}
+          onRepeat={() => repeatTutorMessage(latestTutorMessage)}
         />
       ) : null}
     </main>
@@ -1805,6 +1865,41 @@ function Stat({ value, label }: { value: string; label: string }) {
     <div className="conversation-stat">
       <strong>{value}</strong>
       <span>{label}</span>
+    </div>
+  );
+}
+
+function RepeatRequiredModal({
+  copy,
+  onClose,
+  onRepeat
+}: {
+  copy: RepeatUiMessages;
+  onClose: () => void;
+  onRepeat: () => void;
+}) {
+  return (
+    <div className="repeat-modal-backdrop" role="presentation">
+      <section className="repeat-modal" role="dialog" aria-modal="true" aria-labelledby="repeat-modal-title" aria-describedby="repeat-modal-body">
+        <button className="repeat-modal-close" type="button" onClick={onClose} aria-label={copy.repeatModalClose}>
+          <X size={18} aria-hidden="true" />
+        </button>
+        <span className="repeat-modal-icon">
+          <Mic size={24} aria-hidden="true" />
+        </span>
+        <span className="panel-label">{copy.repeat}</span>
+        <h2 id="repeat-modal-title">{copy.repeatModalTitle}</h2>
+        <p id="repeat-modal-body">{copy.repeatModalBody}</p>
+        <div className="repeat-modal-actions">
+          <button className="repeat-modal-secondary" type="button" onClick={onClose}>
+            {copy.repeatModalClose}
+          </button>
+          <button className="repeat-modal-primary" type="button" onClick={onRepeat}>
+            <Mic size={17} aria-hidden="true" />
+            {copy.repeatModalAction}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
