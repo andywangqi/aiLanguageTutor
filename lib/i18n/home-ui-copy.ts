@@ -4,9 +4,6 @@ export type HomeUiCopy = {
   brandHome: string;
   openMenu: string;
   closeMenu: string;
-  learnerTrust: string;
-  fiveStarRating: string;
-  trustedBy: string;
   productBenefits: string;
   speakingBenefit: { title: string; description: string };
   progressBenefit: { title: string; description: string };
@@ -33,9 +30,6 @@ export const homeUiCopy: Record<Locale, HomeUiCopy> = {
     brandHome: "AI Language Tutor home",
     openMenu: "Open menu",
     closeMenu: "Close menu",
-    learnerTrust: "Learner trust",
-    fiveStarRating: "Rated 5 out of 5",
-    trustedBy: "Trusted by learners around the world",
     productBenefits: "Product benefits",
     speakingBenefit: { title: "Learn by speaking", description: "Get corrections and learn useful expressions." },
     progressBenefit: { title: "Track your progress", description: "Review what you learned and keep improving." },
@@ -60,9 +54,6 @@ export const homeUiCopy: Record<Locale, HomeUiCopy> = {
     brandHome: "AI Language Tutor ホーム",
     openMenu: "メニューを開く",
     closeMenu: "メニューを閉じる",
-    learnerTrust: "学習者からの評価",
-    fiveStarRating: "5段階中5の評価",
-    trustedBy: "世界中の学習者に選ばれています",
     productBenefits: "製品の特長",
     speakingBenefit: { title: "話して身につける", description: "添削を受けながら、役立つ表現を学べます。" },
     progressBenefit: { title: "上達を確認", description: "学んだ内容を復習し、着実に伸ばせます。" },
@@ -87,9 +78,6 @@ export const homeUiCopy: Record<Locale, HomeUiCopy> = {
     brandHome: "หน้าหลัก AI Language Tutor",
     openMenu: "เปิดเมนู",
     closeMenu: "ปิดเมนู",
-    learnerTrust: "ความไว้วางใจจากผู้เรียน",
-    fiveStarRating: "คะแนน 5 จาก 5",
-    trustedBy: "ได้รับความไว้วางใจจากผู้เรียนทั่วโลก",
     productBenefits: "ประโยชน์ของผลิตภัณฑ์",
     speakingBenefit: { title: "เรียนรู้ด้วยการพูด", description: "รับคำแก้ไขและเรียนรู้สำนวนที่ใช้ได้จริง" },
     progressBenefit: { title: "ติดตามความก้าวหน้า", description: "ทบทวนสิ่งที่เรียนและพัฒนาต่อเนื่อง" },
@@ -114,9 +102,6 @@ export const homeUiCopy: Record<Locale, HomeUiCopy> = {
     brandHome: "AI Language Tutor 홈",
     openMenu: "메뉴 열기",
     closeMenu: "메뉴 닫기",
-    learnerTrust: "학습자 평가",
-    fiveStarRating: "5점 만점에 5점",
-    trustedBy: "전 세계 학습자가 이용하고 있습니다",
     productBenefits: "제품 장점",
     speakingBenefit: { title: "말하면서 배우기", description: "교정을 받고 실용적인 표현을 익히세요." },
     progressBenefit: { title: "학습 진도 확인", description: "배운 내용을 복습하며 꾸준히 성장하세요." },
@@ -141,9 +126,6 @@ export const homeUiCopy: Record<Locale, HomeUiCopy> = {
     brandHome: "AI Language Tutor 首页",
     openMenu: "打开菜单",
     closeMenu: "关闭菜单",
-    learnerTrust: "学习者评价",
-    fiveStarRating: "满分 5 分，评分 5 分",
-    trustedBy: "受到全球学习者的信赖",
     productBenefits: "产品优势",
     speakingBenefit: { title: "在表达中学习", description: "获得纠正，并掌握实用表达。" },
     progressBenefit: { title: "跟踪学习进度", description: "复习学过的内容，持续进步。" },
@@ -168,9 +150,6 @@ export const homeUiCopy: Record<Locale, HomeUiCopy> = {
     brandHome: "AI Language Tutor 首頁",
     openMenu: "開啟選單",
     closeMenu: "關閉選單",
-    learnerTrust: "學習者評價",
-    fiveStarRating: "滿分 5 分，評分 5 分",
-    trustedBy: "深受全球學習者信賴",
     productBenefits: "產品優勢",
     speakingBenefit: { title: "在表達中學習", description: "獲得修正，並掌握實用表達。" },
     progressBenefit: { title: "追蹤學習進度", description: "複習學過的內容，持續進步。" },
@@ -195,9 +174,6 @@ export const homeUiCopy: Record<Locale, HomeUiCopy> = {
     brandHome: "Inicio de AI Language Tutor",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",
-    learnerTrust: "Valoración de los estudiantes",
-    fiveStarRating: "Valoración de 5 sobre 5",
-    trustedBy: "Elegido por estudiantes de todo el mundo",
     productBenefits: "Ventajas del producto",
     speakingBenefit: { title: "Aprende hablando", description: "Recibe correcciones y aprende expresiones útiles." },
     progressBenefit: { title: "Sigue tu progreso", description: "Repasa lo aprendido y continúa mejorando." },

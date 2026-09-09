@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/landing/JsonLd";
 import { EnglishReadingPractice } from "@/components/site/EnglishReadingPractice";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { createReadingPageMetadata, createReadingSchema } from "@/lib/seo/reading-metadata";
 
 type LocalePageProps = {
@@ -35,7 +36,7 @@ export default async function LocaleReadingPracticePage({ params }: LocalePagePr
   return (
     <>
       <JsonLd data={createReadingSchema(typedLocale)} />
-      <EnglishReadingPractice locale={typedLocale} />
+      <EnglishReadingPractice dictionary={getDictionary(typedLocale)} locale={typedLocale} />
     </>
   );
 }

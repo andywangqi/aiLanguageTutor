@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BookOpen, Check, ChevronRight, FileText, Highlighter, Headphones, Lightbulb, LockKeyhole, Play, RotateCcw, Upload, Volume2 } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { LanguageSwitcher } from "@/components/landing/LanguageSwitcher";
+import { Header } from "@/components/landing/Header";
 import { getBrowserIdentity, getScopedStorageKey, markAnonymousIdentityMerged, trackEvent, trackEventOnce } from "@/lib/analytics/client";
 import { analyticsEvents } from "@/lib/analytics/events";
 import { api, getAccessToken } from "@/lib/api/client";
@@ -11,6 +11,7 @@ import type { ReadingMaterial, ReadingMaterialBundle, ReadingQuestion as ApiRead
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { readingCopy } from "@/lib/i18n/reading-copy";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import type { LandingDictionary } from "@/lib/i18n/types";
 
 type ReaderTab = "read" | "vocabulary" | "comprehension" | "notes";
 
@@ -82,11 +83,10 @@ function fileExtension(fileName: string) {
   return fileName.toLowerCase().split(".").pop() || "unknown";
 }
 
-export function EnglishReadingPractice({ locale = "en", embedded = false }: { locale?: Locale; embedded?: boolean }) {
+export function EnglishReadingPractice({ locale = "en", embedded = false, dictionary }: { locale?: Locale; embedded?: boolean; dictionary?: LandingDictionary }) {
   const copy = readingCopy[locale];
   const pagePath = localizedPath(locale, "/english-reading-practice");
   const loginPath = `${localizedPath(locale, "/login")}?next=${encodeURIComponent(pagePath)}`;
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<ReaderTab>("read");
   const [articleText, setArticleText] = useState(sampleArticle.text);
   const [articleTitle, setArticleTitle] = useState(sampleArticle.title);
@@ -106,25 +106,6 @@ export function EnglishReadingPractice({ locale = "en", embedded = false }: { lo
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lessonEventsRef = useRef(new Set<string>());
   const attemptSignatureRef = useRef("");
-
-  useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) return;
-
-    let active = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (active) setIsAuthenticated(Boolean(data.session));
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(Boolean(session));
-    });
-
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -526,22 +507,7 @@ export function EnglishReadingPractice({ locale = "en", embedded = false }: { lo
 
   return (
     <main className={`reading-page${embedded ? " reading-page-embedded" : ""}`}>
-      {!embedded ? <header className="reading-header">
-        <div className="reading-container reading-header-inner">
-          <Link className="reading-brand" href={localizedPath(locale, "/")} aria-label="AI Language Tutor">
-            <img src="/arno.svg" alt="" />
-            <span>AI Language Tutor</span>
-          </Link>
-          <nav className="reading-nav" aria-label={copy.nav.aria}>
-            <a href="#how-it-works">{copy.nav.how}</a>
-            <a href="#reader-workspace">{copy.nav.demo}</a>
-            <LanguageSwitcher currentLocale={locale} />
-          </nav>
-          <Link className="reading-header-cta" href={isAuthenticated ? localizedPath(locale, "/app") : loginPath}>
-            {isAuthenticated ? copy.nav.signedIn : copy.nav.start} <ChevronRight size={16} aria-hidden="true" />
-          </Link>
-        </div>
-      </header> : null}
+      {!embedded && dictionary ? <Header dictionary={dictionary} locale={locale} /> : null}
 
       {!embedded ? <section className="reading-hero">
         <div className="reading-container reading-hero-grid">

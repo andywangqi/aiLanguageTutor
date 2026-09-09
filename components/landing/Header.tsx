@@ -21,8 +21,14 @@ const labels: Record<Locale, { how: string; languages: string; reading: string; 
   es: { how: "Cómo funciona", languages: "Idiomas", reading: "Lectura en inglés", pricing: "Precios", blog: "Blog", start: "Empezar gratis", signedIn: "Abrir Tutor" }
 };
 
-function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+function scrollToSection(id: string, locale: Locale) {
+  const section = document.getElementById(id);
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  window.location.assign(`${localePath(locale)}#${id}`);
 }
 
 export function Header({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
@@ -65,8 +71,8 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
         </Link>
 
         <nav className="home-v1-nav" aria-label={dictionary.nav.product}>
-          <button type="button" onClick={() => scrollToSection("home-features")}>{copy.how}</button>
-          <button type="button" onClick={() => scrollToSection("home-languages")}>{copy.languages}</button>
+          <button type="button" onClick={() => scrollToSection("home-features", locale)}>{copy.how}</button>
+          <button type="button" onClick={() => scrollToSection("home-languages", locale)}>{copy.languages}</button>
           <Link href={localizedPath(locale, "/english-reading-practice")}>{copy.reading}</Link>
           <Link href={localizedPath(locale, "/pricing")}>{copy.pricing}</Link>
           <Link href={localizedPath(locale, "/learn/blog")}>{copy.blog}</Link>
@@ -99,8 +105,8 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
         </div>
 
         <nav className="home-v1-mobile-nav" aria-label={dictionary.nav.product}>
-          <button type="button" onClick={() => { scrollToSection("home-features"); setMobileMenuOpen(false); }}>{copy.how}</button>
-          <button type="button" onClick={() => { scrollToSection("home-languages"); setMobileMenuOpen(false); }}>{copy.languages}</button>
+          <button type="button" onClick={() => { scrollToSection("home-features", locale); setMobileMenuOpen(false); }}>{copy.how}</button>
+          <button type="button" onClick={() => { scrollToSection("home-languages", locale); setMobileMenuOpen(false); }}>{copy.languages}</button>
           <Link href={localizedPath(locale, "/english-reading-practice")} onClick={() => setMobileMenuOpen(false)}>{copy.reading}</Link>
           <Link href={localizedPath(locale, "/pricing")} onClick={() => setMobileMenuOpen(false)}>{copy.pricing}</Link>
           <Link href={localizedPath(locale, "/learn/blog")} onClick={() => setMobileMenuOpen(false)}>{copy.blog}</Link>

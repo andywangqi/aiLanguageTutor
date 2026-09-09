@@ -210,10 +210,6 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 </ButtonLink>
                 <button className="home-v1-outline-cta" type="button" onClick={() => scrollToSection("home-features")}>{dictionary.hero.secondaryCta}</button>
               </div>
-              <div className="home-v1-proof" aria-label={ui.learnerTrust}>
-                <div className="home-v1-avatars" aria-hidden="true"><span>J</span><span>M</span><span>A</span><span>R</span></div>
-                <div><div className="home-v1-stars" aria-label={ui.fiveStarRating}>★★★★★</div><small>{ui.trustedBy}</small></div>
-              </div>
             </div>
             <InteractiveDemo dictionary={dictionary} />
           </div>

@@ -588,8 +588,11 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }, [activeNav, copy]);
   const workspaceSubtitle = activeNav === "reading" ? readingCopy[locale].workspace.lead : copy.subtitle;
   const selectedMessage = messages.find((message) => message.role === "tutor" && message.text === selectedPhrase);
+  const latestMessage = messages[messages.length - 1];
   const latestTutorMessage = [...messages].reverse().find((message) => message.role === "tutor");
-  const canContinueConversation = !latestTutorMessage || hasRepeatedLatestTutor;
+  const hasTutorResponseToUser = latestMessage?.role === "tutor" && messages.some((message) => message.role === "user");
+  const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser);
+  const canContinueConversation = !requiresRepeat || hasRepeatedLatestTutor;
 
   function applyWorkbenchData(workbench: WorkbenchData) {
     setProfile(workbench.profile || null);
@@ -1390,10 +1393,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             <Volume2 size={15} aria-hidden="true" />
                             {copy.listen}
                           </button>
-                          <button type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking || message.id !== latestTutorMessage?.id}>
-                            <Mic size={15} aria-hidden="true" />
-                            {isRepeatListening && message.id === latestTutorMessage?.id ? copy.sending : isRepeatChecking && message.id === latestTutorMessage?.id ? copy.repeatChecking : copy.repeat}
-                          </button>
+                          {requiresRepeat && message.id === latestTutorMessage?.id ? (
+                            <button type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking}>
+                              <Mic size={15} aria-hidden="true" />
+                              {isRepeatListening ? copy.sending : isRepeatChecking ? copy.repeatChecking : copy.repeat}
+                            </button>
+                          ) : null}
                           <button type="button" onClick={() => void speakText(message.text, 0.65)}>
                             <Clock3 size={15} aria-hidden="true" />
                             {copy.slow}
