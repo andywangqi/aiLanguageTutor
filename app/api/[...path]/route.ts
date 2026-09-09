@@ -26,9 +26,9 @@ function isAllowed(method: string, segments: string[]) {
     if (segments.length === 4 && segments[2] === "messages" && segments[3] === "from-voice") return method === "POST";
   }
   if (segments[0] === "messages" && isId(segments[1]) && segments.length === 3) {
-    return method === "POST" && ["translate", "grammar", "natural-expression", "audio", "cards"].includes(segments[2]);
+    return method === "POST" && ["translate", "grammar", "natural-expression", "audio", "cards", "pronunciation"].includes(segments[2]);
   }
-  if (path === "messages/translate" || path === "messages/grammar") return method === "POST";
+  if (path === "messages/translate" || path === "messages/grammar" || path === "messages/pronunciation") return method === "POST";
   if (path === "cards") return method === "GET";
   if (segments[0] === "cards" && isId(segments[1]) && segments.length === 2) {
     return method === "PATCH" || method === "DELETE";

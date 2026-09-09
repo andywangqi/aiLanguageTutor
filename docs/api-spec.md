@@ -434,6 +434,20 @@ supabase.auth.signInWithOAuth({
 
 生成语法解释。
 
+### 5.4.1 `POST /api/messages/:id/pronunciation`
+
+提交用户对该 Tutor 英文句子的复读转写，由 AI 返回发音练习反馈。复读反馈不创建新的对话消息，结果写入 `message_outputs` 的 `pronunciation` 类型。
+
+```json
+{
+  "spokenText": "What would you like to do this weekend?",
+  "targetLanguageCode": "en",
+  "nativeLanguageCode": "zh-CN"
+}
+```
+
+匿名文本预览可使用 `POST /api/messages/pronunciation`，传入 `targetText` 和 `spokenText`。
+
 ### 5.5 `POST /api/messages/:id/audio`
 
 生成或返回 TTS。
@@ -690,6 +704,8 @@ Content-Type: application/json
 | `message_submitted` | learning_loop |
 | `voice_recording_started` | voice_learning |
 | `voice_transcribed` | voice_learning |
+| `pronunciation_feedback_passed` | learning_loop |
+| `pronunciation_feedback_failed` | learning_loop |
 | `learning_card_saved` | learning_loop |
 | `checkout_opened` | purchase |
 | `payment_completed` | purchase |

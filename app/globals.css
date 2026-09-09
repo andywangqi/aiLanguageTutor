@@ -3188,6 +3188,34 @@ h1 {
   font-weight: 900;
 }
 
+.repeat-feedback {
+  flex: 1 0 100%;
+  display: grid;
+  gap: 4px;
+  margin-top: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #285f49;
+  background: #eaf8f0;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.repeat-feedback.needs-retry {
+  color: #92512f;
+  background: #fff1e8;
+}
+
+.repeat-feedback strong {
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.repeat-feedback span {
+  font-weight: 700;
+}
+
 .conversation-footer {
   padding: 20px 28px 26px;
 }

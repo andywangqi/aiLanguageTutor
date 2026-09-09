@@ -13,6 +13,8 @@ export const analyticsEvents = {
   messageSubmitted: "message_submitted",
   voiceRecordingStarted: "voice_recording_started",
   voiceTranscribed: "voice_transcribed",
+  pronunciationFeedbackPassed: "pronunciation_feedback_passed",
+  pronunciationFeedbackFailed: "pronunciation_feedback_failed",
   learningCardSaved: "learning_card_saved",
   paymentSucceeded: "payment_succeeded",
   paymentCancelled: "payment_cancelled",

@@ -16,6 +16,7 @@ import type {
   LanguageSettings,
   LearningCard,
   MessageOutput,
+  PronunciationFeedback,
   ReadingAudio,
   ReadingAttempt,
   ReadingMaterialBundle,
@@ -205,6 +206,12 @@ export const api = {
     },
     grammar(id: string) {
       return request<MessageOutput>(`messages/${encodeURIComponent(id)}/grammar`, { method: "POST" });
+    },
+    pronunciation(id: string, body: JsonObject) {
+      return request<PronunciationFeedback>(`messages/${encodeURIComponent(id)}/pronunciation`, { method: "POST", body });
+    },
+    pronunciationText(body: JsonObject) {
+      return request<PronunciationFeedback>("messages/pronunciation", { method: "POST", body });
     },
     grammarText(body: JsonObject) {
       return request<MessageOutput>("messages/grammar", { method: "POST", body });

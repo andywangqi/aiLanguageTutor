@@ -121,7 +121,7 @@ export type ProductCopy = {
     openCheckout: string;
   };
   workbench: {
-    nav: { home: string; history: string; cards: string; partners: string; aria: string };
+    nav: { home: string; history: string; cards: string; reading: string; partners: string; aria: string };
     accountPlan: string;
     tutorLabel: string;
     remoteUnavailable: string;
@@ -154,6 +154,11 @@ export type ProductCopy = {
     listen: string;
     repeat: string;
     repeatPrompt: string;
+    repeatChecking: string;
+    repeatPassed: string;
+    repeatTryAgain: string;
+    repeatCorrection: string;
+    repeatFeedbackError: string;
     repeatUnsupported: string;
     repeatRequired: string;
     slow: string;

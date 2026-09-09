@@ -82,7 +82,7 @@ function fileExtension(fileName: string) {
   return fileName.toLowerCase().split(".").pop() || "unknown";
 }
 
-export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
+export function EnglishReadingPractice({ locale = "en", embedded = false }: { locale?: Locale; embedded?: boolean }) {
   const copy = readingCopy[locale];
   const pagePath = localizedPath(locale, "/english-reading-practice");
   const loginPath = `${localizedPath(locale, "/login")}?next=${encodeURIComponent(pagePath)}`;
@@ -525,8 +525,8 @@ export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
   }
 
   return (
-    <main className="reading-page">
-      <header className="reading-header">
+    <main className={`reading-page${embedded ? " reading-page-embedded" : ""}`}>
+      {!embedded ? <header className="reading-header">
         <div className="reading-container reading-header-inner">
           <Link className="reading-brand" href={localizedPath(locale, "/")} aria-label="AI Language Tutor">
             <img src="/arno.svg" alt="" />
@@ -541,9 +541,9 @@ export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
             {isAuthenticated ? copy.nav.signedIn : copy.nav.start} <ChevronRight size={16} aria-hidden="true" />
           </Link>
         </div>
-      </header>
+      </header> : null}
 
-      <section className="reading-hero">
+      {!embedded ? <section className="reading-hero">
         <div className="reading-container reading-hero-grid">
           <div className="reading-hero-copy">
             <p className="reading-kicker"><BookOpen size={16} aria-hidden="true" /> {copy.hero.kicker}</p>
@@ -570,14 +570,14 @@ export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
             </div>
           </div>
         </div>
-      </section>
+      </section> : null}
 
       <section className="reading-workspace-section" id="reader-workspace">
         <div className="reading-container">
-          <div className="reading-section-intro">
+          {!embedded ? <div className="reading-section-intro">
             <div><p className="reading-kicker">{copy.workspace.kicker}</p><h2>{copy.workspace.title}</h2></div>
             <p>{copy.workspace.lead}</p>
-          </div>
+          </div> : null}
 
           <div className="reading-workspace">
             <aside className="reading-workspace-sidebar">
@@ -609,12 +609,12 @@ export function EnglishReadingPractice({ locale = "en" }: { locale?: Locale }) {
         </div>
       </section>
 
-      <section className="reading-how-section" id="how-it-works">
+      {!embedded ? <section className="reading-how-section" id="how-it-works">
         <div className="reading-container"><div className="reading-section-intro"><div><p className="reading-kicker">{copy.method.kicker}</p><h2>{copy.method.title}</h2></div><p>{copy.method.lead}</p></div><div className="reading-benefit-grid">{copy.method.benefits.map((benefit, index) => <article key={benefit.title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{benefit.title}</h3><p>{benefit.body}</p></article>)}</div></div>
-      </section>
+      </section> : null}
 
-      <section className="reading-cta-section"><div className="reading-container reading-cta-inner"><div><p className="reading-kicker">{copy.cta.kicker}</p><h2>{copy.cta.title}</h2></div><Link className="reading-button reading-button-primary" href={loginPath}>{copy.cta.action} <ChevronRight size={17} aria-hidden="true" /></Link></div></section>
-      <footer className="reading-footer"><div className="reading-container"><span>AI Language Tutor</span><span>{copy.footer.description}</span><Link href={localizedPath(locale, "/")}>{copy.footer.home} <ChevronRight size={15} aria-hidden="true" /></Link></div></footer>
+      {!embedded ? <section className="reading-cta-section"><div className="reading-container reading-cta-inner"><div><p className="reading-kicker">{copy.cta.kicker}</p><h2>{copy.cta.title}</h2></div><Link className="reading-button reading-button-primary" href={loginPath}>{copy.cta.action} <ChevronRight size={17} aria-hidden="true" /></Link></div></section> : null}
+      {!embedded ? <footer className="reading-footer"><div className="reading-container"><span>AI Language Tutor</span><span>{copy.footer.description}</span><Link href={localizedPath(locale, "/")}>{copy.footer.home} <ChevronRight size={15} aria-hidden="true" /></Link></div></footer> : null}
     </main>
   );
 }

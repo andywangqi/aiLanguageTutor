@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { User } from "@supabase/supabase-js";
-import { generateMessageInsight, generateTutorReply, type TutorMode } from "@/lib/ai/tutor";
+import { generateMessageInsight, generatePronunciationFeedback, generateTutorReply, type TutorMode } from "@/lib/ai/tutor";
 import { isQwenConfigured } from "@/lib/ai/qwen";
 import { syncCentralEntity } from "@/lib/central/server";
 import { createSupabaseAdminClient, getSupabaseUserFromRequest } from "@/lib/supabase/server";
@@ -204,6 +204,7 @@ export async function handleLocalProductApi(request: Request, segments: string[]
     if (segments[0] === "conversations" && segments[1] && segments[2] === "end" && method === "POST") return ok(await endConversation(context, segments[1]), requestId);
     if (path === "messages/translate" && method === "POST") return ok(await textMessageAction(context, "translation", await readBody(request)), requestId);
     if (path === "messages/grammar" && method === "POST") return ok(await textMessageAction(context, "grammar", await readBody(request)), requestId);
+    if (path === "messages/pronunciation" && method === "POST") return ok(await textPronunciationAction(context, await readBody(request)), requestId);
     if (segments[0] === "messages" && segments[1] && segments.length === 3 && method === "POST") return ok(await messageAction(context, segments[1], segments[2], await readBody(request)), requestId);
     if (path === "cards" && method === "GET") return ok(await listCards(context), requestId);
     if (segments[0] === "cards" && segments[1] && method === "PATCH") return ok(await updateCard(context, segments[1], await readBody(request)), requestId);
@@ -266,7 +267,9 @@ function defaultSettings(): JsonObject {
     nativeLanguageCode: "zh-CN",
     learningLanguageCode: "en",
     levelCode: "auto",
-    partnerId: null
+    partnerId: null,
+    onboardingCompleted: false,
+    onboardingCompletedAt: null
   };
 }
 
@@ -421,7 +424,7 @@ async function updateMe(context: RequestContext, body: JsonObject) {
 }
 
 async function profilePayload(user: User | null) {
-  if (!user) return { id: "guest", email: null, displayName: "Learner", avatarUrl: null, planCode: "free" };
+  if (!user) return { id: "guest", email: null, displayName: "Learner", avatarUrl: null, planCode: "free", onboardingCompleted: false };
   const supabase = createSupabaseAdminClient();
   const { data } = supabase ? await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle() : { data: null };
   const row = (data || {}) as DbRow;
@@ -430,7 +433,8 @@ async function profilePayload(user: User | null) {
     email: stringField(row.email, user.email || ""),
     displayName: stringField(row.display_name, stringField(user.user_metadata?.name, user.email || "Learner")),
     avatarUrl: stringField(row.avatar_url, "") || null,
-    planCode: stringField(row.plan_code, "free")
+    planCode: stringField(row.plan_code, "free"),
+    onboardingCompleted: row.onboarding_completed === true
   };
 }
 
@@ -446,7 +450,9 @@ async function getSettings(context: RequestContext) {
         nativeLanguageCode: stringField(row.native_language_code, defaults.nativeLanguageCode as string),
         learningLanguageCode: stringField(row.learning_language_code, defaults.learningLanguageCode as string),
         levelCode: stringField(row.level_code, defaults.levelCode as string),
-        partnerId: stringField(row.selected_partner_id, "") || null
+        partnerId: stringField(row.selected_partner_id, "") || null,
+        onboardingCompleted: Boolean(row.onboarding_completed_at),
+        onboardingCompletedAt: stringField(row.onboarding_completed_at, "") || null
       };
     }
   }
@@ -454,12 +460,15 @@ async function getSettings(context: RequestContext) {
   return memory().settingsByUser.get(context.userId) || defaults;
 }
 
-async function saveSettings(context: RequestContext, body: JsonObject) {
+async function saveSettings(context: RequestContext, body: JsonObject, completeOnboarding = true) {
+  const completedAt = completeOnboarding ? now() : stringField(body.onboardingCompletedAt, "") || null;
   const settings = {
     nativeLanguageCode: stringField(body.nativeLanguageCode, "zh-CN"),
     learningLanguageCode: stringField(body.learningLanguageCode, "en"),
     levelCode: stringField(body.levelCode, "auto"),
-    partnerId: stringField(body.partnerId, "") || null
+    partnerId: stringField(body.partnerId, "") || null,
+    onboardingCompleted: completeOnboarding || body.onboardingCompleted === true,
+    onboardingCompletedAt: completedAt
   };
   memory().settingsByUser.set(context.userId, settings);
 
@@ -471,11 +480,13 @@ async function saveSettings(context: RequestContext, body: JsonObject) {
       learning_language_code: settings.learningLanguageCode,
       level_code: settings.levelCode,
       selected_partner_id: settings.partnerId,
-      onboarding_completed_at: now(),
+      ...(completeOnboarding ? { onboarding_completed_at: completedAt } : {}),
       updated_at: now()
     }, { onConflict: "user_id" });
 
-    await supabase.from("profiles").update({ onboarding_completed: true, updated_at: now() }).eq("id", context.user.id);
+    if (completeOnboarding) {
+      await supabase.from("profiles").update({ onboarding_completed: true, updated_at: now() }).eq("id", context.user.id);
+    }
   }
 
   return settings;
@@ -483,7 +494,7 @@ async function saveSettings(context: RequestContext, body: JsonObject) {
 
 async function savePartner(context: RequestContext, body: JsonObject) {
   const settings = await getSettings(context);
-  return saveSettings(context, { ...settings, partnerId: body.partnerId || defaultPartner.id });
+  return saveSettings(context, { ...settings, partnerId: body.partnerId || defaultPartner.id }, false);
 }
 
 async function getWorkbench(context: RequestContext) {
@@ -844,6 +855,27 @@ async function messageAction(context: RequestContext, id: string, action: string
 
   if (action === "cards") return saveCardFromMessage(context, message);
 
+  if (action === "pronunciation") {
+    const spokenText = stringField(body.spokenText);
+    if (!spokenText) throw new Error("Spoken text is required.");
+    const result = await generatePronunciationFeedback(
+      text,
+      spokenText,
+      stringField(body.targetLanguageCode, "en"),
+      stringField(body.nativeLanguageCode, "zh-CN")
+    );
+    const supabase = createSupabaseAdminClient();
+    if (context.user && supabase) {
+      await supabase.from("message_outputs").upsert({
+        message_id: id,
+        output_type: "pronunciation",
+        content: result.content,
+        model_name: result.model
+      }, { onConflict: "message_id,output_type" });
+    }
+    return { messageId: id, outputType: "pronunciation", ...result };
+  }
+
   const outputType = action === "grammar" ? "grammar" : "translation";
   const targetLanguageCode = stringField(body.targetLanguageCode, "en");
   const nativeLanguageCode = stringField(body.nativeLanguageCode, "zh-CN");
@@ -867,6 +899,20 @@ async function textMessageAction(context: RequestContext, kind: "translation" | 
   const targetLanguageCode = stringField(body.targetLanguageCode, "zh-CN");
   const result = await generateMessageInsight(kind, text, targetLanguageCode);
   return { messageId: null, outputType: kind, ...result };
+}
+
+async function textPronunciationAction(context: RequestContext, body: JsonObject) {
+  const targetText = stringField(body.targetText);
+  const spokenText = stringField(body.spokenText);
+  if (!targetText || !spokenText) throw new Error("Target text and spoken text are required.");
+
+  const result = await generatePronunciationFeedback(
+    targetText,
+    spokenText,
+    stringField(body.targetLanguageCode, "en"),
+    stringField(body.nativeLanguageCode, "zh-CN")
+  );
+  return { messageId: null, outputType: "pronunciation", ...result };
 }
 
 async function saveCardFromMessage(context: RequestContext, message: TutorMessage) {

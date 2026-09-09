@@ -10,6 +10,7 @@ import {
   Clock3,
   CreditCard,
   EyeOff,
+  FileText,
   Globe2,
   History,
   Home,
@@ -32,14 +33,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { trackEvent, trackEventOnce } from "@/lib/analytics/client";
-import { paymentEventForStatus } from "@/lib/analytics/events";
-import { ApiError, type JsonObject, type TutorConversation, type TutorMessage, type TutorPartner, type WorkbenchData } from "@/lib/api/types";
+import { analyticsEvents, paymentEventForStatus } from "@/lib/analytics/events";
+import { ApiError, type JsonObject, type PronunciationFeedback, type TutorConversation, type TutorMessage, type TutorPartner, type WorkbenchData } from "@/lib/api/types";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
+import { readingCopy } from "@/lib/i18n/reading-copy";
 import type { LandingDictionary, ProductCopy } from "@/lib/i18n/types";
 import { BrandMark } from "./BrandMark";
+import { EnglishReadingPractice } from "@/components/site/EnglishReadingPractice";
 
-type NavItem = "home" | "history" | "cards";
+type NavItem = "home" | "history" | "cards" | "reading";
 type WorkbenchMode = "sayIt" | "talk";
 type InsightMode = "translate" | "grammar";
 type Message = {
@@ -92,7 +95,8 @@ declare global {
 const navItems: Array<{ key: NavItem; icon: typeof Home }> = [
   { key: "home", icon: Home },
   { key: "history", icon: History },
-  { key: "cards", icon: BookOpen }
+  { key: "cards", icon: BookOpen },
+  { key: "reading", icon: FileText }
 ];
 
 type WorkbenchUiMessages = Pick<
@@ -122,47 +126,86 @@ type WorkbenchUiMessages = Pick<
 };
 
 type WorkbenchCopy = ProductCopy["workbench"] & WorkbenchUiMessages;
+type RepeatFeedbackState = {
+  messageId: string;
+  result: PronunciationFeedback;
+};
 
-const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "repeat" | "repeatPrompt" | "repeatUnsupported" | "repeatRequired">> = {
+const localizedRepeatMessages: Record<Locale, Pick<ProductCopy["workbench"], "repeat" | "repeatPrompt" | "repeatChecking" | "repeatPassed" | "repeatTryAgain" | "repeatCorrection" | "repeatFeedbackError" | "repeatUnsupported" | "repeatRequired">> = {
   en: {
     repeat: "Repeat",
     repeatPrompt: "Repeat the sentence aloud before continuing.",
+    repeatChecking: "Checking your repetition…",
+    repeatPassed: "Good repetition. You can continue.",
+    repeatTryAgain: "Please repeat the sentence and try again.",
+    repeatCorrection: "Practice this sentence:",
+    repeatFeedbackError: "We could not check the repetition. Please try again.",
     repeatUnsupported: "Your browser cannot check repetition. Use Chrome or Edge and allow microphone access.",
     repeatRequired: "Please repeat the tutor's sentence before continuing."
   },
   ja: {
     repeat: "復唱",
     repeatPrompt: "続ける前に、この文を声に出して復唱してください。",
+    repeatChecking: "復唱を確認しています…",
+    repeatPassed: "よくできました。このまま続けられます。",
+    repeatTryAgain: "文をもう一度復唱して、再試行してください。",
+    repeatCorrection: "この文を練習してください：",
+    repeatFeedbackError: "復唱を確認できませんでした。もう一度お試しください。",
     repeatUnsupported: "お使いのブラウザでは復唱を確認できません。ChromeまたはEdgeでマイクの使用を許可してください。",
     repeatRequired: "続ける前に、Tutorの文を復唱してください。"
   },
   th: {
     repeat: "พูดตาม",
     repeatPrompt: "พูดประโยคนี้ตามออกเสียงก่อนดำเนินการต่อ",
+    repeatChecking: "กำลังตรวจสอบการพูดตาม…",
+    repeatPassed: "พูดตามได้ดีมาก ไปต่อได้เลย",
+    repeatTryAgain: "โปรดพูดตามประโยคอีกครั้งแล้วลองใหม่",
+    repeatCorrection: "ฝึกพูดประโยคนี้:",
+    repeatFeedbackError: "ตรวจสอบการพูดตามไม่ได้ โปรดลองอีกครั้ง",
     repeatUnsupported: "เบราว์เซอร์ของคุณไม่สามารถตรวจสอบการพูดตามได้ โปรดใช้ Chrome หรือ Edge และอนุญาตให้ใช้ไมโครโฟน",
     repeatRequired: "โปรดพูดตามประโยคของ Tutor ก่อนดำเนินการต่อ"
   },
   ko: {
     repeat: "따라 말하기",
     repeatPrompt: "계속하기 전에 이 문장을 소리 내어 따라 말해 보세요.",
+    repeatChecking: "따라 말하기를 확인하는 중…",
+    repeatPassed: "잘했어요. 계속 진행할 수 있어요.",
+    repeatTryAgain: "문장을 다시 따라 말하고 시도해 주세요.",
+    repeatCorrection: "이 문장을 연습해 보세요:",
+    repeatFeedbackError: "따라 말하기를 확인하지 못했습니다. 다시 시도해 주세요.",
     repeatUnsupported: "현재 브라우저에서는 따라 말하기를 확인할 수 없습니다. Chrome 또는 Edge에서 마이크 사용을 허용해 주세요.",
     repeatRequired: "계속하기 전에 Tutor의 문장을 따라 말해 주세요."
   },
   "zh-CN": {
     repeat: "复读",
     repeatPrompt: "继续之前，请大声复读这句话。",
+    repeatChecking: "正在检查复读…",
+    repeatPassed: "复读完成，可以继续了。",
+    repeatTryAgain: "请再复读一次，然后重试。",
+    repeatCorrection: "请练习这句话：",
+    repeatFeedbackError: "暂时无法检查复读，请再试一次。",
     repeatUnsupported: "当前浏览器无法检测复读，请使用 Chrome 或 Edge 并允许麦克风权限。",
     repeatRequired: "请先复读导师说的句子，然后再继续。"
   },
   "zh-TW": {
     repeat: "複誦",
     repeatPrompt: "繼續之前，請大聲複誦這句話。",
+    repeatChecking: "正在檢查複誦…",
+    repeatPassed: "複誦完成，可以繼續了。",
+    repeatTryAgain: "請再複誦一次，然後重試。",
+    repeatCorrection: "請練習這句話：",
+    repeatFeedbackError: "暫時無法檢查複誦，請再試一次。",
     repeatUnsupported: "目前瀏覽器無法檢查複誦，請使用 Chrome 或 Edge 並允許麥克風權限。",
     repeatRequired: "請先複誦 Tutor 的句子，再繼續。"
   },
   es: {
     repeat: "Repetir",
     repeatPrompt: "Repite esta frase en voz alta antes de continuar.",
+    repeatChecking: "Comprobando tu repetición…",
+    repeatPassed: "Buena repetición. Puedes continuar.",
+    repeatTryAgain: "Repite la frase e inténtalo de nuevo.",
+    repeatCorrection: "Practica esta frase:",
+    repeatFeedbackError: "No se pudo comprobar la repetición. Vuelve a intentarlo.",
     repeatUnsupported: "Tu navegador no puede comprobar la repetición. Usa Chrome o Edge y permite el acceso al micrófono.",
     repeatRequired: "Repite la frase del tutor antes de continuar."
   }
@@ -340,6 +383,44 @@ const initialMessages: Message[] = [
   }
 ];
 
+const languagePromptSeenStorageKey = "ai-tutor-language-prompt-seen";
+
+function languagePromptScope(workbench?: WorkbenchData) {
+  const profile = workbench?.profile;
+  if (profile && typeof profile === "object") {
+    const id = (profile as JsonObject).id;
+    if (typeof id === "string" && id.trim()) return id.trim();
+  }
+  return "anonymous";
+}
+
+function hasSeenLanguagePrompt(scope: string) {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(`${languagePromptSeenStorageKey}:${scope}`) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markLanguagePromptSeen(scope: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(`${languagePromptSeenStorageKey}:${scope}`, "1");
+  } catch {
+    // A blocked localStorage must not prevent the workbench from opening.
+  }
+}
+
+function isLanguageSetupComplete(workbench: WorkbenchData) {
+  const settings = workbench.settings as (JsonObject | undefined);
+  const profile = workbench.profile && typeof workbench.profile === "object" ? workbench.profile as JsonObject : undefined;
+  return settings?.onboardingCompleted === true
+    || Boolean(settings?.onboardingCompletedAt)
+    || profile?.onboardingCompleted === true
+    || profile?.onboarding_completed === true;
+}
+
 function normalizeSpeech(text: string) {
   return text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
@@ -362,14 +443,16 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [mode, setMode] = useState<WorkbenchMode>("sayIt");
   const [insightMode, setInsightMode] = useState<InsightMode>("translate");
   const [partnerOpen, setPartnerOpen] = useState(false);
-  const [languageModalOpen, setLanguageModalOpen] = useState(true);
+  const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [nativeLanguage, setNativeLanguage] = useState("Chinese");
   const [learningLanguage, setLearningLanguage] = useState("English");
   const [level, setLevel] = useState("Auto-detect");
   const [isListening, setIsListening] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState("");
   const [isRepeatListening, setIsRepeatListening] = useState(false);
+  const [isRepeatChecking, setIsRepeatChecking] = useState(false);
   const [hasRepeatedLatestTutor, setHasRepeatedLatestTutor] = useState(false);
+  const [repeatFeedback, setRepeatFeedback] = useState<RepeatFeedbackState | null>(null);
   const [apiNotice, setApiNotice] = useState("");
   const [isRemoteSession, setIsRemoteSession] = useState(false);
   const [isRemoteUnavailable, setIsRemoteUnavailable] = useState(false);
@@ -411,6 +494,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [todayMessageCount, setTodayMessageCount] = useState(0);
   const voiceStartedAtRef = useRef<number | null>(null);
   const voiceCancelledRef = useRef(false);
+
+  useEffect(() => {
+    if (isSupabaseConfigured() || hasSeenLanguagePrompt("anonymous")) return;
+    markLanguagePromptSeen("anonymous");
+    setLanguageModalOpen(true);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -494,8 +583,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const workspaceTitle = useMemo(() => {
     if (activeNav === "history") return copy.nav.history;
     if (activeNav === "cards") return copy.nav.cards;
+    if (activeNav === "reading") return copy.nav.reading;
     return copy.title;
   }, [activeNav, copy]);
+  const workspaceSubtitle = activeNav === "reading" ? readingCopy[locale].workspace.lead : copy.subtitle;
   const selectedMessage = messages.find((message) => message.role === "tutor" && message.text === selectedPhrase);
   const latestTutorMessage = [...messages].reverse().find((message) => message.role === "tutor");
   const canContinueConversation = !latestTutorMessage || hasRepeatedLatestTutor;
@@ -507,6 +598,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     setCards(workbench.cards || []);
     setRecentConversations(workbench.recentConversations || []);
     setTodayMessageCount(numberValue(workbench.todayMessageCount));
+    const setupComplete = isLanguageSetupComplete(workbench);
+    const promptScope = languagePromptScope(workbench);
+    if (setupComplete) {
+      setLanguageModalOpen(false);
+    } else if (!hasSeenLanguagePrompt(promptScope)) {
+      markLanguagePromptSeen(promptScope);
+      setLanguageModalOpen(true);
+    }
     const settings = workbench.settings;
     if (settings?.nativeLanguageCode) setNativeLanguage(languageName(settings.nativeLanguageCode));
     if (settings?.learningLanguageCode) setLearningLanguage(languageName(settings.learningLanguageCode));
@@ -518,7 +617,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       const remoteMessages = getConversationMessages(conversation);
       if (remoteMessages.length > 0) setMessages(remoteMessages);
       setHasRepeatedLatestTutor(false);
-      setLanguageModalOpen(false);
+      setRepeatFeedback(null);
     }
   }
 
@@ -542,6 +641,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
   function resetDemoConversation(nextMode = mode) {
     setHasRepeatedLatestTutor(false);
+    setRepeatFeedback(null);
     setMessages([
       {
         id: `demo-${Date.now()}`,
@@ -640,6 +740,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         }
       ]);
       setHasRepeatedLatestTutor(false);
+      setRepeatFeedback(null);
       return;
     }
 
@@ -722,6 +823,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       if (remoteMessages.length > 0) {
         setMessages(remoteMessages);
         if (remoteMessages.some((message) => message.role === "tutor")) setHasRepeatedLatestTutor(false);
+        if (remoteMessages.some((message) => message.role === "tutor")) setRepeatFeedback(null);
       }
       await trackEvent(inputType === "voice" ? "voice_transcribed" : "message_submitted", { mode });
     } catch (error) {
@@ -887,8 +989,11 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   async function saveLanguageSettings() {
-    setLanguageModalOpen(false);
-    if (!isRemoteSession) return;
+    if (!isRemoteSession) {
+      markLanguagePromptSeen("anonymous");
+      setLanguageModalOpen(false);
+      return;
+    }
 
     try {
       await api.me.updateSettings({
@@ -896,6 +1001,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         learningLanguageCode: languageCode(learningLanguage),
         levelCode: levelCode(level)
       });
+      markLanguagePromptSeen(languagePromptScope({ profile: profile || undefined }));
+      setLanguageModalOpen(false);
       setApiNotice("");
     } catch (error) {
       setApiNotice(apiErrorMessage(error, copy.settingsError));
@@ -938,8 +1045,61 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     window.speechSynthesis.speak(utterance);
   }
 
+  async function submitRepeatFeedback(message: Message, spokenText: string) {
+    setIsRepeatChecking(true);
+    setHasRepeatedLatestTutor(false);
+    setVoiceNotice(copy.repeatChecking);
+    try {
+      const result = (!isRemoteSession
+        ? {
+            messageId: null,
+            outputType: "pronunciation" as const,
+            provider: "fallback",
+            model: "demo-local",
+            content: {
+              text: isRepeatCloseEnough(spokenText, message.text)
+                ? "Good repetition. Your sentence is clear."
+                : "Try again and focus on saying every word clearly.",
+              passed: isRepeatCloseEnough(spokenText, message.text),
+              score: isRepeatCloseEnough(spokenText, message.text) ? 1 : 0,
+              correctedText: message.text,
+              targetText: message.text,
+              spokenText
+            }
+          }
+        : !message.id.startsWith("demo-")
+        ? await api.messages.pronunciation(message.id, {
+            spokenText,
+            targetLanguageCode: languageCode(learningLanguage),
+            nativeLanguageCode: languageCode(nativeLanguage)
+          })
+        : await api.messages.pronunciationText({
+            targetText: message.text,
+            spokenText,
+            targetLanguageCode: languageCode(learningLanguage),
+            nativeLanguageCode: languageCode(nativeLanguage)
+          })) as PronunciationFeedback;
+      setRepeatFeedback({ messageId: message.id, result });
+      const passed = Boolean(result.content?.passed);
+      setHasRepeatedLatestTutor(passed);
+      setVoiceNotice(passed ? copy.repeatPassed : copy.repeatTryAgain);
+      void trackEvent(passed ? analyticsEvents.pronunciationFeedbackPassed : analyticsEvents.pronunciationFeedbackFailed, {
+        mode,
+        messageId: message.id,
+        score: result.content?.score ?? 0
+      });
+    } catch (error) {
+      setRepeatFeedback(null);
+      setHasRepeatedLatestTutor(false);
+      setVoiceNotice(copy.repeatFeedbackError);
+      setApiNotice(apiErrorMessage(error, copy.learningToolError));
+    } finally {
+      setIsRepeatChecking(false);
+    }
+  }
+
   function repeatTutorMessage(message: Message) {
-    if (message.id !== latestTutorMessage?.id || isRepeatListening) return;
+    if (message.id !== latestTutorMessage?.id || isRepeatListening || isRepeatChecking) return;
 
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Recognition) {
@@ -953,15 +1113,19 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     const recognition = new Recognition();
     let transcript = "";
     let finished = false;
-    const finish = (success: boolean) => {
+    const finish = (spokenText: string) => {
       if (finished) return;
       finished = true;
       if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
       repeatTimeoutRef.current = null;
       repeatRecognitionRef.current = null;
       setIsRepeatListening(false);
-      setHasRepeatedLatestTutor(success);
-      setVoiceNotice(success ? copy.sent : copy.repeatRequired);
+      if (!spokenText.trim()) {
+        setHasRepeatedLatestTutor(false);
+        setVoiceNotice(copy.repeatRequired);
+        return;
+      }
+      void submitRepeatFeedback(message, spokenText.trim());
     };
 
     recognition.lang = getSpeechLocale(learningLanguage);
@@ -972,20 +1136,22 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         .join(" ")
         .trim();
       if (Array.from({ length: event.results.length }, (_, index) => event.results[index].isFinal).some(Boolean)) {
-        finish(isRepeatCloseEnough(transcript, message.text));
+        finish(transcript);
       }
     };
-    recognition.onerror = () => finish(false);
-    recognition.onend = () => finish(isRepeatCloseEnough(transcript, message.text));
+    recognition.onerror = () => finish(transcript);
+    recognition.onend = () => finish(transcript);
     repeatRecognitionRef.current = recognition;
+    setRepeatFeedback(null);
+    setHasRepeatedLatestTutor(false);
     setIsRepeatListening(true);
     setVoiceNotice(copy.repeatPrompt);
-    repeatTimeoutRef.current = setTimeout(() => finish(isRepeatCloseEnough(transcript, message.text)), 12000);
+    repeatTimeoutRef.current = setTimeout(() => finish(transcript), 12000);
 
     try {
       recognition.start();
     } catch {
-      finish(false);
+      finish(transcript);
     }
   }
 
@@ -1097,7 +1263,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           <div>
             <span className="workbench-mobile-nav">{copy.nav[activeNav]}</span>
             <h1>{workspaceTitle}</h1>
-            <p>{copy.subtitle}</p>
+            <p>{workspaceSubtitle}</p>
           </div>
           <div className="workbench-top-actions">
             <button className="language-settings-button" type="button" onClick={() => setLanguageModalOpen(true)}>
@@ -1224,9 +1390,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             <Volume2 size={15} aria-hidden="true" />
                             {copy.listen}
                           </button>
-                          <button type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || message.id !== latestTutorMessage?.id}>
+                          <button type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking || message.id !== latestTutorMessage?.id}>
                             <Mic size={15} aria-hidden="true" />
-                            {isRepeatListening && message.id === latestTutorMessage?.id ? copy.sending : copy.repeat}
+                            {isRepeatListening && message.id === latestTutorMessage?.id ? copy.sending : isRepeatChecking && message.id === latestTutorMessage?.id ? copy.repeatChecking : copy.repeat}
                           </button>
                           <button type="button" onClick={() => void speakText(message.text, 0.65)}>
                             <Clock3 size={15} aria-hidden="true" />
@@ -1240,6 +1406,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             <Languages size={15} aria-hidden="true" />
                             {copy.translation}
                           </button>
+                          {repeatFeedback?.messageId === message.id ? (
+                            <div className={`repeat-feedback ${repeatFeedback.result.content.passed ? "passed" : "needs-retry"}`} role="status">
+                              <strong>{repeatFeedback.result.content.passed ? copy.repeatPassed : copy.repeatTryAgain}</strong>
+                              <span>{repeatFeedback.result.content.text}</span>
+                              <span>{copy.repeatCorrection} {repeatFeedback.result.content.correctedText}</span>
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
@@ -1282,7 +1455,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   }}
                   placeholder={mode === "sayIt" ? copy.typeSayIt : copy.typeTalk}
                   aria-label={copy.messageLabel}
-                  disabled={!canContinueConversation || isApiBusy || isRepeatListening}
+                  disabled={!canContinueConversation || isApiBusy || isRepeatListening || isRepeatChecking}
                 />
                 <button
                   className={isListening ? "voice-button listening" : "voice-button"}
@@ -1294,11 +1467,11 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   aria-label={copy.holdToSpeak}
                   aria-pressed={isListening}
                   title={copy.holdToSpeak}
-                  disabled={!canContinueConversation || isApiBusy || isRepeatListening}
+                  disabled={!canContinueConversation || isApiBusy || isRepeatListening || isRepeatChecking}
                 >
                   {isListening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
                 </button>
-                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={!canContinueConversation || isApiBusy || isRepeatListening}>
+                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={!canContinueConversation || isApiBusy || isRepeatListening || isRepeatChecking}>
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
@@ -1380,7 +1553,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           {copy.privateNote}
           <ArrowRight size={14} aria-hidden="true" />
         </div>
-        </> : <WorkbenchNavView activeNav={activeNav} copy={copy} locale={locale} conversations={recentConversations} cards={cards} />}
+        </> : activeNav === "reading" ? (
+          <EnglishReadingPractice locale={locale} embedded />
+        ) : <WorkbenchNavView activeNav={activeNav} copy={copy} locale={locale} conversations={recentConversations} cards={cards} />}
       </section>
 
       {languageModalOpen ? (

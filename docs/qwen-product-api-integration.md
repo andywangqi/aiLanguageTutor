@@ -80,6 +80,8 @@ POST /api/conversations/:id/reset
 POST /api/conversations/:id/end
 POST /api/messages/:id/translate
 POST /api/messages/:id/grammar
+POST /api/messages/:id/pronunciation
+POST /api/messages/pronunciation
 POST /api/messages/:id/audio
 POST /api/messages/:id/cards
 GET  /api/cards
@@ -98,8 +100,10 @@ POST /api/billing/checkout
 
 - User can type or speak in their native language.
 - Qwen understands the meaning.
-- The tutor replies with a natural target-language expression first.
-- The tutor keeps the explanation short so the learner can practice speaking.
+- The tutor replies with one natural target-language expression.
+- The learner must repeat that expression before sending the next message.
+- The repeat transcript is checked by `POST /api/messages/:id/pronunciation`.
+- Qwen returns a short target-language correction or encouragement, and only a passed repeat unlocks the next turn.
 
 `Talk` mode:
 

@@ -28,6 +28,15 @@ export type TutorReply = {
 
 export type TutorInsightKind = "translation" | "grammar" | "natural_expression";
 
+export type PronunciationFeedback = {
+  text: string;
+  passed: boolean;
+  score: number;
+  correctedText: string;
+  targetText: string;
+  spokenText: string;
+};
+
 const languageNames: Record<string, string> = {
   en: "English",
   "en-US": "English",
@@ -70,8 +79,8 @@ function systemPrompt(input: TutorReplyInput) {
     `You are AI Language Tutor, a speaking tutor that helps learners express an idea in ${learningLanguage}.`,
     `The learner may type in ${nativeLanguage} because they do not know how to say it in ${learningLanguage}. Their level is ${level}.`,
     `Use only ${learningLanguage} in your reply. Never use ${nativeLanguage}.`,
-    "Return exactly two short lines: first, one natural target-language sentence expressing the learner's meaning; second, one short follow-up question in the target language.",
-    "Do not translate, explain, correct, add labels, quote the learner, mention the native language, use markdown, or include any text besides those two lines."
+    "Return exactly one short line: one natural target-language sentence expressing the learner's meaning.",
+    "Do not translate, explain, correct, ask a question, add labels, quote the learner, mention the native language, use markdown, or include any text besides that one line."
   ].join("\n");
 }
 
@@ -99,7 +108,7 @@ function fallbackReply(input: TutorReplyInput): TutorReply {
     th: "เข้าใจแล้ว เล่าเพิ่มอีกหนึ่งรายละเอียดได้ไหม\nคุณอยากเพิ่มเติมอะไรอีกไหม",
     es: "Entiendo. Cuéntame un detalle más.\n¿Qué te gustaría añadir?"
   };
-  const text = fallbackByLanguage[input.learningLanguageCode] || fallbackByLanguage.en;
+  const text = (fallbackByLanguage[input.learningLanguageCode] || fallbackByLanguage.en).split("\n")[0];
 
   return { text, provider: "fallback", model: "local-fallback" };
 }
@@ -122,7 +131,7 @@ function sanitizeTutorText(text: string, input: TutorReplyInput) {
     .filter((line) => line && !/^[-*#]+\s*/.test(line))
     .filter((line) => !(nativePattern && nativePattern.test(line)));
 
-  if (input.mode === "say_it") return lines.slice(0, 2).join("\n");
+  if (input.mode === "say_it") return lines.slice(0, 1).join(" ");
   return lines.slice(0, 2).join(" ");
 }
 
@@ -134,6 +143,132 @@ export async function generateTutorReply(input: TutorReplyInput): Promise<TutorR
     return { ...qwenResult(result), text: sanitizeTutorText(result.text, input) || fallbackReply(input).text };
   } catch {
     return fallbackReply(input);
+  }
+}
+
+function normalizedWords(text: string) {
+  const words = text.toLowerCase().match(/[\p{L}\p{N}]+/gu);
+  return words ? Array.from(words) : [];
+}
+
+function repeatScore(targetText: string, spokenText: string) {
+  const targetWords = normalizedWords(targetText);
+  const spokenWords = normalizedWords(spokenText);
+  if (!targetWords.length || !spokenWords.length) return 0;
+  const matched = targetWords.filter((word) => spokenWords.includes(word)).length;
+  return matched / targetWords.length;
+}
+
+function isRepeatPassed(targetText: string, spokenText: string) {
+  const targetWords = normalizedWords(targetText);
+  const score = repeatScore(targetText, spokenText);
+  return score >= (targetWords.length <= 5 ? 0.6 : 0.72);
+}
+
+function parseFeedbackJson(text: string) {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[0]) as { feedback?: unknown; correctedText?: unknown };
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeFeedback(text: string, nativeLanguageCode: string) {
+  const nativePattern = nativeLanguagePattern(nativeLanguageCode);
+  return text
+    .replace(/```(?:json|text)?/gi, "")
+    .replace(/```/g, "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:feedback|correction|explanation|answer)\s*:\s*/i, "").trim())
+    .filter((line) => line && !(nativePattern && nativePattern.test(line)))
+    .slice(0, 2)
+    .join(" ");
+}
+
+export async function generatePronunciationFeedback(
+  targetText: string,
+  spokenText: string,
+  targetLanguageCode = "en",
+  nativeLanguageCode = "zh-CN"
+): Promise<{ provider: "qwen" | "fallback"; model: string; content: PronunciationFeedback; inputTokens?: number; outputTokens?: number }> {
+  const score = repeatScore(targetText, spokenText);
+  const passed = isRepeatPassed(targetText, spokenText);
+  const targetLanguage = nameForLanguage(targetLanguageCode);
+
+  if (!isQwenConfigured()) {
+    return {
+      provider: "fallback",
+      model: "local-fallback",
+      content: {
+        text: passed
+          ? "Good repetition. Your sentence is clear."
+          : `Try again: ${targetText}. Focus on saying every word clearly.`,
+        passed,
+        score,
+        correctedText: targetText,
+        targetText,
+        spokenText
+      }
+    };
+  }
+
+  try {
+    const result = await qwenChat([
+      {
+        role: "system",
+        content: [
+          `You are a pronunciation coach for ${targetLanguage}.`,
+          `The learner's native language is ${nameForLanguage(nativeLanguageCode)}.`,
+          "Compare the target sentence with the learner's speech transcript.",
+          "Return valid JSON only with exactly these keys: feedback, correctedText.",
+          `Write feedback only in ${targetLanguage}; never use the native language.`,
+          "If the repetition is close, give one short positive sentence. If it is not close, give one short correction and a brief tip.",
+          "Do not add markdown, labels, translation, or any text outside the JSON object."
+        ].join("\n")
+      },
+      {
+        role: "user",
+        content: `TARGET SENTENCE:\n${targetText}\n\nLEARNER TRANSCRIPT:\n${spokenText}`
+      }
+    ], { temperature: 0.2, maxTokens: 220 });
+    const parsed = parseFeedbackJson(result.text);
+    const rawFeedback = typeof parsed?.feedback === "string" ? parsed.feedback : result.text;
+    const feedback = sanitizeFeedback(rawFeedback, nativeLanguageCode);
+    const correctedText = typeof parsed?.correctedText === "string" && parsed.correctedText.trim()
+      ? parsed.correctedText.trim()
+      : targetText;
+
+    return {
+      provider: result.provider,
+      model: result.model,
+      content: {
+        text: feedback || (passed ? "Good repetition. Your sentence is clear." : `Try again: ${targetText}.`),
+        passed,
+        score,
+        correctedText,
+        targetText,
+        spokenText
+      },
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens
+    };
+  } catch {
+    return {
+      provider: "fallback",
+      model: "local-fallback",
+      content: {
+        text: passed
+          ? "Good repetition. Your sentence is clear."
+          : `Try again: ${targetText}. Focus on saying every word clearly.`,
+        passed,
+        score,
+        correctedText: targetText,
+        targetText,
+        spokenText
+      }
+    };
   }
 }
 

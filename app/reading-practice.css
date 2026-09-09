@@ -905,6 +905,28 @@
   font-weight: 800;
 }
 
+/* The workbench owns the page shell when reading practice is opened from its sidebar. */
+.reading-page-embedded {
+  min-width: 0;
+  background: transparent;
+}
+
+.reading-page-embedded .reading-workspace-section {
+  padding: 0;
+  background: transparent;
+}
+
+.reading-page-embedded .reading-container {
+  width: 100%;
+  max-width: none;
+}
+
+.reading-page-embedded .reading-workspace {
+  min-height: 620px;
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgb(76 53 30 / 7%);
+}
+
 @media (max-width: 900px) {
   .reading-hero-grid {
     grid-template-columns: 1fr;

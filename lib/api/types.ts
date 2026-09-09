@@ -34,6 +34,8 @@ export type LanguageSettings = {
   learningLanguageCode?: string;
   levelCode?: string;
   partnerId?: string | null;
+  onboardingCompleted?: boolean;
+  onboardingCompletedAt?: string | null;
 };
 
 export type Profile = {
@@ -43,6 +45,7 @@ export type Profile = {
   avatarUrl: string | null;
   timezone: string | null;
   planCode: string;
+  onboardingCompleted?: boolean;
 };
 
 export type Settings = {
@@ -199,9 +202,24 @@ export type LearningCard = {
 
 export type MessageOutput = {
   id: string;
-  type: "translation" | "grammar" | "natural_expression";
+  type: "translation" | "grammar" | "natural_expression" | "pronunciation";
   content: string | JsonObject;
   generatedAt: string;
+};
+
+export type PronunciationFeedback = {
+  messageId: string | null;
+  outputType: "pronunciation";
+  content: {
+    text: string;
+    passed: boolean;
+    score: number;
+    correctedText: string;
+    targetText: string;
+    spokenText: string;
+  };
+  provider?: string;
+  model?: string;
 };
 
 export type VoiceUpload = {
