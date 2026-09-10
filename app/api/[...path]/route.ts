@@ -11,6 +11,10 @@ function isId(value: string | undefined) {
   return Boolean(value && value.length <= 128 && /^[a-zA-Z0-9_-]+$/.test(value));
 }
 
+function isBlogSlug(value: string | undefined) {
+  return Boolean(value && value.length <= 180 && !value.includes("/"));
+}
+
 function isAllowed(method: string, segments: string[]) {
   const path = segments.join("/");
   if (path === "track") return method === "POST";
@@ -35,6 +39,10 @@ function isAllowed(method: string, segments: string[]) {
   }
   if (path === "billing/plans" || path === "billing/me") return method === "GET";
   if (path === "billing/checkout") return method === "POST";
+  if (segments[0] === "blog" && segments[1] === "posts") {
+    if (segments.length === 2) return method === "GET";
+    if (segments.length === 3 && isBlogSlug(segments[2])) return method === "GET";
+  }
   if (segments[0] === "billing" && segments[1] === "orders" && isId(segments[2]) && segments.length === 3) {
     return method === "GET";
   }

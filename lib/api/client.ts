@@ -5,6 +5,8 @@ import { localeFromPathname, localizedPath } from "@/lib/i18n/config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
   ApiEnvelope,
+  BlogDetailResponse,
+  BlogListResponse,
   BillingMe,
   BillingOrder,
   BillingPlan,
@@ -311,6 +313,14 @@ export const api = {
     },
     audio(id: string, body: JsonObject = {}) {
       return request<ReadingAudio>(`reading/materials/${encodeURIComponent(id)}/audio`, { method: "POST", body });
+    }
+  },
+  blog: {
+    list(query = "") {
+      return request<BlogListResponse>(`blog/posts${query ? `?${query}` : ""}`);
+    },
+    get(slug: string, query = "") {
+      return request<BlogDetailResponse>(`blog/posts/${encodeURIComponent(slug)}${query ? `?${query}` : ""}`);
     }
   }
 };

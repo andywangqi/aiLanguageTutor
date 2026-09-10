@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentPage } from "@/components/site/ContentPage";
+import { BlogPage } from "@/components/site/BlogPage";
 import { contentRoutes, getContentPageCopy, getContentPagePath, type ContentSlug } from "@/lib/content-pages";
+import { getPublicBlogPosts } from "@/lib/blog";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
 
@@ -46,6 +48,11 @@ export default async function Page({ params }: PageProps) {
 
   if (!copy) {
     notFound();
+  }
+
+  if (typedSlug === "blog") {
+    const blog = await getPublicBlogPosts("en");
+    if (blog) return <BlogPage locale="en" copy={copy} data={blog} />;
   }
 
   return <ContentPage locale="en" {...copy} />;

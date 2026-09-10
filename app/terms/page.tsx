@@ -83,7 +83,7 @@ export default function TermsPage() {
         </p>
         <p>
           Refund eligibility depends on the purchase channel, local law, and the terms shown at checkout. For help
-          with a billing issue, contact <a href="mailto:support@ailanguagetutor.online">support@ailanguagetutor.online</a>{" "}
+          with a billing issue, contact <a href="mailto:scottthornton815@gmail.com">scottthornton815@gmail.com</a>{" "}
           with the account email and transaction details.
         </p>
       </section>
@@ -143,7 +143,7 @@ export default function TermsPage() {
         <h2>11. Contact</h2>
         <p>
           Questions about these terms can be sent to{" "}
-          <a href="mailto:legal@ailanguagetutor.online">legal@ailanguagetutor.online</a>. For general product help, use
+          <a href="mailto:scottthornton815@gmail.com">scottthornton815@gmail.com</a>. For general product help, use
           our <Link href="/contact">Contact page</Link>.
         </p>
       </section>

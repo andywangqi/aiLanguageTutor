@@ -448,10 +448,10 @@ function markLanguagePromptSeen(scope: string) {
 }
 
 function isLanguageSetupComplete(workbench: WorkbenchData) {
-  const settings = workbench.settings as (JsonObject | undefined);
+  const settings = languageSettingsFromWorkbench(workbench);
   const profile = workbench.profile && typeof workbench.profile === "object" ? workbench.profile as JsonObject : undefined;
-  return settings?.onboardingCompleted === true
-    || Boolean(settings?.onboardingCompletedAt)
+  return settings.onboardingCompleted === true
+    || Boolean(settings.onboardingCompletedAt)
     || profile?.onboardingCompleted === true
     || profile?.onboarding_completed === true;
 }
@@ -658,10 +658,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       markLanguagePromptSeen(promptScope);
       setLanguageModalOpen(true);
     }
-    const settings = workbench.settings;
-    if (settings?.nativeLanguageCode) setNativeLanguage(languageName(settings.nativeLanguageCode));
-    if (settings?.learningLanguageCode) setLearningLanguage(languageName(settings.learningLanguageCode));
-    if (settings?.levelCode) setLevel(levelName(settings.levelCode));
+    const settings = languageSettingsFromWorkbench(workbench);
+    if (settings.nativeLanguage) setNativeLanguage(settings.nativeLanguage);
+    if (settings.learningLanguage) setLearningLanguage(settings.learningLanguage);
+    if (settings.level) setLevel(settings.level);
 
     const conversation = workbench.currentConversation || workbench.conversation || workbench.recentConversations?.[0];
     if (conversation?.id) {
@@ -1797,28 +1797,81 @@ function languageCode(language: string) {
     German: "de"
   };
 
-  return codes[language] || "en";
+  return codes[languageName(language)] || "en";
 }
 
-function languageName(code: string) {
+function languageName(value: string) {
+  const normalized = value.trim().toLowerCase().replace(/[\s_-]+/g, "");
   const names: Record<string, string> = {
-    "zh-CN": "Chinese",
-    "zh-TW": "Chinese",
+    zh: "Chinese",
+    zhcn: "Chinese",
+    zhtw: "Chinese",
+    chinese: "Chinese",
+    中文: "Chinese",
     en: "English",
-    "en-US": "English",
+    enus: "English",
+    english: "English",
+    英语: "English",
     es: "Spanish",
-    "es-ES": "Spanish",
+    eses: "Spanish",
+    spanish: "Spanish",
+    西班牙语: "Spanish",
     ja: "Japanese",
-    "ja-JP": "Japanese",
+    jaja: "Japanese",
+    japanese: "Japanese",
+    日本語: "Japanese",
+    日语: "Japanese",
     fr: "French",
-    "fr-FR": "French",
+    frfr: "French",
+    french: "French",
+    法语: "French",
     ko: "Korean",
-    "ko-KR": "Korean",
+    koko: "Korean",
+    korean: "Korean",
+    한국어: "Korean",
+    韩语: "Korean",
     de: "German",
-    "de-DE": "German"
+    dede: "German",
+    german: "German",
+    德语: "German"
   };
 
-  return names[code] || "English";
+  return names[normalized] || value;
+}
+
+function languageSettingsFromWorkbench(workbench: WorkbenchData) {
+  const rawSettings = workbench.settings && typeof workbench.settings === "object"
+    ? workbench.settings as JsonObject
+    : undefined;
+  const settings = rawSettings?.settings && typeof rawSettings.settings === "object"
+    ? rawSettings.settings as JsonObject
+    : rawSettings;
+
+  return {
+    nativeLanguage: languageSettingValue(settings, "nativeLanguageCode", "native_language_code", "nativeLanguage", "native_language"),
+    learningLanguage: languageSettingValue(settings, "learningLanguageCode", "learning_language_code", "learningLanguage", "learning_language"),
+    level: levelSettingValue(settings, "levelCode", "level_code", "level"),
+    onboardingCompleted: settings?.onboardingCompleted === true || settings?.onboarding_completed === true,
+    onboardingCompletedAt: stringValue(settings?.onboardingCompletedAt) || stringValue(settings?.onboarding_completed_at)
+  };
+}
+
+function languageSettingValue(settings: JsonObject | undefined, ...keys: string[]) {
+  if (!settings) return undefined;
+  for (const key of keys) {
+    const value = stringValue(settings[key]);
+    if (value) return languageName(value);
+  }
+  return undefined;
+}
+
+function levelSettingValue(settings: JsonObject | undefined, ...keys: string[]) {
+  if (!settings) return undefined;
+  for (const key of keys) {
+    const value = stringValue(settings[key]);
+    if (value) return levelName(value);
+  }
+  return undefined;
 }
 
 function levelCode(level: string) {

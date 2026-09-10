@@ -11,7 +11,7 @@ const privacyEnglish: InfoSectionCopy[] = [
   { title: "7. Your choices", bullets: ["Choose text input, voice input, or neither.", "Review or remove saved words and conversation history where controls are available.", "Ask us to correct, export, or delete account information, subject to legal limits.", "Stop receiving non-essential product messages through the available unsubscribe option."] },
   { title: "8. Retention and security", paragraphs: ["We keep information for as long as reasonably needed to provide the service, maintain records, resolve disputes, meet legal obligations, or improve reliability. We use reasonable safeguards, but no internet service can guarantee absolute security."] },
   { title: "9. Children and international use", paragraphs: ["AI Language Tutor is not directed to children under 13. Our providers may process information in countries other than where you live, with steps appropriate to the service and applicable law."] },
-  { title: "10. Contact and policy changes", paragraphs: ["For privacy questions or requests, email privacy@ailanguagetutor.online. We may update this policy when the product, providers, or legal requirements change. The date above shows when the current version was published."] }
+  { title: "10. Contact and policy changes", paragraphs: ["For privacy questions or requests, email scottthornton815@gmail.com. We may update this policy when the product, providers, or legal requirements change. The date above shows when the current version was published."] }
 ];
 
 const termsEnglish: InfoSectionCopy[] = [
@@ -20,12 +20,12 @@ const termsEnglish: InfoSectionCopy[] = [
   { title: "3. AI-generated learning content", paragraphs: ["Tutor responses are generated to support practice and may contain mistakes or culturally unsuitable phrasing. Treat them as learning suggestions rather than professional, legal, medical, or safety advice. You remain responsible for deciding what to say in real situations."] },
   { title: "4. Acceptable use", paragraphs: ["You may not use the service to:"], bullets: ["Break the law, infringe another person's rights, or facilitate harm.", "Harass, threaten, impersonate, exploit, or target another person.", "Upload malware, attempt unauthorized access, or interfere with service reliability.", "Probe, scrape, copy, reverse engineer, or reproduce the product except where law allows it.", "Submit private information about another person without permission.", "Evade usage limits, payment controls, security measures, or account restrictions."] },
   { title: "5. Plans, payments, and trials", paragraphs: ["Available plans, prices, limits, and features are shown on the Pricing page. A free experience may have limits. Paid plans may renew according to the option selected at checkout, where the price, billing interval, taxes, and fees will be shown."] },
-  { title: "6. Cancellation and refunds", paragraphs: ["You may cancel a recurring plan using the account or payment controls made available for your purchase. Refund eligibility depends on the purchase channel, local law, and the terms shown at checkout. For billing help, contact support@ailanguagetutor.online."] },
+  { title: "6. Cancellation and refunds", paragraphs: ["You may cancel a recurring plan using the account or payment controls made available for your purchase. Refund eligibility depends on the purchase channel, local law, and the terms shown at checkout. For billing help, contact scottthornton815@gmail.com."] },
   { title: "7. Your content and our rights", paragraphs: ["You keep the rights you already have in messages, examples, and recordings you submit. You give us the limited permission needed to host, process, transmit, and display that content to provide requested features. The product, interface, branding, software, and original materials belong to AI Language Tutor or its licensors."] },
   { title: "8. Availability and changes", paragraphs: ["We are building and improving the service continuously. Features may change, be paused, or be removed, and we do not promise that every feature will be available at every moment or on every device. Continued use after updated terms take effect means you accept them."] },
   { title: "9. Suspension and termination", paragraphs: ["We may limit or suspend access to protect users, the service, providers, or the public; investigate abuse; address unpaid charges; or comply with law. You may stop using the service at any time."] },
   { title: "10. Disclaimers and limits", paragraphs: ["To the extent permitted by law, the service is provided on an as-available basis without guarantees that it will be uninterrupted, error-free, or suitable for every learning goal. Nothing in these terms limits rights or remedies that cannot legally be limited in your location."] },
-  { title: "11. Contact", paragraphs: ["Questions about these terms can be sent to legal@ailanguagetutor.online. For general product help, use the Contact page."] }
+  { title: "11. Contact", paragraphs: ["Questions about these terms can be sent to scottthornton815@gmail.com. For general product help, use the Contact page."] }
 ];
 
 type LocalizedInfo = {
@@ -86,14 +86,43 @@ const localized: Record<Exclude<Locale, "en">, LocalizedInfo> = {
   }
 };
 
-export function getInfoCopy(locale: Locale): InfoCopy {
-  if (locale === "en") return english;
-  const copy = localized[locale];
+const publicContactEmail = "scottthornton815@gmail.com";
+
+function replaceContactEmails(copy: InfoCopy): InfoCopy {
+  const replace = (value: string) => value.replace(/(?:support|hello|partners|privacy|legal)@ailanguagetutor\.online/g, publicContactEmail);
   return {
+    ...copy,
+    contact: {
+      ...copy.contact,
+      cards: copy.contact.cards.map((card) => ({ ...card, email: publicContactEmail }))
+    },
+    privacy: {
+      ...copy.privacy,
+      sections: copy.privacy.sections.map((section) => ({
+        ...section,
+        paragraphs: section.paragraphs?.map(replace),
+        bullets: section.bullets?.map(replace)
+      }))
+    },
+    terms: {
+      ...copy.terms,
+      sections: copy.terms.sections.map((section) => ({
+        ...section,
+        paragraphs: section.paragraphs?.map(replace),
+        bullets: section.bullets?.map(replace)
+      }))
+    }
+  };
+}
+
+export function getInfoCopy(locale: Locale): InfoCopy {
+  if (locale === "en") return replaceContactEmails(english);
+  const copy = localized[locale];
+  return replaceContactEmails({
     locale,
     shell: copy.shell,
     contact: copy.contact,
     privacy: { ...copy.privacy, sections: textSections(copy.privacy.sectionTitles, copy.privacy.sectionTexts) },
     terms: { ...copy.terms, sections: textSections(copy.terms.sectionTitles, copy.terms.sectionTexts) }
-  };
+  });
 }

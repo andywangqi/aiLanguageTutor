@@ -152,6 +152,58 @@ export type WorkbenchData = {
   notices?: unknown[];
 };
 
+export type BlogLayout = {
+  template?: "magazine" | "grid" | "editorial" | string;
+  accentColor?: string;
+  contentWidth?: string;
+  cardStyle?: string;
+  heroStyle?: string;
+  typography?: string;
+  showAuthor?: boolean;
+  showReadingTime?: boolean;
+  showCover?: boolean;
+  showToc?: boolean;
+};
+
+export type BlogPostSummary = {
+  id: string;
+  slug: string;
+  locale?: string;
+  requestedLocale?: string;
+  fallbackUsed?: boolean;
+  title: string;
+  excerpt?: string | null;
+  coverImageUrl?: string | null;
+  authorName?: string | null;
+  tags?: string[];
+  featured?: boolean;
+  publishedAt?: string | null;
+  updatedAt?: string | null;
+  readingTimeMinutes?: number;
+  layout?: BlogLayout;
+  seo?: { title?: string; description?: string; [key: string]: unknown };
+};
+
+export type BlogPost = BlogPostSummary & {
+  contentMarkdown?: string;
+  contentBlocks?: JsonObject[];
+  tableOfContents?: Array<{ text: string; level?: number; anchor?: string }>;
+  alternateLocales?: string[];
+};
+
+export type BlogListResponse = {
+  site?: JsonObject;
+  locale?: string;
+  fallbackLocale?: string;
+  layout?: BlogLayout;
+  posts?: BlogPostSummary[];
+};
+
+export type BlogDetailResponse = {
+  site?: JsonObject;
+  post?: BlogPost;
+};
+
 export type BillingPlan = {
   id?: string;
   code?: string;
