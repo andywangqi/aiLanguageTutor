@@ -111,6 +111,11 @@ type WorkbenchUiMessages = Pick<
   | "settingsError"
   | "learningToolError"
 > & {
+  replyWaiting: string;
+  voiceStart: string;
+  voiceListening: string;
+  voiceCancel: string;
+  voiceSend: string;
   signOut: string;
   signingOut: string;
   paymentPending: string;
@@ -267,6 +272,11 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     femaleGender: "Female",
     maleGender: "Male",
     nonBinaryGender: "Non-binary",
+    replyWaiting: "Thinking…",
+    voiceStart: "Start voice input",
+    voiceListening: "Listening…",
+    voiceCancel: "Cancel voice input",
+    voiceSend: "Send voice message",
     signOut: "Sign out",
     signingOut: "Signing out…"
   },
@@ -290,6 +300,11 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     femaleGender: "女性",
     maleGender: "男性",
     nonBinaryGender: "ノンバイナリー",
+    replyWaiting: "考え中…",
+    voiceStart: "音声入力を開始",
+    voiceListening: "聞き取り中…",
+    voiceCancel: "音声入力をキャンセル",
+    voiceSend: "音声メッセージを送信",
     signOut: "ログアウト",
     signingOut: "ログアウト中…"
   },
@@ -313,6 +328,11 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     femaleGender: "ผู้หญิง",
     maleGender: "ผู้ชาย",
     nonBinaryGender: "นอนไบนารี",
+    replyWaiting: "กำลังคิด…",
+    voiceStart: "เริ่มป้อนข้อมูลด้วยเสียง",
+    voiceListening: "กำลังฟัง…",
+    voiceCancel: "ยกเลิกการป้อนข้อมูลด้วยเสียง",
+    voiceSend: "ส่งข้อความเสียง",
     signOut: "ออกจากระบบ",
     signingOut: "กำลังออกจากระบบ…"
   },
@@ -336,6 +356,11 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     femaleGender: "여성",
     maleGender: "남성",
     nonBinaryGender: "논바이너리",
+    replyWaiting: "생각하는 중…",
+    voiceStart: "음성 입력 시작",
+    voiceListening: "듣는 중…",
+    voiceCancel: "음성 입력 취소",
+    voiceSend: "음성 메시지 보내기",
     signOut: "로그아웃",
     signingOut: "로그아웃 중…"
   },
@@ -359,6 +384,11 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     femaleGender: "女性",
     maleGender: "男性",
     nonBinaryGender: "非二元性别",
+    replyWaiting: "正在思考…",
+    voiceStart: "开始语音输入",
+    voiceListening: "正在听…",
+    voiceCancel: "取消语音输入",
+    voiceSend: "发送语音消息",
     signOut: "退出登录",
     signingOut: "正在退出…"
   },
@@ -382,6 +412,11 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     femaleGender: "女性",
     maleGender: "男性",
     nonBinaryGender: "非二元性別",
+    replyWaiting: "正在思考…",
+    voiceStart: "開始語音輸入",
+    voiceListening: "正在聆聽…",
+    voiceCancel: "取消語音輸入",
+    voiceSend: "傳送語音訊息",
     signOut: "登出",
     signingOut: "正在登出…"
   },
@@ -405,6 +440,11 @@ const localizedWorkbenchMessages: Record<Locale, WorkbenchUiMessages> = {
     femaleGender: "Mujer",
     maleGender: "Hombre",
     nonBinaryGender: "No binario",
+    replyWaiting: "Pensando…",
+    voiceStart: "Iniciar entrada de voz",
+    voiceListening: "Escuchando…",
+    voiceCancel: "Cancelar entrada de voz",
+    voiceSend: "Enviar mensaje de voz",
     signOut: "Cerrar sesión",
     signingOut: "Cerrando sesión…"
   }
@@ -489,6 +529,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [isRepeatChecking, setIsRepeatChecking] = useState(false);
   const [hasRepeatedLatestTutor, setHasRepeatedLatestTutor] = useState(false);
   const [repeatFeedback, setRepeatFeedback] = useState<RepeatFeedbackState | null>(null);
+  const [isReplyPending, setIsReplyPending] = useState(false);
   const [apiNotice, setApiNotice] = useState("");
   const [isRemoteSession, setIsRemoteSession] = useState(false);
   const [isRemoteUnavailable, setIsRemoteUnavailable] = useState(false);
@@ -630,14 +671,6 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser);
   const canContinueConversation = !requiresRepeat || hasRepeatedLatestTutor;
 
-  useEffect(() => {
-    if (requiresRepeat && !hasRepeatedLatestTutor && !languageModalOpen) {
-      setRepeatRequiredModalOpen(true);
-    } else if (!requiresRepeat || hasRepeatedLatestTutor) {
-      setRepeatRequiredModalOpen(false);
-    }
-  }, [hasRepeatedLatestTutor, languageModalOpen, latestTutorMessage?.id, requiresRepeat]);
-
   function showRepeatRequiredModal() {
     setVoiceNotice("");
     setRepeatRequiredModalOpen(true);
@@ -692,6 +725,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   function resetDemoConversation(nextMode = mode) {
+    setIsReplyPending(false);
     setHasRepeatedLatestTutor(false);
     setRepeatFeedback(null);
     setMessages([
@@ -780,22 +814,29 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         setVoiceNotice(copy.voiceUnclear);
         return;
       }
-      setMessages((current) => [
-        ...current,
-        {
-          id: `demo-${Date.now()}`,
-          role: "tutor",
-          text:
-            mode === "sayIt"
-              ? copy.demoSayItReply
-              : copy.demoTalkReply
-        }
-      ]);
-      setHasRepeatedLatestTutor(false);
-      setRepeatFeedback(null);
+      setIsReplyPending(true);
+      try {
+        await wait(650);
+        setMessages((current) => [
+          ...current,
+          {
+            id: `demo-${Date.now()}`,
+            role: "tutor",
+            text:
+              mode === "sayIt"
+                ? copy.demoSayItReply
+                : copy.demoTalkReply
+          }
+        ]);
+        setHasRepeatedLatestTutor(false);
+        setRepeatFeedback(null);
+      } finally {
+        setIsReplyPending(false);
+      }
       return;
     }
 
+    setIsReplyPending(true);
     setIsApiBusy(true);
     try {
       const currentConversationId = await getOrCreateConversation();
@@ -885,10 +926,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       setApiNotice(message);
     } finally {
       setIsApiBusy(false);
+      setIsReplyPending(false);
     }
   }
 
   function sendMessage() {
+    if (isReplyPending || isApiBusy) return;
     void sendMessageText(input);
   }
 
@@ -1439,17 +1482,21 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                         message.text
                       )}
                       {message.role === "tutor" ? (
-                        <div className="message-tools">
+                        <>
+                          {requiresRepeat && message.id === latestTutorMessage?.id ? (
+                            <div className="repeat-action-wrap">
+                              <button className="repeat-action" type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking}>
+                                <Mic size={16} aria-hidden="true" />
+                                {isRepeatListening ? copy.voiceListening : isRepeatChecking ? copy.repeatChecking : copy.repeat}
+                              </button>
+                              {isRepeatListening ? <VoiceActivityIndicator label={copy.repeatPrompt} compact /> : null}
+                            </div>
+                          ) : null}
+                          <div className="message-tools">
                           <button type="button" onClick={() => void requestMessageHelp(message, "audio")}>
                             <Volume2 size={15} aria-hidden="true" />
                             {copy.listen}
                           </button>
-                          {requiresRepeat && message.id === latestTutorMessage?.id ? (
-                            <button type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking}>
-                              <Mic size={15} aria-hidden="true" />
-                              {isRepeatListening ? copy.sending : isRepeatChecking ? copy.repeatChecking : copy.repeat}
-                            </button>
-                          ) : null}
                           <button type="button" onClick={() => void speakText(message.text, 0.65)}>
                             <Clock3 size={15} aria-hidden="true" />
                             {copy.slow}
@@ -1462,6 +1509,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             <Languages size={15} aria-hidden="true" />
                             {copy.translation}
                           </button>
+                          </div>
+                          {isRepeatChecking && message.id === latestTutorMessage?.id ? <VoiceActivityIndicator label={copy.repeatChecking} compact /> : null}
                           {repeatFeedback?.messageId === message.id ? (
                             <div className={`repeat-feedback ${repeatFeedback.result.content.passed ? "passed" : "needs-retry"}`} role="status">
                               <strong>{repeatFeedback.result.content.passed ? copy.repeatPassed : copy.repeatTryAgain}</strong>
@@ -1469,15 +1518,26 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                               <span>{copy.repeatCorrection} {repeatFeedback.result.content.correctedText}</span>
                             </div>
                           ) : null}
-                        </div>
+                        </>
                       ) : null}
                     </div>
                   </div>
                 ))}
+                {isReplyPending ? (
+                  <div className="workbench-message tutor pending" role="status" aria-live="polite">
+                    <div className="partner-avatar mini">
+                      <span>✦</span>
+                    </div>
+                    <div className="message-bubble tutor-reply-loading">
+                      <span className="reply-loading-label">{copy.replyWaiting}</span>
+                      <span className="reply-loading-dots" aria-hidden="true"><i /><i /><i /></span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            <div className="conversation-footer">
+            {canContinueConversation ? <div className="conversation-footer">
               <div className="conversation-shortcuts">
                  <button className="lost" type="button" onClick={() => setInput("Could you say that more slowly?")}>
                   <AlertCircle size={16} aria-hidden="true" />
@@ -1491,19 +1551,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   {copy.showHints}
                 </button>
               </div>
-              <div className={`message-composer${!canContinueConversation ? " message-composer-locked" : ""}`}>
+              <div className="message-composer">
                 {isListening ? (
-                  <div className="voice-wave-overlay" aria-live="polite">
-                    <span className="voice-wave-label">{copy.releaseToSend}</span>
-                    <span className="voice-wave" aria-hidden="true">
-                      {[18, 30, 44, 26, 38, 52, 31, 20, 42, 27].map((height, index) => (
-                        <i key={index} style={{ height: `${height}%` }} />
-                      ))}
-                    </span>
-                  </div>
+                  <VoiceActivityIndicator label={copy.voiceListening} />
                 ) : null}
                 <input
-                  className={`${isListening ? "voice-input-hidden " : ""}${!canContinueConversation ? "message-input-locked" : ""}`}
+                  className={isListening ? "voice-input-hidden" : ""}
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
                   onFocus={() => { if (!canContinueConversation) showRepeatRequiredModal(); }}
@@ -1515,27 +1568,24 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   readOnly={!canContinueConversation}
                   disabled={isApiBusy || isRepeatListening || isRepeatChecking}
                 />
-                <button
-                  className={isListening ? "voice-button listening" : "voice-button"}
-                  type="button"
-                   onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); startVoiceInput(); }}
-                   onPointerUp={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); stopVoiceInput(); }}
-                   onPointerCancel={cancelVoiceInput}
-                   onPointerLeave={cancelVoiceInput}
-                  aria-label={copy.holdToSpeak}
+                  <button
+                    className={isListening ? "voice-button listening" : "voice-button"}
+                    type="button"
+                  onClick={() => { if (isListening) cancelVoiceInput(); else startVoiceInput(); }}
+                  aria-label={isListening ? copy.voiceCancel : copy.voiceStart}
                   aria-pressed={isListening}
-                  title={copy.holdToSpeak}
+                  title={isListening ? copy.voiceCancel : copy.voiceStart}
                   disabled={isApiBusy || isRepeatListening || isRepeatChecking}
                 >
                   {isListening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
                 </button>
-                <button className="send-button" type="button" onClick={sendMessage} aria-label={copy.sendMessage} disabled={isApiBusy || isRepeatListening || isRepeatChecking}>
+                <button className="send-button" type="button" onClick={() => { if (isListening) stopVoiceInput(); else sendMessage(); }} aria-label={isListening ? copy.voiceSend : copy.sendMessage} disabled={isApiBusy || isRepeatListening || isRepeatChecking}>
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
-              {voiceNotice ? <p className="voice-notice">{voiceNotice}</p> : null}
-              {apiNotice ? <p className="workbench-api-notice" role="status">{apiNotice}</p> : null}
-            </div>
+            </div> : null}
+            {voiceNotice ? <p className="voice-notice">{voiceNotice}</p> : null}
+            {apiNotice ? <p className="workbench-api-notice" role="status">{apiNotice}</p> : null}
           </div>
 
           <aside className="insight-panel">
@@ -1918,6 +1968,20 @@ function Stat({ value, label }: { value: string; label: string }) {
     <div className="conversation-stat">
       <strong>{value}</strong>
       <span>{label}</span>
+    </div>
+  );
+}
+
+function VoiceActivityIndicator({ label, compact = false }: { label: string; compact?: boolean }) {
+  return (
+    <div className={`voice-activity-indicator${compact ? " compact" : ""}`} role="status" aria-live="polite">
+      <span className="voice-activity-orb" aria-hidden="true">
+        <Mic size={compact ? 15 : 19} />
+      </span>
+      <span className="voice-activity-label">{label}</span>
+      <span className="voice-activity-bars" aria-hidden="true">
+        {[22, 38, 58, 32, 48, 68, 40, 26].map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}
+      </span>
     </div>
   );
 }
