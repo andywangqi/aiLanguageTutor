@@ -38,6 +38,7 @@ import { ApiError, type JsonObject, type PronunciationFeedback, type TutorConver
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { readingCopy } from "@/lib/i18n/reading-copy";
+import { saveNativeLanguagePreference } from "@/lib/i18n/language-preferences";
 import type { LandingDictionary, ProductCopy } from "@/lib/i18n/types";
 import { BrandMark } from "./BrandMark";
 import { EnglishReadingPractice } from "@/components/site/EnglishReadingPractice";
@@ -50,6 +51,8 @@ type Message = {
   role: "tutor" | "user";
   text: string;
 };
+
+const sayItPrompt = "You could say";
 
 type InsightResult = {
   content?: string | { text?: string; note?: string; explanation?: string; suggestion?: string };
@@ -692,7 +695,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       setLanguageModalOpen(true);
     }
     const settings = languageSettingsFromWorkbench(workbench);
-    if (settings.nativeLanguage) setNativeLanguage(settings.nativeLanguage);
+    if (settings.nativeLanguage) {
+      setNativeLanguage(settings.nativeLanguage);
+      if (setupComplete) saveNativeLanguagePreference(settings.nativeLanguage);
+    }
     if (settings.learningLanguage) setLearningLanguage(settings.learningLanguage);
     if (settings.level) setLevel(settings.level);
 
@@ -822,10 +828,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           {
             id: `demo-${Date.now()}`,
             role: "tutor",
-            text:
-              mode === "sayIt"
-                ? copy.demoSayItReply
-                : copy.demoTalkReply
+            text: mode === "sayIt"
+              ? demoSayItExpression(learningLanguage)
+              : copy.demoTalkReply
           }
         ]);
         setHasRepeatedLatestTutor(false);
@@ -1084,6 +1089,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   async function saveLanguageSettings() {
+    saveNativeLanguagePreference(nativeLanguage);
     if (!isRemoteSession) {
       markLanguagePromptSeen("anonymous");
       setLanguageModalOpen(false);
@@ -1848,6 +1854,20 @@ function languageCode(language: string) {
   };
 
   return codes[languageName(language)] || "en";
+}
+
+function demoSayItExpression(targetLanguage: string) {
+  const expressions: Record<string, string> = {
+    English: "I’d like to ask about that.",
+    Chinese: "我想问一下这件事。",
+    Japanese: "そのことについて聞きたいです。",
+    Thai: "ฉันอยากถามเกี่ยวกับเรื่องนั้น",
+    Korean: "그것에 대해 물어보고 싶어요.",
+    Spanish: "Me gustaría preguntar sobre eso.",
+    French: "J’aimerais poser une question à ce sujet.",
+    German: "Ich möchte dazu etwas fragen."
+  };
+  return expressions[languageName(targetLanguage)] || expressions.English;
 }
 
 function languageName(value: string) {

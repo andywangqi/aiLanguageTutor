@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BookOpen, Building2, Coffee, Languages, Mic, Plane, Sparkles, Utensils, Volume2 } from "lucide-react";
 import type { DemoScenario, LandingDictionary } from "@/lib/i18n/types";
 import { trackEvent } from "@/lib/analytics/client";
+import { detectBrowserNativeLanguage, readNativeLanguagePreference, type DemoLanguage, isDemoLanguage } from "@/lib/i18n/language-preferences";
 
 type BrowserLanguage = "en" | "zh-CN" | "zh-TW" | "ja" | "th" | "ko" | "es" | "fr";
 
@@ -18,10 +19,11 @@ const icons: Record<DemoScenario["id"], LucideIcon> = {
 export function InteractiveDemo({ dictionary }: { dictionary: LandingDictionary }) {
   const demo = dictionary.product.demo;
   const [browserLanguage, setBrowserLanguage] = useState<BrowserLanguage>("en");
+  const [nativeLanguage, setNativeLanguage] = useState<DemoLanguage>("English");
   const [activeId, setActiveId] = useState<DemoScenario["id"]>("airport");
   const [hasDetectedLanguage, setHasDetectedLanguage] = useState(false);
   const baseActive = demo.scenarios.find((scenario) => scenario.id === activeId) ?? demo.scenarios[0];
-  const active = getLocalizedScenario(baseActive, browserLanguage);
+  const active = getLocalizedScenario(baseActive, browserLanguage, nativeLanguage);
   const VisualIcon = icons[active.id];
 
   function selectScenario(nextId: DemoScenario["id"]) {
@@ -31,6 +33,7 @@ export function InteractiveDemo({ dictionary }: { dictionary: LandingDictionary 
       from_scenario: activeId,
       to_scenario: nextId,
       browser_language: browserLanguage,
+      native_language: nativeLanguage,
       locale: dictionary.locale
     });
     setActiveId(nextId);
@@ -39,8 +42,16 @@ export function InteractiveDemo({ dictionary }: { dictionary: LandingDictionary 
   useEffect(() => {
     const detected = detectBrowserLanguage();
     setBrowserLanguage(detected);
+    setNativeLanguage(readNativeLanguagePreference() || detectBrowserNativeLanguage());
     setActiveId(defaultScenarioForLanguage(detected));
     setHasDetectedLanguage(true);
+
+    const handleNativeLanguageChange = (event: Event) => {
+      const language = (event as CustomEvent<string>).detail;
+      if (isDemoLanguage(language)) setNativeLanguage(language);
+    };
+    window.addEventListener("ai-tutor-native-language-changed", handleNativeLanguageChange);
+    return () => window.removeEventListener("ai-tutor-native-language-changed", handleNativeLanguageChange);
   }, []);
 
   return (
@@ -174,9 +185,9 @@ function defaultScenarioForLanguage(language: BrowserLanguage): DemoScenario["id
   return "airport";
 }
 
-function getLocalizedScenario(scenario: DemoScenario, language: BrowserLanguage): DemoScenario {
+function getLocalizedScenario(scenario: DemoScenario, language: BrowserLanguage, nativeLanguage: DemoLanguage): DemoScenario {
   const copy = scenario.browserCopy?.[language];
-  return copy
+  const localized = copy
     ? {
         ...scenario,
         languagePair: copy.languagePair,
@@ -184,4 +195,5 @@ function getLocalizedScenario(scenario: DemoScenario, language: BrowserLanguage)
         aiMessage: copy.aiMessage ?? scenario.aiMessage
       }
     : scenario;
+  return { ...localized, languagePair: `${nativeLanguage} → English` };
 }
