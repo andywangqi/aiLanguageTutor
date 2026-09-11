@@ -3353,6 +3353,11 @@ h1 {
   gap: 13px;
 }
 
+.workbench-message.tutor {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
 .workbench-message.user {
   justify-content: flex-end;
 }
@@ -3461,8 +3466,13 @@ h1 {
 
 .repeat-action-wrap {
   display: grid;
+  grid-column: 1 / -1;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 5px;
+  padding: 9px;
+  border: 2px solid #dce8f7;
+  border-radius: 22px;
+  background: #ffffff;
 }
 
 .repeat-action {
@@ -3470,6 +3480,7 @@ h1 {
   min-height: 60px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 0 16px;
   border: 0;

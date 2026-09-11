@@ -1477,7 +1477,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                       <span>✦</span>
                     </div>
                     {message.role === "tutor" ? (
-                      <div className="tutor-message-content">
+                      <>
+                        <div className="tutor-message-content">
                         <div className="message-bubble">
                           {requiresRepeat && message.id === latestTutorMessage?.id ? <span className="say-it-prompt">{sayItPrompt}</span> : null}
                           <button
@@ -1514,6 +1515,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             </div>
                           ) : null}
                         </div>
+                        </div>
                         {requiresRepeat && message.id === latestTutorMessage?.id ? (
                           <div className="repeat-action-wrap">
                             <button className="repeat-action" type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking}>
@@ -1523,7 +1525,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             {isRepeatListening ? <VoiceActivityIndicator label={copy.repeatPrompt} compact /> : null}
                           </div>
                         ) : null}
-                      </div>
+                      </>
                     ) : (
                       <div className="message-bubble">{message.text}</div>
                     )}
