@@ -3361,8 +3361,13 @@ h1 {
   display: none;
 }
 
+.tutor-message-content {
+  width: min(78%, 600px);
+  min-width: 0;
+}
+
 .message-bubble {
-  max-width: min(78%, 600px);
+  max-width: 100%;
   padding: 23px 26px;
   border-radius: 26px;
   background: var(--surface);
@@ -3415,12 +3420,22 @@ h1 {
 }
 
 .phrase-button {
+  display: block;
   padding: 0;
   border: 0;
   color: inherit;
   background: transparent;
   font-weight: inherit;
   text-align: left;
+}
+
+.say-it-prompt {
+  display: block;
+  margin-bottom: 18px;
+  color: var(--blue);
+  font-size: 14px;
+  font-weight: 950;
+  letter-spacing: 0.01em;
 }
 
 .message-tools {
@@ -3446,23 +3461,23 @@ h1 {
 
 .repeat-action-wrap {
   display: grid;
-  justify-items: start;
   gap: 10px;
   margin-top: 18px;
 }
 
 .repeat-action {
-  min-height: 42px;
+  width: 100%;
+  min-height: 60px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 0 16px;
   border: 0;
-  border-radius: 15px;
+  border-radius: 20px;
   color: #ffffff;
   background: var(--orange);
   box-shadow: 0 8px 18px rgba(255, 132, 71, 0.2);
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 950;
 }
 
@@ -5532,6 +5547,10 @@ h1 {
     padding: 17px;
     font-size: 16px;
     border-radius: 20px;
+  }
+
+  .tutor-message-content {
+    width: 88%;
   }
 
   .conversation-footer {

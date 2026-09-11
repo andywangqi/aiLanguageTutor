@@ -127,7 +127,7 @@ function sanitizeTutorText(text: string, input: TutorReplyInput) {
   const lines = text
     .replace(/```[\s\S]*?```/g, "")
     .split(/\r?\n/)
-    .map((line) => line.replace(/^\s*(?:answer|response|translation|correction|explanation|question)\s*:\s*/i, "").trim())
+    .map((line) => line.replace(/^\s*(?:answer|response|translation|correction|explanation|question|you\s+could\s+say)\s*:\s*/i, "").trim())
     .filter((line) => line && !/^[-*#]+\s*/.test(line))
     .filter((line) => !(nativePattern && nativePattern.test(line)));
 

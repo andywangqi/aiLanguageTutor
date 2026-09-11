@@ -738,7 +738,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       {
         id: `demo-${Date.now()}`,
         role: "tutor",
-        text: nextMode === "sayIt" ? "What would you like to say in English?" : "What would you like to talk about today?"
+        text: nextMode === "sayIt" ? `What would you like to say in ${languageName(learningLanguage)}?` : "What would you like to talk about today?"
       }
     ]);
     setSelectedPhrase("");
@@ -1102,6 +1102,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         learningLanguageCode: languageCode(learningLanguage),
         levelCode: levelCode(level)
       });
+      if (conversationId) await createConversation(mode);
       markLanguagePromptSeen(languagePromptScope({ profile: profile || undefined }));
       setLanguageModalOpen(false);
       setApiNotice("");
@@ -1475,46 +1476,34 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                     <div className="partner-avatar mini">
                       <span>✦</span>
                     </div>
-                    <div className="message-bubble">
-                      {message.role === "tutor" ? (
-                        <button
-                          className="phrase-button"
-                          type="button"
-                          onClick={() => { setSelectedPhrase(message.text); setInsightText(""); }}
-                        >
-                          {message.text}
-                        </button>
-                      ) : (
-                        message.text
-                      )}
-                      {message.role === "tutor" ? (
-                        <>
-                          {requiresRepeat && message.id === latestTutorMessage?.id ? (
-                            <div className="repeat-action-wrap">
-                              <button className="repeat-action" type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking}>
-                                <Mic size={16} aria-hidden="true" />
-                                {isRepeatListening ? copy.voiceListening : isRepeatChecking ? copy.repeatChecking : copy.repeat}
-                              </button>
-                              {isRepeatListening ? <VoiceActivityIndicator label={copy.repeatPrompt} compact /> : null}
-                            </div>
-                          ) : null}
+                    {message.role === "tutor" ? (
+                      <div className="tutor-message-content">
+                        <div className="message-bubble">
+                          {requiresRepeat && message.id === latestTutorMessage?.id ? <span className="say-it-prompt">{sayItPrompt}</span> : null}
+                          <button
+                            className="phrase-button"
+                            type="button"
+                            onClick={() => { setSelectedPhrase(message.text); setInsightText(""); }}
+                          >
+                            {message.text}
+                          </button>
                           <div className="message-tools">
-                          <button type="button" onClick={() => void requestMessageHelp(message, "audio")}>
-                            <Volume2 size={15} aria-hidden="true" />
-                            {copy.listen}
-                          </button>
-                          <button type="button" onClick={() => void speakText(message.text, 0.65)}>
-                            <Clock3 size={15} aria-hidden="true" />
-                            {copy.slow}
-                          </button>
-                          <button type="button" onClick={() => setSelectedPhrase("")}>
-                            <EyeOff size={15} aria-hidden="true" />
-                            {copy.hide}
-                          </button>
-                          <button type="button" onClick={() => void requestMessageHelp(message, "translate")}>
-                            <Languages size={15} aria-hidden="true" />
-                            {copy.translation}
-                          </button>
+                            <button type="button" onClick={() => void requestMessageHelp(message, "audio")}>
+                              <Volume2 size={15} aria-hidden="true" />
+                              {copy.listen}
+                            </button>
+                            <button type="button" onClick={() => void speakText(message.text, 0.65)}>
+                              <Clock3 size={15} aria-hidden="true" />
+                              {copy.slow}
+                            </button>
+                            <button type="button" onClick={() => setSelectedPhrase("")}>
+                              <EyeOff size={15} aria-hidden="true" />
+                              {copy.hide}
+                            </button>
+                            <button type="button" onClick={() => void requestMessageHelp(message, "translate")}>
+                              <Languages size={15} aria-hidden="true" />
+                              {copy.translation}
+                            </button>
                           </div>
                           {isRepeatChecking && message.id === latestTutorMessage?.id ? <VoiceActivityIndicator label={copy.repeatChecking} compact /> : null}
                           {repeatFeedback?.messageId === message.id ? (
@@ -1524,9 +1513,20 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                               <span>{copy.repeatCorrection} {repeatFeedback.result.content.correctedText}</span>
                             </div>
                           ) : null}
-                        </>
-                      ) : null}
-                    </div>
+                        </div>
+                        {requiresRepeat && message.id === latestTutorMessage?.id ? (
+                          <div className="repeat-action-wrap">
+                            <button className="repeat-action" type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking}>
+                              <Mic size={19} aria-hidden="true" />
+                              {isRepeatListening ? copy.voiceListening : isRepeatChecking ? copy.repeatChecking : copy.repeat}
+                            </button>
+                            {isRepeatListening ? <VoiceActivityIndicator label={copy.repeatPrompt} compact /> : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="message-bubble">{message.text}</div>
+                    )}
                   </div>
                 ))}
                 {isReplyPending ? (
