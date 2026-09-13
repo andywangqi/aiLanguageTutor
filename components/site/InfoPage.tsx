@@ -14,10 +14,11 @@ type InfoPageProps = {
   updated?: string;
   locale?: Locale;
   copy?: InfoCopy;
+  showIntro?: boolean;
   children: ReactNode;
 };
 
-export function InfoPage({ eyebrow, title, lead, updated, locale = "en", copy, children }: InfoPageProps) {
+export function InfoPage({ eyebrow, title, lead, updated, locale = "en", copy, showIntro = true, children }: InfoPageProps) {
   const shell = (copy ?? getInfoCopy(locale)).shell;
   const resolvedUpdated = updated ?? "August 24, 2026";
 
@@ -38,12 +39,12 @@ export function InfoPage({ eyebrow, title, lead, updated, locale = "en", copy, c
 
       <main className="info-main">
         <div className="container info-layout">
-          <header className="info-intro">
+          {showIntro ? <header className="info-intro">
             <p className="info-eyebrow">{eyebrow}</p>
             <h1>{title}</h1>
             <p className="info-lead">{lead}</p>
             <p className="info-updated">{shell.updatedLabel}: {resolvedUpdated}</p>
-          </header>
+          </header> : null}
 
           <article className="info-article">{children}</article>
         </div>

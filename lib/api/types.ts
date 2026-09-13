@@ -188,6 +188,7 @@ export type BlogPost = BlogPostSummary & {
   contentMarkdown?: string;
   contentBlocks?: JsonObject[];
   tableOfContents?: Array<{ text: string; level?: number; anchor?: string }>;
+  relatedArticles?: BlogPostSummary[];
   alternateLocales?: string[];
 };
 
