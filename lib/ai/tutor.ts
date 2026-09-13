@@ -220,6 +220,10 @@ function isRepeatPassed(targetText: string, spokenText: string) {
   return score >= (targetWords.length <= 5 ? 0.6 : 0.72);
 }
 
+function hasSpeechContent(text: string) {
+  return /[\p{L}\p{N}]/u.test(text.trim());
+}
+
 function parseFeedbackJson(text: string) {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
@@ -248,8 +252,24 @@ export async function generatePronunciationFeedback(
   targetLanguageCode = "en",
   nativeLanguageCode = "zh-CN"
 ): Promise<{ provider: "qwen" | "fallback"; model: string; content: PronunciationFeedback; inputTokens?: number; outputTokens?: number }> {
-  const score = repeatScore(targetText, spokenText);
-  const passed = isRepeatPassed(targetText, spokenText);
+  const cleanedSpokenText = spokenText.trim();
+  if (!hasSpeechContent(cleanedSpokenText)) {
+    return {
+      provider: "fallback",
+      model: "local-validation",
+      content: {
+        text: "No spoken words were detected. Please try repeating the sentence.",
+        passed: false,
+        score: 0,
+        correctedText: targetText,
+        targetText,
+        spokenText: cleanedSpokenText
+      }
+    };
+  }
+
+  const score = repeatScore(targetText, cleanedSpokenText);
+  const passed = isRepeatPassed(targetText, cleanedSpokenText);
   const targetLanguage = nameForLanguage(targetLanguageCode);
 
   if (!isQwenConfigured()) {
@@ -264,7 +284,7 @@ export async function generatePronunciationFeedback(
         score,
         correctedText: targetText,
         targetText,
-        spokenText
+        spokenText: cleanedSpokenText
       }
     };
   }
@@ -285,7 +305,7 @@ export async function generatePronunciationFeedback(
       },
       {
         role: "user",
-        content: `TARGET SENTENCE:\n${targetText}\n\nLEARNER TRANSCRIPT:\n${spokenText}`
+        content: `TARGET SENTENCE:\n${targetText}\n\nLEARNER TRANSCRIPT:\n${cleanedSpokenText}`
       }
     ], { temperature: 0.2, maxTokens: 220 });
     const parsed = parseFeedbackJson(result.text);
@@ -304,7 +324,7 @@ export async function generatePronunciationFeedback(
         score,
         correctedText,
         targetText,
-        spokenText
+        spokenText: cleanedSpokenText
       },
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens

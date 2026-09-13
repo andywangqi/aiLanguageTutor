@@ -95,6 +95,7 @@ type SpeechRecognitionInstance = {
   onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
   start: () => void;
   stop: () => void;
+  abort?: () => void;
 };
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
@@ -561,6 +562,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repeatRecognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const repeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const repeatCancelledRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -1160,6 +1162,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   async function submitRepeatFeedback(message: Message, spokenText: string) {
+    const cleanedText = spokenText.trim();
+    if (!normalizeSpeech(cleanedText)) {
+      setHasRepeatedLatestTutor(false);
+      setVoiceNotice(copy.repeatRequired);
+      return;
+    }
+
     setIsRepeatChecking(true);
     setHasRepeatedLatestTutor(false);
     setVoiceNotice(copy.repeatChecking);
@@ -1183,13 +1192,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           }
         : !message.id.startsWith("demo-")
         ? await api.messages.pronunciation(message.id, {
-            spokenText,
+            spokenText: cleanedText,
             targetLanguageCode: languageCode(learningLanguage),
             nativeLanguageCode: languageCode(nativeLanguage)
           })
         : await api.messages.pronunciationText({
             targetText: message.text,
-            spokenText,
+            spokenText: cleanedText,
             targetLanguageCode: languageCode(learningLanguage),
             nativeLanguageCode: languageCode(nativeLanguage)
           })) as PronunciationFeedback;
@@ -1212,6 +1221,19 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     }
   }
 
+  function cancelRepeat() {
+    if (!isRepeatListening) return;
+    repeatCancelledRef.current = true;
+    if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
+    repeatTimeoutRef.current = null;
+    repeatRecognitionRef.current?.abort?.();
+    repeatRecognitionRef.current?.stop();
+    repeatRecognitionRef.current = null;
+    setIsRepeatListening(false);
+    setHasRepeatedLatestTutor(false);
+    setVoiceNotice(copy.voiceCancel);
+  }
+
   function repeatTutorMessage(message: Message) {
     if (message.id !== latestTutorMessage?.id || isRepeatListening || isRepeatChecking) return;
 
@@ -1225,6 +1247,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
     repeatRecognitionRef.current?.stop();
     if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
+    repeatCancelledRef.current = false;
 
     const recognition = new Recognition();
     let transcript = "";
@@ -1236,12 +1259,17 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       repeatTimeoutRef.current = null;
       repeatRecognitionRef.current = null;
       setIsRepeatListening(false);
-      if (!spokenText.trim()) {
+      if (repeatCancelledRef.current) {
+        repeatCancelledRef.current = false;
+        return;
+      }
+      const cleanedText = spokenText.trim();
+      if (!normalizeSpeech(cleanedText)) {
         setHasRepeatedLatestTutor(false);
         setVoiceNotice(copy.repeatRequired);
         return;
       }
-      void submitRepeatFeedback(message, spokenText.trim());
+      void submitRepeatFeedback(message, cleanedText);
     };
 
     recognition.lang = getSpeechLocale(learningLanguage);
@@ -1255,7 +1283,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         finish(transcript);
       }
     };
-    recognition.onerror = () => finish(transcript);
+    recognition.onerror = () => finish("");
     recognition.onend = () => finish(transcript);
     repeatRecognitionRef.current = recognition;
     setRepeatFeedback(null);
@@ -1541,9 +1569,9 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                         </div>
                         {requiresRepeat && message.id === latestTutorMessage?.id ? (
                           <div className="repeat-action-wrap">
-                            <button className="repeat-action" type="button" onClick={() => repeatTutorMessage(message)} disabled={isRepeatListening || isRepeatChecking}>
+                            <button className="repeat-action" type="button" onClick={() => isRepeatListening ? cancelRepeat() : repeatTutorMessage(message)} disabled={isRepeatChecking}>
                               <Mic size={19} aria-hidden="true" />
-                              {isRepeatListening ? copy.voiceListening : isRepeatChecking ? copy.repeatChecking : copy.repeat}
+                              {isRepeatListening ? copy.voiceCancel : isRepeatChecking ? copy.repeatChecking : copy.repeat}
                             </button>
                             {isRepeatListening ? <VoiceActivityIndicator label={copy.repeatPrompt} compact /> : null}
                           </div>

@@ -873,7 +873,7 @@ async function messageAction(context: RequestContext, id: string, action: string
 
   if (action === "pronunciation") {
     const spokenText = stringField(body.spokenText);
-    if (!spokenText) throw new Error("Spoken text is required.");
+    if (!spokenText || !/[\p{L}\p{N}]/u.test(spokenText)) throw new Error("Spoken text is required.");
     const result = await generatePronunciationFeedback(
       text,
       spokenText,
@@ -920,7 +920,7 @@ async function textMessageAction(context: RequestContext, kind: "translation" | 
 async function textPronunciationAction(context: RequestContext, body: JsonObject) {
   const targetText = stringField(body.targetText);
   const spokenText = stringField(body.spokenText);
-  if (!targetText || !spokenText) throw new Error("Target text and spoken text are required.");
+  if (!targetText || !spokenText || !/[\p{L}\p{N}]/u.test(spokenText)) throw new Error("Target text and spoken text are required.");
 
   const result = await generatePronunciationFeedback(
     targetText,
