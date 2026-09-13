@@ -24,6 +24,13 @@ export type TutorReply = {
   model: string;
   inputTokens?: number;
   outputTokens?: number;
+  structured?: SayItReply;
+};
+
+export type SayItReply = {
+  expression: string;
+  naturalExpression: string;
+  question: string;
 };
 
 export type TutorInsightKind = "translation" | "grammar" | "natural_expression";
@@ -79,8 +86,11 @@ function systemPrompt(input: TutorReplyInput) {
     `You are AI Language Tutor, a speaking tutor that helps learners express an idea in ${learningLanguage}.`,
     `The learner may type in ${nativeLanguage} because they do not know how to say it in ${learningLanguage}. Their level is ${level}.`,
     `Use only ${learningLanguage} in your reply. Never use ${nativeLanguage}.`,
-    "Return exactly one short line: one natural target-language sentence expressing the learner's meaning.",
-    "Do not translate, explain, correct, ask a question, add labels, quote the learner, mention the native language, use markdown, or include any text besides that one line."
+    "Return valid JSON only with exactly these keys: expression, naturalExpression, question.",
+    `expression must be one short target-language sentence expressing the learner's meaning in ${learningLanguage}.`,
+    `naturalExpression must be one short, more natural target-language alternative in ${learningLanguage}.`,
+    `question must be one short relevant follow-up question in ${learningLanguage}, or an empty string when a question is not useful.`,
+    "Do not include labels, markdown, quotes around the JSON, explanations, the native language, or any text outside the JSON object."
   ].join("\n");
 }
 
@@ -99,6 +109,20 @@ function qwenMessages(input: TutorReplyInput): QwenChatMessage[] {
 
 function fallbackReply(input: TutorReplyInput): TutorReply {
   const learningLanguage = nameForLanguage(input.learningLanguageCode);
+  if (input.mode === "say_it") {
+    const structured: SayItReply = input.learningLanguageCode.startsWith("zh")
+      ? { expression: "我明白了。", naturalExpression: "我明白你的意思了。", question: "你还想补充什么？" }
+      : input.learningLanguageCode.startsWith("ja")
+        ? { expression: "わかりました。", naturalExpression: "あなたの言いたいことがわかりました。", question: "ほかに何か伝えたいことはありますか？" }
+        : input.learningLanguageCode.startsWith("ko")
+          ? { expression: "알겠습니다.", naturalExpression: "무슨 말씀인지 알겠습니다.", question: "더 덧붙이고 싶은 말이 있나요?" }
+          : input.learningLanguageCode.startsWith("es")
+            ? { expression: "Entiendo.", naturalExpression: "Entiendo lo que quieres decir.", question: "¿Quieres añadir algo más?" }
+            : input.learningLanguageCode.startsWith("th")
+              ? { expression: "เข้าใจแล้ว", naturalExpression: "ฉันเข้าใจสิ่งที่คุณต้องการจะสื่อแล้ว", question: "มีอะไรอยากเพิ่มเติมอีกไหม" }
+              : { expression: "I understand.", naturalExpression: "I understand what you mean.", question: "Would you like to add anything else?" };
+    return { text: structured.expression, structured, provider: "fallback", model: "local-fallback" };
+  }
   const fallbackByLanguage: Record<string, string> = {
     en: input.mode === "talk" ? "I understand. Tell me one more detail.\nWhat would you like to add?" : "Try saying it in a natural way.\nWhat would you like to add?",
     "zh-CN": "我明白了。请再补充一个细节。\n你还想说什么？",
@@ -122,6 +146,32 @@ function nativeLanguagePattern(code: string) {
   return null;
 }
 
+function cleanStructuredLine(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value
+    .replace(/^\s*(?:you\s+can\s+say(?:\s+in\s+\w+)?|you\s+could\s+say|expression|natural(?:\s+expression)?|question)\s*:\s*/i, "")
+    .replace(/^\s*["'“”]+|["'“”]+\s*$/g, "")
+    .replace(/\*+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseSayItReply(text: string): SayItReply | null {
+  const jsonText = text.match(/\{[\s\S]*\}/)?.[0];
+  if (!jsonText) return null;
+  try {
+    const parsed = JSON.parse(jsonText) as Record<string, unknown>;
+    const structured = {
+      expression: cleanStructuredLine(parsed.expression),
+      naturalExpression: cleanStructuredLine(parsed.naturalExpression),
+      question: cleanStructuredLine(parsed.question)
+    };
+    return structured.expression && structured.naturalExpression ? structured : null;
+  } catch {
+    return null;
+  }
+}
+
 function sanitizeTutorText(text: string, input: TutorReplyInput) {
   const nativePattern = nativeLanguagePattern(input.nativeLanguageCode);
   const lines = text
@@ -140,6 +190,11 @@ export async function generateTutorReply(input: TutorReplyInput): Promise<TutorR
 
   try {
     const result = await qwenChat(qwenMessages(input));
+    if (input.mode === "say_it") {
+      const structured = parseSayItReply(result.text);
+      if (structured) return { ...qwenResult(result), text: structured.expression, structured };
+      return fallbackReply(input);
+    }
     return { ...qwenResult(result), text: sanitizeTutorText(result.text, input) || fallbackReply(input).text };
   } catch {
     return fallbackReply(input);
@@ -287,7 +342,7 @@ export async function generateMessageInsight(kind: TutorInsightKind, text: strin
   const targetLanguage = nameForLanguage(targetLanguageCode);
   const prompts: Record<TutorInsightKind, string> = {
     translation: `Translate this phrase into ${targetLanguage}. Return only the translated text. Do not add an explanation, note, label, quotation marks, or any other language.`,
-    grammar: `Explain the grammar of this phrase for a language learner. Keep it concise and practical.`,
+    grammar: `Explain the grammar of this phrase for a language learner in ${targetLanguage}. Keep it concise and practical. Do not use any other language.`,
     natural_expression: `Rewrite this phrase as a more natural expression in ${targetLanguage}. Include one brief explanation.`
   };
 

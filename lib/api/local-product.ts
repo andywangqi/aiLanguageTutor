@@ -18,6 +18,7 @@ type LocalMessage = {
   content: string;
   sequenceNo: number;
   clientMessageId?: string;
+  metadata?: JsonObject;
   createdAt: string;
 };
 
@@ -684,6 +685,7 @@ async function sendConversationMessage(context: RequestContext, id: string, body
     targetLanguageCode: local.learningLanguageCode,
     content: reply.text,
     sequenceNo: userMessage.sequenceNo + 1,
+    metadata: reply.structured ? { sayIt: reply.structured } : undefined,
     createdAt: now()
   };
 
@@ -704,7 +706,7 @@ async function sendConversationMessage(context: RequestContext, id: string, body
       await supabase.from("message_outputs").upsert({
         message_id: dbTutorMessage.id,
         output_type: "reply",
-        content: { text: reply.text, provider: reply.provider, inputTokens: reply.inputTokens, outputTokens: reply.outputTokens },
+        content: { text: reply.text, structured: reply.structured, provider: reply.provider, inputTokens: reply.inputTokens, outputTokens: reply.outputTokens },
         model_name: reply.model
       }, { onConflict: "message_id,output_type" });
     }
@@ -736,6 +738,7 @@ function toLocalConversation(conversation: TutorConversation, userId: string): L
       inputType: message.inputType === "voice" ? "voice" : "text",
       content: stringField(message.content || message.text),
       sequenceNo: index + 1,
+      metadata: message.metadata,
       createdAt: message.createdAt || now()
     }))
   };
@@ -772,7 +775,16 @@ async function conversationFromDb(context: RequestContext, row: DbRow): Promise<
   const supabase = createSupabaseAdminClient();
   const id = stringField(row.id);
   const { data } = supabase ? await supabase.from("messages").select("*").eq("conversation_id", id).order("sequence_no", { ascending: true }) : { data: [] };
-  const messages = ((data || []) as DbRow[]).map(messageFromDb);
+  const messageRows = (data || []) as DbRow[];
+  const messageIds = messageRows.map((message) => stringField(message.id)).filter(Boolean);
+  const { data: outputRows } = supabase && messageIds.length
+    ? await supabase.from("message_outputs").select("message_id, content").in("message_id", messageIds).eq("output_type", "reply")
+    : { data: [] };
+  const replyOutputs = new Map(((outputRows || []) as DbRow[]).map((output) => [
+    stringField(output.message_id),
+    output.content && typeof output.content === "object" ? output.content as JsonObject : {}
+  ]));
+  const messages = messageRows.map((message) => messageFromDb(message, replyOutputs.get(stringField(message.id))));
   return {
     id,
     mode: stringField(row.mode, "say_it"),
@@ -785,12 +797,15 @@ async function conversationFromDb(context: RequestContext, row: DbRow): Promise<
   } as TutorConversation;
 }
 
-function messageFromDb(row: DbRow): TutorMessage {
+function messageFromDb(row: DbRow, replyOutput?: JsonObject): TutorMessage {
   return {
     id: stringField(row.id),
     role: stringField(row.role, "tutor"),
     inputType: stringField(row.input_type, "text"),
     content: stringField(row.content),
+    metadata: replyOutput?.structured && typeof replyOutput.structured === "object"
+      ? { sayIt: replyOutput.structured as JsonObject }
+      : undefined,
     createdAt: stringField(row.created_at, now())
   };
 }
@@ -809,6 +824,7 @@ function formatConversation(conversation: LocalConversation): TutorConversation 
       role: message.role,
       inputType: message.inputType,
       content: message.content,
+      metadata: message.metadata,
       createdAt: message.createdAt
     }))
   } as TutorConversation;
@@ -853,7 +869,7 @@ async function messageAction(context: RequestContext, id: string, action: string
     };
   }
 
-  if (action === "cards") return saveCardFromMessage(context, message);
+  if (action === "cards") return saveCardFromMessage(context, message, body);
 
   if (action === "pronunciation") {
     const spokenText = stringField(body.spokenText);
@@ -915,15 +931,15 @@ async function textPronunciationAction(context: RequestContext, body: JsonObject
   return { messageId: null, outputType: "pronunciation", ...result };
 }
 
-async function saveCardFromMessage(context: RequestContext, message: TutorMessage) {
+async function saveCardFromMessage(context: RequestContext, message: TutorMessage, body: JsonObject = {}) {
   const text = stringField(message.content || message.text);
   const card: LocalCard = {
     id: crypto.randomUUID(),
     userId: context.userId,
     sourceMessageId: message.id,
     phrase: text,
-    languageCode: "en",
-    cardType: "phrase",
+    languageCode: stringField(body.languageCode, "en"),
+    cardType: stringField(body.cardType, "phrase"),
     reviewState: "new",
     createdAt: now()
   };

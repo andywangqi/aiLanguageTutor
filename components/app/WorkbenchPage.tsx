@@ -50,12 +50,23 @@ type Message = {
   id: string;
   role: "tutor" | "user";
   text: string;
+  structured?: {
+    expression: string;
+    naturalExpression: string;
+    question: string;
+  };
 };
 
 const sayItPrompt = "You could say";
 
 type InsightResult = {
-  content?: string | { text?: string; note?: string; explanation?: string; suggestion?: string };
+  content?: string | { text?: string; note?: string; explanation?: string; suggestion?: string; translation?: string; translatedText?: string; grammar?: string };
+  text?: string;
+  translation?: string;
+  translatedText?: string;
+  explanation?: string;
+  suggestion?: string;
+  grammar?: string;
   audioUrl?: string | null;
   signedUrl?: string | null;
 };
@@ -830,7 +841,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
             role: "tutor",
             text: mode === "sayIt"
               ? demoSayItExpression(learningLanguage)
-              : copy.demoTalkReply
+              : copy.demoTalkReply,
+            structured: mode === "sayIt" ? demoSayItReply(learningLanguage) : undefined
           }
         ]);
         setHasRepeatedLatestTutor(false);
@@ -1278,11 +1290,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               targetLanguageCode: languageCode(nativeLanguage),
               nativeLanguageCode: languageCode(learningLanguage)
             })
-          : await api.messages.grammar(targetMessage.id)) as InsightResult
+          : await api.messages.grammar(targetMessage.id, {
+              sourceLanguageCode: languageCode(learningLanguage),
+              targetLanguageCode: languageCode(nativeLanguage)
+            })) as InsightResult
         : (kind === "translate"
           ? await api.messages.translateText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })
           : await api.messages.grammarText({ text: phrase, sourceLanguageCode: languageCode(learningLanguage), targetLanguageCode: languageCode(nativeLanguage) })) as InsightResult;
-      setInsightText(insightContent(result.content, copy.noExplanation));
+      setInsightText(insightContent(result, copy.noExplanation));
     } catch (error) {
       if (kind === "translate" && (!isRemoteSession || targetMessage?.id.startsWith("demo-"))) {
         setInsightText(copy.demoMeaning.replace("{phrase}", phrase));
@@ -1328,6 +1343,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           languageCode: languageCode(learningLanguage),
           cardType: "phrase"
         });
+        const result = await api.cards.list();
+        setCards(jsonArray(result, "cards"));
         await trackEvent("learning_card_saved", { messageId: message.id });
       }
     } catch (error) {
@@ -1486,8 +1503,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             type="button"
                             onClick={() => { setSelectedPhrase(message.text); setInsightText(""); }}
                           >
-                            {message.text}
+                            {message.structured?.expression || message.text}
                           </button>
+                          {message.structured ? (
+                            <div className="say-it-reply-lines" aria-label={sayItPrompt}>
+                              {message.structured.naturalExpression ? <p>{message.structured.naturalExpression}</p> : null}
+                              {message.structured.question ? <p>{message.structured.question}</p> : null}
+                            </div>
+                          ) : null}
                           <div className="message-tools">
                             <button type="button" onClick={() => void requestMessageHelp(message, "audio")}>
                               <Volume2 size={15} aria-hidden="true" />
@@ -1827,9 +1850,23 @@ function stringValue(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function insightContent(content: InsightResult["content"], fallback: string) {
+function insightContent(result: InsightResult, fallback: string) {
+  const content = result.content;
   if (typeof content === "string") return content;
-  return content?.text || content?.suggestion || content?.explanation || content?.note || fallback;
+  return result.translation
+    || result.translatedText
+    || result.grammar
+    || result.text
+    || result.explanation
+    || result.suggestion
+    || content?.text
+    || content?.translation
+    || content?.translatedText
+    || content?.grammar
+    || content?.suggestion
+    || content?.explanation
+    || content?.note
+    || fallback;
 }
 
 function apiErrorMessage(error: unknown, fallback: string) {
@@ -1870,6 +1907,25 @@ function demoSayItExpression(targetLanguage: string) {
     German: "Ich möchte dazu etwas fragen."
   };
   return expressions[languageName(targetLanguage)] || expressions.English;
+}
+
+function demoSayItReply(targetLanguage: string) {
+  const language = languageName(targetLanguage);
+  const replies: Record<string, { expression: string; naturalExpression: string; question: string }> = {
+    English: {
+      expression: "I'd like to ask about that.",
+      naturalExpression: "I'd like to ask you about that.",
+      question: "What would you like to ask?"
+    },
+    Chinese: { expression: "我想问一下这件事。", naturalExpression: "我想问问你的看法。", question: "你还想问什么？" },
+    Japanese: { expression: "そのことについて聞きたいです。", naturalExpression: "そのことについて少し伺いたいです。", question: "ほかに聞きたいことはありますか？" },
+    Thai: { expression: "ฉันอยากถามเกี่ยวกับเรื่องนั้น", naturalExpression: "ฉันอยากถามคุณเกี่ยวกับเรื่องนั้น", question: "อยากถามอะไรเพิ่มเติมไหม" },
+    Korean: { expression: "그것에 대해 물어보고 싶어요.", naturalExpression: "그 일에 대해 여쭤보고 싶어요.", question: "더 물어보고 싶은 것이 있나요?" },
+    Spanish: { expression: "Me gustaría preguntar sobre eso.", naturalExpression: "Me gustaría preguntarte sobre ese tema.", question: "¿Qué te gustaría preguntar?" },
+    French: { expression: "J’aimerais poser une question à ce sujet.", naturalExpression: "J’aimerais vous poser une question à ce sujet.", question: "Que souhaitez-vous demander ?" },
+    German: { expression: "Ich möchte dazu etwas fragen.", naturalExpression: "Ich möchte Sie dazu etwas fragen.", question: "Was möchten Sie fragen?" }
+  };
+  return replies[language] || replies.English;
 }
 
 function languageName(value: string) {
@@ -1973,16 +2029,40 @@ function getConversationMessages(conversation: TutorConversation) {
 
   return messages
     .map((message: TutorMessage): Message | null => {
-      const text = message.content || message.text;
+      const rawText = message.content || message.text;
+      const structuredValue = message.metadata?.sayIt;
+      const structured = structuredValue && typeof structuredValue === "object"
+        ? structuredValue as JsonObject
+        : conversation.mode === "say_it" ? parseSayItJson(rawText) : null;
+      const text = typeof structured?.expression === "string" ? structured.expression : rawText;
       if (!text || !message.id) return null;
 
       return {
         id: message.id,
         role: message.role === "assistant" || message.role === "tutor" ? "tutor" : "user",
-        text
+        text,
+        structured: structured
+          ? {
+              expression: typeof structured.expression === "string" ? structured.expression : text,
+              naturalExpression: typeof structured.naturalExpression === "string" ? structured.naturalExpression : "",
+              question: typeof structured.question === "string" ? structured.question : ""
+            }
+          : undefined
       };
     })
     .filter((message): message is Message => Boolean(message));
+}
+
+function parseSayItJson(value: string | undefined): JsonObject | null {
+  if (!value) return null;
+  const jsonText = value.match(/\{[\s\S]*\}/)?.[0];
+  if (!jsonText) return null;
+  try {
+    const parsed = JSON.parse(jsonText) as JsonObject;
+    return typeof parsed.expression === "string" ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function Stat({ value, label }: { value: string; label: string }) {

@@ -206,8 +206,8 @@ export const api = {
     translateText(body: JsonObject) {
       return request<MessageOutput>("messages/translate", { method: "POST", body });
     },
-    grammar(id: string) {
-      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/grammar`, { method: "POST" });
+    grammar(id: string, body: JsonObject = {}) {
+      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/grammar`, { method: "POST", body });
     },
     pronunciation(id: string, body: JsonObject) {
       return request<PronunciationFeedback>(`messages/${encodeURIComponent(id)}/pronunciation`, { method: "POST", body });
