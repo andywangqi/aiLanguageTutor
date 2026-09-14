@@ -28,6 +28,7 @@ export type TutorReply = {
 };
 
 export type SayItReply = {
+  expressions: string[];
   expression: string;
   naturalExpression: string;
   question: string;
@@ -86,8 +87,8 @@ function systemPrompt(input: TutorReplyInput) {
     `You are AI Language Tutor, a speaking tutor that helps learners express an idea in ${learningLanguage}.`,
     `The learner may type in ${nativeLanguage} because they do not know how to say it in ${learningLanguage}. Their level is ${level}.`,
     `Use only ${learningLanguage} in your reply. Never use ${nativeLanguage}.`,
-    "Return valid JSON only with exactly these keys: expression, naturalExpression, question.",
-    `expression must be one short target-language sentence expressing the learner's meaning in ${learningLanguage}.`,
+    "Return valid JSON only with exactly these keys: expressions, naturalExpression, question.",
+    `expressions must be an array of 2 to 4 short target-language sentences expressing the learner's meaning in ${learningLanguage}, one sentence per item.`,
     `naturalExpression must be one short, more natural target-language alternative in ${learningLanguage}.`,
     `question must be one short relevant follow-up question in ${learningLanguage}, or an empty string when a question is not useful.`,
     "Do not include labels, markdown, quotes around the JSON, explanations, the native language, or any text outside the JSON object."
@@ -111,16 +112,16 @@ function fallbackReply(input: TutorReplyInput): TutorReply {
   const learningLanguage = nameForLanguage(input.learningLanguageCode);
   if (input.mode === "say_it") {
     const structured: SayItReply = input.learningLanguageCode.startsWith("zh")
-      ? { expression: "我明白了。", naturalExpression: "我明白你的意思了。", question: "你还想补充什么？" }
+      ? { expressions: ["我明白了。"], expression: "我明白了。", naturalExpression: "我明白你的意思了。", question: "你还想补充什么？" }
       : input.learningLanguageCode.startsWith("ja")
-        ? { expression: "わかりました。", naturalExpression: "あなたの言いたいことがわかりました。", question: "ほかに何か伝えたいことはありますか？" }
+        ? { expressions: ["わかりました。"], expression: "わかりました。", naturalExpression: "あなたの言いたいことがわかりました。", question: "ほかに何か伝えたいことはありますか？" }
         : input.learningLanguageCode.startsWith("ko")
-          ? { expression: "알겠습니다.", naturalExpression: "무슨 말씀인지 알겠습니다.", question: "더 덧붙이고 싶은 말이 있나요?" }
+          ? { expressions: ["알겠습니다."], expression: "알겠습니다.", naturalExpression: "무슨 말씀인지 알겠습니다.", question: "더 덧붙이고 싶은 말이 있나요?" }
           : input.learningLanguageCode.startsWith("es")
-            ? { expression: "Entiendo.", naturalExpression: "Entiendo lo que quieres decir.", question: "¿Quieres añadir algo más?" }
+            ? { expressions: ["Entiendo."], expression: "Entiendo.", naturalExpression: "Entiendo lo que quieres decir.", question: "¿Quieres añadir algo más?" }
             : input.learningLanguageCode.startsWith("th")
-              ? { expression: "เข้าใจแล้ว", naturalExpression: "ฉันเข้าใจสิ่งที่คุณต้องการจะสื่อแล้ว", question: "มีอะไรอยากเพิ่มเติมอีกไหม" }
-              : { expression: "I understand.", naturalExpression: "I understand what you mean.", question: "Would you like to add anything else?" };
+              ? { expressions: ["เข้าใจแล้ว"], expression: "เข้าใจแล้ว", naturalExpression: "ฉันเข้าใจสิ่งที่คุณต้องการจะสื่อแล้ว", question: "มีอะไรอยากเพิ่มเติมอีกไหม" }
+              : { expressions: ["I understand."], expression: "I understand.", naturalExpression: "I understand what you mean.", question: "Would you like to add anything else?" };
     return { text: structured.expression, structured, provider: "fallback", model: "local-fallback" };
   }
   const fallbackByLanguage: Record<string, string> = {
@@ -162,11 +163,14 @@ function parseSayItReply(text: string): SayItReply | null {
   try {
     const parsed = JSON.parse(jsonText) as Record<string, unknown>;
     const structured = {
+      expressions: Array.isArray(parsed.expressions) ? parsed.expressions.map(cleanStructuredLine).filter(Boolean).slice(0, 4) : [],
       expression: cleanStructuredLine(parsed.expression),
       naturalExpression: cleanStructuredLine(parsed.naturalExpression),
       question: cleanStructuredLine(parsed.question)
     };
-    return structured.expression && structured.naturalExpression ? structured : null;
+    if (!structured.expressions.length && structured.expression) structured.expressions = [structured.expression];
+    structured.expression = structured.expressions[0] || structured.expression;
+    return structured.expressions.length && structured.naturalExpression ? structured : null;
   } catch {
     return null;
   }
@@ -192,7 +196,7 @@ export async function generateTutorReply(input: TutorReplyInput): Promise<TutorR
     const result = await qwenChat(qwenMessages(input));
     if (input.mode === "say_it") {
       const structured = parseSayItReply(result.text);
-      if (structured) return { ...qwenResult(result), text: structured.expression, structured };
+      if (structured) return { ...qwenResult(result), text: structured.expressions[0], structured };
       return fallbackReply(input);
     }
     return { ...qwenResult(result), text: sanitizeTutorText(result.text, input) || fallbackReply(input).text };

@@ -106,6 +106,7 @@
 .blog-related { margin-top: 70px; padding-top: 30px; border-top: 1px solid #e2e8f0; }
 .blog-related h2 { margin-top: 0; }
 .blog-related-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.tutor-reply-line { display: block; }
 @media (max-width: 760px) {
   .blog-feature-cards, .blog-related-grid { grid-template-columns: 1fr; }
   .blog-article-content h2 { font-size: 26px; }

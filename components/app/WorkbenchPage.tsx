@@ -51,6 +51,7 @@ type Message = {
   role: "tutor" | "user";
   text: string;
   structured?: {
+    expressions?: string[];
     expression: string;
     naturalExpression: string;
     question: string;
@@ -58,6 +59,20 @@ type Message = {
 };
 
 const sayItPrompt = "You could say";
+
+function cleanTutorDisplayText(value: string) {
+  return value
+    .replace(/```(?:text|markdown)?/gi, "")
+    .replace(/```/g, "")
+    .split(/\r?\n+/)
+    .map((line) => line
+      .replace(/^\s*(?:you\s+(?:could|can)\s+say(?:\s+in\s+\w+)?|answer|response|translation|correction|explanation|question)\s*:?\s*/i, "")
+      .replace(/^\s*[-*•]\s*/, "")
+      .replace(/\*+/g, "")
+      .trim())
+    .filter(Boolean)
+    .join("\n");
+}
 
 type InsightResult = {
   content?: string | { text?: string; note?: string; explanation?: string; suggestion?: string; translation?: string; translatedText?: string; grammar?: string };
@@ -715,14 +730,17 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     if (settings.learningLanguage) setLearningLanguage(settings.learningLanguage);
     if (settings.level) setLevel(settings.level);
 
-    const conversation = workbench.currentConversation || workbench.conversation || workbench.recentConversations?.[0];
-    if (conversation?.id) {
-      setConversationId(conversation.id);
-      const remoteMessages = getConversationMessages(conversation);
-      if (remoteMessages.length > 0) setMessages(remoteMessages);
-      setHasRepeatedLatestTutor(false);
-      setRepeatFeedback(null);
-    }
+    // A workbench visit always starts a fresh daily conversation. Previous
+    // conversations are loaded only from the History tab and must not leak
+    // into today's workspace.
+    setConversationId(null);
+    setMessages([{
+      id: `daily-${Date.now()}`,
+      role: "tutor",
+      text: mode === "sayIt" ? `What would you like to say in ${languageName(learningLanguage)}?` : "What would you like to talk about today?"
+    }]);
+    setHasRepeatedLatestTutor(false);
+    setRepeatFeedback(null);
   }
 
   async function selectNav(nextNav: NavItem) {
@@ -1533,9 +1551,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                           >
                             {message.structured?.expression || message.text}
                           </button>
-                          {message.structured ? (
+                            {message.structured ? (
                             <div className="say-it-reply-lines" aria-label={sayItPrompt}>
-                              {message.structured.naturalExpression ? <p>{message.structured.naturalExpression}</p> : null}
+                              {message.structured.expressions?.length ? message.structured.expressions.map((expression, index) => <p key={`${message.id}-expression-${index}`}>{expression}</p>) : message.structured.expression ? <p>{message.structured.expression}</p> : null}
+                              {message.structured.naturalExpression ? <p className="natural-expression">{message.structured.naturalExpression}</p> : null}
                               {message.structured.question ? <p>{message.structured.question}</p> : null}
                             </div>
                           ) : null}
@@ -1578,7 +1597,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                         ) : null}
                       </>
                     ) : (
-                      <div className="message-bubble">{message.text}</div>
+                      <div className="message-bubble">{message.text.split(/\r?\n/).map((line, lineIndex) => <span className="tutor-reply-line" key={`${message.id}-line-${lineIndex}`}>{line}</span>)}</div>
                     )}
                   </div>
                 ))}
@@ -2062,7 +2081,7 @@ function getConversationMessages(conversation: TutorConversation) {
       const structured = structuredValue && typeof structuredValue === "object"
         ? structuredValue as JsonObject
         : conversation.mode === "say_it" ? parseSayItJson(rawText) : null;
-      const text = typeof structured?.expression === "string" ? structured.expression : rawText;
+      const text = typeof structured?.expression === "string" ? structured.expression : cleanTutorDisplayText(rawText || "");
       if (!text || !message.id) return null;
 
       return {
@@ -2071,6 +2090,7 @@ function getConversationMessages(conversation: TutorConversation) {
         text,
         structured: structured
           ? {
+              expressions: Array.isArray(structured.expressions) ? structured.expressions.filter((item): item is string => typeof item === "string") : typeof structured.expression === "string" ? [structured.expression] : [],
               expression: typeof structured.expression === "string" ? structured.expression : text,
               naturalExpression: typeof structured.naturalExpression === "string" ? structured.naturalExpression : "",
               question: typeof structured.question === "string" ? structured.question : ""
@@ -2087,7 +2107,8 @@ function parseSayItJson(value: string | undefined): JsonObject | null {
   if (!jsonText) return null;
   try {
     const parsed = JSON.parse(jsonText) as JsonObject;
-    return typeof parsed.expression === "string" ? parsed : null;
+    const expressions = Array.isArray(parsed.expressions) ? parsed.expressions.filter((item): item is string => typeof item === "string") : typeof parsed.expression === "string" ? [parsed.expression] : [];
+    return expressions.length ? { ...parsed, expressions, expression: expressions[0] } : null;
   } catch {
     return null;
   }
