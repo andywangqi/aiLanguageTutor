@@ -370,7 +370,7 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
     seo: {
       title: "AI Language Tutor | Habla, aprende y mejora con AI",
       description:
-        "Practica conversaciones reales con un tutor de idiomas con AI. Aprende expresiones naturales, recibe correcciones al instante y mejora tu speaking."
+        "Practica conversaciones reales con un tutor de idiomas con IA. Aprende expresiones naturales, recibe correcciones al instante y mejora tu expresión oral."
     },
     nav: { product: "Producto", method: "Método", languages: "Idiomas", faq: "FAQ", app: "Empezar a hablar" },
     hero: {

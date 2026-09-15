@@ -35,6 +35,15 @@ const openGraphLocale: Record<Locale, string> = {
   "zh-TW": "zh_TW",
   es: "es_ES"
 };
+const localeKeywords: Record<Locale, string[]> = {
+  en: ["AI language tutor", "English speaking practice", "AI conversation practice", "pronunciation practice"],
+  ja: ["AI英会話", "英会話練習", "英語スピーキング練習", "発音練習"],
+  th: ["ฝึกพูดภาษาอังกฤษ", "ฝึกสนทนาภาษาอังกฤษ", "ติวเตอร์ภาษา AI", "ฝึกออกเสียงภาษาอังกฤษ"],
+  ko: ["AI 영어 회화", "영어 회화 연습", "영어 말하기 연습", "영어 발음 연습"],
+  "zh-CN": ["AI英语口语练习", "AI英语陪练", "英语对话练习", "英语发音纠正"],
+  "zh-TW": ["AI英語口說練習", "AI英語陪練", "英語會話練習", "英語發音練習"],
+  es: ["practicar inglés", "conversación en inglés", "práctica de speaking", "pronunciación en inglés"]
+};
 
 export function createPageMetadata(locale: Locale): Metadata {
   const dictionary = getDictionary(locale);
@@ -47,6 +56,7 @@ export function createPageMetadata(locale: Locale): Metadata {
     metadataBase: new URL(siteUrl),
     title: dictionary.seo.title,
     description: dictionary.seo.description,
+    keywords: localeKeywords[locale],
     alternates: {
       canonical,
       languages: {
@@ -93,6 +103,7 @@ export function createLocalizedPageMetadata(locale: Locale, path: string, title:
     metadataBase: new URL(siteUrl),
     title,
     description,
+    keywords: localeKeywords[locale],
     alternates: {
       canonical,
       languages: {
@@ -159,5 +170,26 @@ export function createSoftwareSchema(locale: Locale) {
       price: "0",
       priceCurrency: "USD"
     }
+  };
+}
+
+export function createOrganizationSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "AI Language Tutor",
+    url: siteUrl,
+    logo: `${siteUrl}/arno.svg`,
+    email: "scottthornton815@gmail.com"
+  };
+}
+
+export function createWebsiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "AI Language Tutor",
+    url: siteUrl,
+    inLanguage: locales.map((locale) => localeLabels[locale].hreflang)
   };
 }

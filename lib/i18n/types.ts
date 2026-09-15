@@ -196,7 +196,7 @@ export type ProductCopy = {
 
 export type LandingDictionary = {
   locale: Locale;
-  seo: { title: string; description: string };
+  seo: { title: string; description: string; keywords?: string[] };
   nav: { product: string; method: string; languages: string; faq: string; app: string };
   hero: { eyebrow: string; h1: string; lead: string; primaryCta: string; secondaryCta: string; proof?: string[] };
   demo: { title: string; tabs: { sayIt: string; talk: string; practice: string }; promptLabel: string; prompt: string; responseLabel: string; response: string; actions: string[]; turn: string; hint: string };
