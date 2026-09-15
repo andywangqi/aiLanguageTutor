@@ -38,7 +38,7 @@ import { ApiError, type JsonObject, type PronunciationFeedback, type TutorConver
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { readingCopy } from "@/lib/i18n/reading-copy";
-import { saveNativeLanguagePreference } from "@/lib/i18n/language-preferences";
+import { detectBrowserNativeLanguage, readNativeLanguagePreference, saveNativeLanguagePreference } from "@/lib/i18n/language-preferences";
 import type { LandingDictionary, ProductCopy } from "@/lib/i18n/types";
 import { BrandMark } from "./BrandMark";
 import { EnglishReadingPractice } from "@/components/site/EnglishReadingPractice";
@@ -51,10 +51,9 @@ type Message = {
   role: "tutor" | "user";
   text: string;
   structured?: {
-    target_sentence?: string;
-    follow_up_question?: string;
-    requires_repeat?: boolean;
-    expression?: string;
+    target_sentence: string;
+    follow_up_question: string;
+    requires_repeat: boolean;
   };
 };
 
@@ -561,7 +560,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [insightMode, setInsightMode] = useState<InsightMode>("translate");
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
-  const [nativeLanguage, setNativeLanguage] = useState("Chinese");
+  const [nativeLanguage, setNativeLanguage] = useState<string>(() => readNativeLanguagePreference() || detectBrowserNativeLanguage());
   const [learningLanguage, setLearningLanguage] = useState("English");
   const [level, setLevel] = useState("Auto-detect");
   const [isListening, setIsListening] = useState(false);
@@ -719,7 +718,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const latestMessage = messages[messages.length - 1];
   const latestTutorMessage = [...messages].reverse().find((message) => message.role === "tutor");
   const hasTutorResponseToUser = latestMessage?.role === "tutor" && messages.some((message) => message.role === "user");
-  const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser && latestTutorMessage.structured?.requires_repeat !== false);
+  const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser && latestTutorMessage.structured);
   const canContinueConversation = !requiresRepeat || followUpVisible;
 
   function showRepeatRequiredModal() {
@@ -1575,12 +1574,13 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                             type="button"
                             onClick={() => { setSelectedPhrase(message.text); setInsightText(""); }}
                           >
-                            {message.structured?.expression || message.text}
+                            {message.structured?.target_sentence || message.text}
                           </button>
                             {message.structured ? (
                             <div className="say-it-reply-lines" aria-label={sayItPrompt}>
-                              <p>{message.structured.target_sentence || message.structured.expression || message.text}</p>
-                              {followUpVisible && message.id === latestTutorMessage?.id && message.structured.follow_up_question ? <p>{message.structured.follow_up_question}</p> : null}
+                              <p className="say-it-target">{message.structured.target_sentence}</p>
+                              {followUpVisible && message.id === latestTutorMessage?.id && message.structured.follow_up_question ? <p className="say-it-question">{message.structured.follow_up_question}</p> : null}
+                              {message.structured.requires_repeat ? <span className="say-it-repeat-badge">Repeat this sentence</span> : null}
                             </div>
                           ) : null}
                           <div className="message-tools">
@@ -1987,19 +1987,17 @@ function demoSayItExpression(targetLanguage: string) {
 
 function demoSayItReply(targetLanguage: string) {
   const language = languageName(targetLanguage);
-  const replies: Record<string, { expression: string; naturalExpression: string; question: string }> = {
+  const replies: Record<string, { target_sentence: string; follow_up_question: string; requires_repeat: boolean }> = {
     English: {
-      expression: "I'd like to ask about that.",
-      naturalExpression: "I'd like to ask you about that.",
-      question: "What would you like to ask?"
+      target_sentence: "I'd like to ask about that.", follow_up_question: "What would you like to ask?", requires_repeat: true
     },
-    Chinese: { expression: "我想问一下这件事。", naturalExpression: "我想问问你的看法。", question: "你还想问什么？" },
-    Japanese: { expression: "そのことについて聞きたいです。", naturalExpression: "そのことについて少し伺いたいです。", question: "ほかに聞きたいことはありますか？" },
-    Thai: { expression: "ฉันอยากถามเกี่ยวกับเรื่องนั้น", naturalExpression: "ฉันอยากถามคุณเกี่ยวกับเรื่องนั้น", question: "อยากถามอะไรเพิ่มเติมไหม" },
-    Korean: { expression: "그것에 대해 물어보고 싶어요.", naturalExpression: "그 일에 대해 여쭤보고 싶어요.", question: "더 물어보고 싶은 것이 있나요?" },
-    Spanish: { expression: "Me gustaría preguntar sobre eso.", naturalExpression: "Me gustaría preguntarte sobre ese tema.", question: "¿Qué te gustaría preguntar?" },
-    French: { expression: "J’aimerais poser une question à ce sujet.", naturalExpression: "J’aimerais vous poser une question à ce sujet.", question: "Que souhaitez-vous demander ?" },
-    German: { expression: "Ich möchte dazu etwas fragen.", naturalExpression: "Ich möchte Sie dazu etwas fragen.", question: "Was möchten Sie fragen?" }
+    Chinese: { target_sentence: "我想问一下这件事。", follow_up_question: "你还想问什么？", requires_repeat: true },
+    Japanese: { target_sentence: "そのことについて聞きたいです。", follow_up_question: "ほかに聞きたいことはありますか？", requires_repeat: true },
+    Thai: { target_sentence: "ฉันอยากถามเกี่ยวกับเรื่องนั้น", follow_up_question: "อยากถามอะไรเพิ่มเติมไหม", requires_repeat: true },
+    Korean: { target_sentence: "그것에 대해 물어보고 싶어요.", follow_up_question: "더 물어보고 싶은 것이 있나요?", requires_repeat: true },
+    Spanish: { target_sentence: "Me gustaría preguntar sobre eso.", follow_up_question: "¿Qué te gustaría preguntar?", requires_repeat: true },
+    French: { target_sentence: "J’aimerais poser une question à ce sujet.", follow_up_question: "Que souhaitez-vous demander ?", requires_repeat: true },
+    German: { target_sentence: "Ich möchte dazu etwas fragen.", follow_up_question: "Was möchten Sie fragen?", requires_repeat: true }
   };
   return replies[language] || replies.English;
 }
@@ -2110,7 +2108,7 @@ function getConversationMessages(conversation: TutorConversation) {
       const structured = structuredValue && typeof structuredValue === "object"
         ? structuredValue as JsonObject
         : conversation.mode === "say_it" ? parseSayItJson(rawText) || parseSayItFallback(rawText || "") : null;
-      const text = typeof structured?.expression === "string" ? structured.expression : cleanTutorDisplayText(rawText || "");
+      const text = typeof structured?.target_sentence === "string" ? structured.target_sentence : cleanTutorDisplayText(rawText || "");
       if (!text || !message.id) return null;
 
       return {
@@ -2119,10 +2117,9 @@ function getConversationMessages(conversation: TutorConversation) {
         text,
         structured: structured
           ? {
-              target_sentence: typeof structured.target_sentence === "string" ? structured.target_sentence : typeof structured.expression === "string" ? structured.expression : text,
-              follow_up_question: typeof structured.follow_up_question === "string" ? structured.follow_up_question : typeof structured.question === "string" ? structured.question : "",
-              requires_repeat: structured.requires_repeat !== false,
-              expression: typeof structured.expression === "string" ? structured.expression : text
+              target_sentence: String(structured.target_sentence ?? text),
+              follow_up_question: String(structured.follow_up_question ?? ""),
+              requires_repeat: structured.requires_repeat === true
             }
           : undefined
       };
@@ -2136,8 +2133,21 @@ function parseSayItJson(value: string | undefined): JsonObject | null {
   if (!jsonText) return null;
   try {
     const parsed = JSON.parse(jsonText) as JsonObject;
-    const target = typeof parsed.target_sentence === "string" ? parsed.target_sentence : typeof parsed.expression === "string" ? parsed.expression : "";
-    return target ? { ...parsed, target_sentence: target, expression: target, follow_up_question: typeof parsed.follow_up_question === "string" ? parsed.follow_up_question : typeof parsed.question === "string" ? parsed.question : "", requires_repeat: parsed.requires_repeat !== false } : null;
+    if (typeof parsed.target_sentence === "string") {
+      return {
+        target_sentence: parsed.target_sentence,
+        follow_up_question: typeof parsed.follow_up_question === "string" ? parsed.follow_up_question : "",
+        requires_repeat: parsed.requires_repeat === true
+      };
+    }
+    if (typeof parsed.expression === "string") {
+      return {
+        target_sentence: parsed.expression,
+        follow_up_question: typeof parsed.question === "string" ? parsed.question : "",
+        requires_repeat: false
+      };
+    }
+    return null;
   } catch {
     return null;
   }

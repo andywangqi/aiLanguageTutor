@@ -31,7 +31,6 @@ export type SayItReply = {
   target_sentence: string;
   follow_up_question: string;
   requires_repeat: boolean;
-  expression?: string;
 };
 
 export type TutorInsightKind = "translation" | "grammar" | "natural_expression";
@@ -88,9 +87,9 @@ function systemPrompt(input: TutorReplyInput) {
     `The learner may type in ${nativeLanguage} because they do not know how to say it in ${learningLanguage}. Their level is ${level}.`,
     `Use only ${learningLanguage} in your reply. Never use ${nativeLanguage}.`,
     "Return valid JSON only with exactly these keys: target_sentence, follow_up_question, requires_repeat.",
-    `target_sentence must be one short target-language sentence expressing the learner's meaning in ${learningLanguage}.`,
-    `follow_up_question must be one short relevant question in ${learningLanguage}, shown only after the learner repeats target_sentence.`,
-    "requires_repeat must be true. Never combine target_sentence and follow_up_question.",
+    `target_sentence must be one natural ${learningLanguage} sentence expressing the learner's meaning.`,
+    `follow_up_question must be a short ${learningLanguage} question, or an empty string.`,
+    "requires_repeat must be true when the learner should repeat the target sentence before continuing, otherwise false.",
     "Do not include labels, markdown, quotes around the JSON, explanations, the native language, or any text outside the JSON object."
   ].join("\n");
 }
@@ -162,9 +161,10 @@ function parseSayItReply(text: string): SayItReply | null {
   if (!jsonText) return null;
   try {
     const parsed = JSON.parse(jsonText) as Record<string, unknown>;
-    const target = cleanStructuredLine(parsed.target_sentence) || cleanStructuredLine(parsed.expression);
-    const question = cleanStructuredLine(parsed.follow_up_question) || cleanStructuredLine(parsed.question);
-    return target ? { target_sentence: target, follow_up_question: question, requires_repeat: parsed.requires_repeat !== false, expression: target } : null;
+    const targetSentence = typeof parsed.target_sentence === "string" ? parsed.target_sentence.trim() : "";
+    const followUpQuestion = typeof parsed.follow_up_question === "string" ? parsed.follow_up_question.trim() : "";
+    if (!targetSentence) return null;
+    return { target_sentence: targetSentence, follow_up_question: followUpQuestion, requires_repeat: parsed.requires_repeat === true };
   } catch {
     return null;
   }

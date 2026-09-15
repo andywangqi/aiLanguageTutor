@@ -26,6 +26,16 @@ function resolveSiteUrl(value: string | undefined) {
 
 export const siteUrl = resolveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
+const openGraphLocale: Record<Locale, string> = {
+  en: "en_US",
+  ja: "ja_JP",
+  th: "th_TH",
+  ko: "ko_KR",
+  "zh-CN": "zh_CN",
+  "zh-TW": "zh_TW",
+  es: "es_ES"
+};
+
 export function createPageMetadata(locale: Locale): Metadata {
   const dictionary = getDictionary(locale);
   const canonical = localeUrl(siteUrl, locale);
@@ -50,7 +60,7 @@ export function createPageMetadata(locale: Locale): Metadata {
       title: dictionary.seo.title,
       description: dictionary.seo.description,
       siteName: "AI Language Tutor",
-      locale
+      locale: openGraphLocale[locale]
     },
     twitter: {
       card: "summary_large_image",
@@ -96,7 +106,7 @@ export function createLocalizedPageMetadata(locale: Locale, path: string, title:
       title,
       description,
       siteName: "AI Language Tutor",
-      locale
+      locale: openGraphLocale[locale]
     },
     twitter: {
       card: "summary_large_image",

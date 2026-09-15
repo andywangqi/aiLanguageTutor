@@ -110,9 +110,6 @@ async function forward(request: NextRequest, segments: string[]) {
   const target = new URL(`${getCentralEndpoint()}/api/${segments.map(encodeURIComponent).join("/")}`);
   for (const [key, value] of request.nextUrl.searchParams.entries()) target.searchParams.append(key, value);
   target.searchParams.set("siteUrl", getProductSiteUrl());
-  // The central API accepts either identifier; sending both keeps the proxy
-  // compatible with deployments that validate siteId before siteUrl.
-  target.searchParams.set("siteId", getProductSiteUrl());
 
   const headers = new Headers({
     Accept: request.headers.get("Accept") || "application/json",
