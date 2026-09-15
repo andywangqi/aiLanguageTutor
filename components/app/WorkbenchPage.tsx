@@ -51,10 +51,10 @@ type Message = {
   role: "tutor" | "user";
   text: string;
   structured?: {
-    expressions?: string[];
-    expression: string;
-    naturalExpression: string;
-    question: string;
+    target_sentence?: string;
+    follow_up_question?: string;
+    requires_repeat?: boolean;
+    expression?: string;
   };
 };
 
@@ -72,6 +72,18 @@ function cleanTutorDisplayText(value: string) {
       .trim())
     .filter(Boolean)
     .join("\n");
+}
+
+function parseSayItFallback(value: string): JsonObject | null {
+  const cleaned = cleanTutorDisplayText(value).replace(/^.*?\byou\s+can\s+say\s*:\s*/i, "");
+  const quoted = Array.from(cleaned.matchAll(/[“"]([^”"]+)[”"]/g), (match) => match[1].trim()).filter(Boolean);
+  const expressions = quoted.length ? quoted.slice(0, 4) : cleaned
+    .split(/(?<=[.!?])\s+/)
+    .map((line) => line.trim())
+    .filter((line) => line && !/^are\s+/i.test(line))
+    .slice(0, 4);
+  const question = cleaned.match(/[^.!?]*\?\s*$/)?.[0]?.trim() || "";
+  return expressions.length ? { expressions, expression: expressions[0], naturalExpression: "", question } : null;
 }
 
 type InsightResult = {
@@ -558,6 +570,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [isRepeatListening, setIsRepeatListening] = useState(false);
   const [isRepeatChecking, setIsRepeatChecking] = useState(false);
   const [hasRepeatedLatestTutor, setHasRepeatedLatestTutor] = useState(false);
+  const [followUpVisible, setFollowUpVisible] = useState(false);
   const [repeatFeedback, setRepeatFeedback] = useState<RepeatFeedbackState | null>(null);
   const [isReplyPending, setIsReplyPending] = useState(false);
   const [apiNotice, setApiNotice] = useState("");
@@ -578,6 +591,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const repeatRecognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const repeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repeatCancelledRef = useRef(false);
+  const messageListRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -602,6 +616,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const [todayMessageCount, setTodayMessageCount] = useState(0);
   const voiceStartedAtRef = useRef<number | null>(null);
   const voiceCancelledRef = useRef(false);
+
+  useEffect(() => {
+    const list = messageListRef.current;
+    if (!list) return;
+    requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; });
+  }, [messages, isReplyPending]);
 
   useEffect(() => {
     if (isSupabaseConfigured() || hasSeenLanguagePrompt("anonymous")) return;
@@ -699,8 +719,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const latestMessage = messages[messages.length - 1];
   const latestTutorMessage = [...messages].reverse().find((message) => message.role === "tutor");
   const hasTutorResponseToUser = latestMessage?.role === "tutor" && messages.some((message) => message.role === "user");
-  const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser);
-  const canContinueConversation = !requiresRepeat || hasRepeatedLatestTutor;
+  const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser && latestTutorMessage.structured?.requires_repeat !== false);
+  const canContinueConversation = !requiresRepeat || followUpVisible;
 
   function showRepeatRequiredModal() {
     setVoiceNotice("");
@@ -740,6 +760,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       text: mode === "sayIt" ? `What would you like to say in ${languageName(learningLanguage)}?` : "What would you like to talk about today?"
     }]);
     setHasRepeatedLatestTutor(false);
+    setFollowUpVisible(false);
     setRepeatFeedback(null);
   }
 
@@ -764,6 +785,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   function resetDemoConversation(nextMode = mode) {
     setIsReplyPending(false);
     setHasRepeatedLatestTutor(false);
+    setFollowUpVisible(false);
     setRepeatFeedback(null);
     setMessages([
       {
@@ -866,6 +888,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
           }
         ]);
         setHasRepeatedLatestTutor(false);
+        setFollowUpVisible(false);
         setRepeatFeedback(null);
       } finally {
         setIsReplyPending(false);
@@ -953,6 +976,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       if (remoteMessages.length > 0) {
         setMessages(remoteMessages);
         if (remoteMessages.some((message) => message.role === "tutor")) setHasRepeatedLatestTutor(false);
+        if (remoteMessages.some((message) => message.role === "tutor")) setFollowUpVisible(false);
         if (remoteMessages.some((message) => message.role === "tutor")) setRepeatFeedback(null);
       }
       await trackEvent(inputType === "voice" ? "voice_transcribed" : "message_submitted", { mode });
@@ -1223,6 +1247,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       setRepeatFeedback({ messageId: message.id, result });
       const passed = Boolean(result.content?.passed);
       setHasRepeatedLatestTutor(passed);
+      setFollowUpVisible(false);
       setVoiceNotice(passed ? copy.repeatPassed : copy.repeatTryAgain);
       void trackEvent(passed ? analyticsEvents.pronunciationFeedbackPassed : analyticsEvents.pronunciationFeedbackFailed, {
         mode,
@@ -1249,6 +1274,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     repeatRecognitionRef.current = null;
     setIsRepeatListening(false);
     setHasRepeatedLatestTutor(false);
+    setFollowUpVisible(false);
     setVoiceNotice(copy.voiceCancel);
   }
 
@@ -1533,7 +1559,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
             <div className="conversation-body">
               <div className="today-label">{copy.today}</div>
-              <div className="message-list">
+              <div className="message-list" ref={messageListRef}>
                 {messages.map((message) => (
                   <div className={`workbench-message ${message.role}`} key={message.id}>
                     <div className="partner-avatar mini">
@@ -1553,9 +1579,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                           </button>
                             {message.structured ? (
                             <div className="say-it-reply-lines" aria-label={sayItPrompt}>
-                              {message.structured.expressions?.length ? message.structured.expressions.map((expression, index) => <p key={`${message.id}-expression-${index}`}>{expression}</p>) : message.structured.expression ? <p>{message.structured.expression}</p> : null}
-                              {message.structured.naturalExpression ? <p className="natural-expression">{message.structured.naturalExpression}</p> : null}
-                              {message.structured.question ? <p>{message.structured.question}</p> : null}
+                              <p>{message.structured.target_sentence || message.structured.expression || message.text}</p>
+                              {followUpVisible && message.id === latestTutorMessage?.id && message.structured.follow_up_question ? <p>{message.structured.follow_up_question}</p> : null}
                             </div>
                           ) : null}
                           <div className="message-tools">
@@ -1582,11 +1607,15 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                               <strong>{repeatFeedback.result.content.passed ? copy.repeatPassed : copy.repeatTryAgain}</strong>
                               <span>{repeatFeedback.result.content.text}</span>
                               <span>{copy.repeatCorrection} {repeatFeedback.result.content.correctedText}</span>
+                              {repeatFeedback.result.content.passed ? <div className="repeat-feedback-actions">
+                                <button type="button" onClick={() => { setFollowUpVisible(true); setVoiceNotice(""); }}>{copy.gotIt}</button>
+                                <button type="button" onClick={() => { setHasRepeatedLatestTutor(false); setFollowUpVisible(false); setRepeatFeedback(null); setVoiceNotice(copy.repeatPrompt); }}>{copy.repeat}</button>
+                              </div> : null}
                             </div>
                           ) : null}
                         </div>
                         </div>
-                        {requiresRepeat && message.id === latestTutorMessage?.id ? (
+                        {requiresRepeat && !followUpVisible && message.id === latestTutorMessage?.id ? (
                           <div className="repeat-action-wrap">
                             <button className="repeat-action" type="button" onClick={() => isRepeatListening ? cancelRepeat() : repeatTutorMessage(message)} disabled={isRepeatChecking}>
                               <Mic size={19} aria-hidden="true" />
@@ -2080,7 +2109,7 @@ function getConversationMessages(conversation: TutorConversation) {
       const structuredValue = message.metadata?.sayIt;
       const structured = structuredValue && typeof structuredValue === "object"
         ? structuredValue as JsonObject
-        : conversation.mode === "say_it" ? parseSayItJson(rawText) : null;
+        : conversation.mode === "say_it" ? parseSayItJson(rawText) || parseSayItFallback(rawText || "") : null;
       const text = typeof structured?.expression === "string" ? structured.expression : cleanTutorDisplayText(rawText || "");
       if (!text || !message.id) return null;
 
@@ -2090,10 +2119,10 @@ function getConversationMessages(conversation: TutorConversation) {
         text,
         structured: structured
           ? {
-              expressions: Array.isArray(structured.expressions) ? structured.expressions.filter((item): item is string => typeof item === "string") : typeof structured.expression === "string" ? [structured.expression] : [],
-              expression: typeof structured.expression === "string" ? structured.expression : text,
-              naturalExpression: typeof structured.naturalExpression === "string" ? structured.naturalExpression : "",
-              question: typeof structured.question === "string" ? structured.question : ""
+              target_sentence: typeof structured.target_sentence === "string" ? structured.target_sentence : typeof structured.expression === "string" ? structured.expression : text,
+              follow_up_question: typeof structured.follow_up_question === "string" ? structured.follow_up_question : typeof structured.question === "string" ? structured.question : "",
+              requires_repeat: structured.requires_repeat !== false,
+              expression: typeof structured.expression === "string" ? structured.expression : text
             }
           : undefined
       };
@@ -2107,8 +2136,8 @@ function parseSayItJson(value: string | undefined): JsonObject | null {
   if (!jsonText) return null;
   try {
     const parsed = JSON.parse(jsonText) as JsonObject;
-    const expressions = Array.isArray(parsed.expressions) ? parsed.expressions.filter((item): item is string => typeof item === "string") : typeof parsed.expression === "string" ? [parsed.expression] : [];
-    return expressions.length ? { ...parsed, expressions, expression: expressions[0] } : null;
+    const target = typeof parsed.target_sentence === "string" ? parsed.target_sentence : typeof parsed.expression === "string" ? parsed.expression : "";
+    return target ? { ...parsed, target_sentence: target, expression: target, follow_up_question: typeof parsed.follow_up_question === "string" ? parsed.follow_up_question : typeof parsed.question === "string" ? parsed.question : "", requires_repeat: parsed.requires_repeat !== false } : null;
   } catch {
     return null;
   }

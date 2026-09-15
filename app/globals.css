@@ -107,6 +107,9 @@
 .blog-related h2 { margin-top: 0; }
 .blog-related-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .tutor-reply-line { display: block; }
+.repeat-feedback-actions { display: flex; gap: 10px; margin-top: 14px; }
+.repeat-feedback-actions button { min-height: 36px; padding: 0 15px; border: 0; border-radius: 10px; color: #fff; background: var(--blue); font-weight: 800; cursor: pointer; }
+.repeat-feedback-actions button + button { color: var(--blue); background: var(--blue-soft); }
 @media (max-width: 760px) {
   .blog-feature-cards, .blog-related-grid { grid-template-columns: 1fr; }
   .blog-article-content h2 { font-size: 26px; }
@@ -3352,6 +3355,7 @@ h1 {
 
 .conversation-card {
   display: flex;
+  height: 670px;
   min-height: 670px;
   flex-direction: column;
 }
@@ -3424,7 +3428,8 @@ h1 {
 
 .conversation-body {
   flex: 1;
-  min-height: 410px;
+  min-height: 0;
+  overflow: hidden;
   padding: 36px 28px;
   background: #eef6ff;
 }
@@ -3439,7 +3444,11 @@ h1 {
 
 .message-list {
   display: grid;
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 8px;
   gap: 22px;
+  scroll-behavior: smooth;
 }
 
 .workbench-message {
@@ -3995,6 +4004,7 @@ h1 {
 
 .insight-panel {
   display: flex;
+  height: 670px;
   min-height: 670px;
   flex-direction: column;
 }
@@ -5632,6 +5642,7 @@ h1 {
 
   .conversation-card,
   .insight-panel {
+    height: auto;
     min-height: 0;
     border-radius: 22px;
   }
@@ -5658,7 +5669,12 @@ h1 {
 
   .conversation-body {
     min-height: 390px;
+    overflow: visible;
     padding: 28px 14px;
+  }
+
+  .message-list {
+    max-height: 390px;
   }
 
   .message-bubble {

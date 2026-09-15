@@ -16,6 +16,7 @@ function isBlogSlug(value: string | undefined) {
 }
 
 function isAllowed(method: string, segments: string[]) {
+  if (segments[0] === "ai-tutor") segments = segments.slice(1);
   const path = segments.join("/");
   if (path === "track") return method === "POST";
   if (path === "auth/sync" || path === "auth/logout") return method === "POST";

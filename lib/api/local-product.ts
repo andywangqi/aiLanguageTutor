@@ -163,6 +163,7 @@ export function shouldHandleLocalProductApi(segments: string[]) {
 }
 
 export async function handleLocalProductApi(request: Request, segments: string[], requestId: string) {
+  if (segments[0] === "ai-tutor") segments = segments.slice(1);
   if (!shouldHandleLocalProductApi(segments)) return null;
 
   const context: RequestContext = {

@@ -152,34 +152,34 @@ export const api = {
   },
   conversations: {
     create(body: JsonObject) {
-      return request<TutorConversation>("conversations", {
+      return request<TutorConversation>("ai-tutor/conversations", {
         method: "POST",
         body
       });
     },
     list(query = "") {
-      return request<ConversationList>(`conversations${query ? `?${query}` : ""}`);
+      return request<ConversationList>(`ai-tutor/conversations${query ? `?${query}` : ""}`);
     },
     get(id: string) {
-      return request<TutorConversation>(`conversations/${encodeURIComponent(id)}`);
+      return request<TutorConversation>(`ai-tutor/conversations/${encodeURIComponent(id)}`);
     },
     sendMessage(id: string, body: JsonObject) {
-      return request<SendMessageResult>(`conversations/${encodeURIComponent(id)}/messages`, {
+      return request<SendMessageResult>(`ai-tutor/conversations/${encodeURIComponent(id)}/messages`, {
         method: "POST",
         body
       });
     },
     sendVoiceMessage(id: string, body: JsonObject) {
-      return request<SendMessageResult>(`conversations/${encodeURIComponent(id)}/messages/from-voice`, {
+      return request<SendMessageResult>(`ai-tutor/conversations/${encodeURIComponent(id)}/messages/from-voice`, {
         method: "POST",
         body
       });
     },
     end(id: string) {
-      return request<JsonObject>(`conversations/${encodeURIComponent(id)}/end`, { method: "POST" });
+      return request<JsonObject>(`ai-tutor/conversations/${encodeURIComponent(id)}/end`, { method: "POST" });
     },
     reset(id: string, body: JsonObject = {}) {
-      return request<TutorConversation>(`conversations/${encodeURIComponent(id)}/reset`, {
+      return request<TutorConversation>(`ai-tutor/conversations/${encodeURIComponent(id)}/reset`, {
         method: "POST",
         body
       });
@@ -187,45 +187,45 @@ export const api = {
   },
   voice: {
     uploadUrl(body: JsonObject) {
-      return request<VoiceUpload>("voice/upload-url", { method: "POST", body });
+      return request<VoiceUpload>("ai-tutor/voice/upload-url", { method: "POST", body });
     },
     registerInput(body: JsonObject) {
-      return request<VoiceInput>("voice/inputs", { method: "POST", body });
+      return request<VoiceInput>("ai-tutor/voice/inputs", { method: "POST", body });
     },
     get(id: string) {
-      return request<VoiceInput>(`voice/inputs/${encodeURIComponent(id)}`);
+      return request<VoiceInput>(`ai-tutor/voice/inputs/${encodeURIComponent(id)}`);
     },
     transcribe(id: string) {
-      return request<VoiceInput>(`voice/inputs/${encodeURIComponent(id)}/transcribe`, { method: "POST" });
+      return request<VoiceInput>(`ai-tutor/voice/inputs/${encodeURIComponent(id)}/transcribe`, { method: "POST" });
     }
   },
   messages: {
     translate(id: string, body: JsonObject = {}) {
-      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/translate`, { method: "POST", body });
+      return request<MessageOutput>(`ai-tutor/messages/${encodeURIComponent(id)}/translate`, { method: "POST", body });
     },
     translateText(body: JsonObject) {
-      return request<MessageOutput>("messages/translate", { method: "POST", body });
+      return request<MessageOutput>("ai-tutor/messages/translate", { method: "POST", body });
     },
     grammar(id: string, body: JsonObject = {}) {
-      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/grammar`, { method: "POST", body });
+      return request<MessageOutput>(`ai-tutor/messages/${encodeURIComponent(id)}/grammar`, { method: "POST", body });
     },
     pronunciation(id: string, body: JsonObject) {
-      return request<PronunciationFeedback>(`messages/${encodeURIComponent(id)}/pronunciation`, { method: "POST", body });
+      return request<PronunciationFeedback>(`ai-tutor/messages/${encodeURIComponent(id)}/pronunciation`, { method: "POST", body });
     },
     pronunciationText(body: JsonObject) {
-      return request<PronunciationFeedback>("messages/pronunciation", { method: "POST", body });
+      return request<PronunciationFeedback>("ai-tutor/messages/pronunciation", { method: "POST", body });
     },
     grammarText(body: JsonObject) {
-      return request<MessageOutput>("messages/grammar", { method: "POST", body });
+      return request<MessageOutput>("ai-tutor/messages/grammar", { method: "POST", body });
     },
     naturalExpression(id: string) {
-      return request<MessageOutput>(`messages/${encodeURIComponent(id)}/natural-expression`, { method: "POST" });
+      return request<MessageOutput>(`ai-tutor/messages/${encodeURIComponent(id)}/natural-expression`, { method: "POST" });
     },
     audio(id: string) {
-      return request<JsonObject>(`messages/${encodeURIComponent(id)}/audio`, { method: "POST" });
+      return request<JsonObject>(`ai-tutor/messages/${encodeURIComponent(id)}/audio`, { method: "POST" });
     },
     saveCard(id: string, body: JsonObject) {
-      return request<LearningCard>(`messages/${encodeURIComponent(id)}/cards`, {
+      return request<LearningCard>(`ai-tutor/messages/${encodeURIComponent(id)}/cards`, {
         method: "POST",
         body
       });
@@ -233,13 +233,13 @@ export const api = {
   },
   cards: {
     list() {
-      return request<JsonObject>("cards");
+      return request<JsonObject>("ai-tutor/cards");
     },
     update(id: string, body: JsonObject) {
-      return request<JsonObject>(`cards/${encodeURIComponent(id)}`, { method: "PATCH", body });
+      return request<JsonObject>(`ai-tutor/cards/${encodeURIComponent(id)}`, { method: "PATCH", body });
     },
     remove(id: string) {
-      return request<JsonObject>(`cards/${encodeURIComponent(id)}`, { method: "DELETE" });
+      return request<JsonObject>(`ai-tutor/cards/${encodeURIComponent(id)}`, { method: "DELETE" });
     }
   },
   billing: {

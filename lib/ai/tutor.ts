@@ -28,10 +28,10 @@ export type TutorReply = {
 };
 
 export type SayItReply = {
-  expressions: string[];
-  expression: string;
-  naturalExpression: string;
-  question: string;
+  target_sentence: string;
+  follow_up_question: string;
+  requires_repeat: boolean;
+  expression?: string;
 };
 
 export type TutorInsightKind = "translation" | "grammar" | "natural_expression";
@@ -87,10 +87,10 @@ function systemPrompt(input: TutorReplyInput) {
     `You are AI Language Tutor, a speaking tutor that helps learners express an idea in ${learningLanguage}.`,
     `The learner may type in ${nativeLanguage} because they do not know how to say it in ${learningLanguage}. Their level is ${level}.`,
     `Use only ${learningLanguage} in your reply. Never use ${nativeLanguage}.`,
-    "Return valid JSON only with exactly these keys: expressions, naturalExpression, question.",
-    `expressions must be an array of 2 to 4 short target-language sentences expressing the learner's meaning in ${learningLanguage}, one sentence per item.`,
-    `naturalExpression must be one short, more natural target-language alternative in ${learningLanguage}.`,
-    `question must be one short relevant follow-up question in ${learningLanguage}, or an empty string when a question is not useful.`,
+    "Return valid JSON only with exactly these keys: target_sentence, follow_up_question, requires_repeat.",
+    `target_sentence must be one short target-language sentence expressing the learner's meaning in ${learningLanguage}.`,
+    `follow_up_question must be one short relevant question in ${learningLanguage}, shown only after the learner repeats target_sentence.`,
+    "requires_repeat must be true. Never combine target_sentence and follow_up_question.",
     "Do not include labels, markdown, quotes around the JSON, explanations, the native language, or any text outside the JSON object."
   ].join("\n");
 }
@@ -112,17 +112,17 @@ function fallbackReply(input: TutorReplyInput): TutorReply {
   const learningLanguage = nameForLanguage(input.learningLanguageCode);
   if (input.mode === "say_it") {
     const structured: SayItReply = input.learningLanguageCode.startsWith("zh")
-      ? { expressions: ["我明白了。"], expression: "我明白了。", naturalExpression: "我明白你的意思了。", question: "你还想补充什么？" }
+      ? { target_sentence: "我明白了。", follow_up_question: "你还想补充什么？", requires_repeat: true }
       : input.learningLanguageCode.startsWith("ja")
-        ? { expressions: ["わかりました。"], expression: "わかりました。", naturalExpression: "あなたの言いたいことがわかりました。", question: "ほかに何か伝えたいことはありますか？" }
+        ? { target_sentence: "わかりました。", follow_up_question: "ほかに何か伝えたいことはありますか？", requires_repeat: true }
         : input.learningLanguageCode.startsWith("ko")
-          ? { expressions: ["알겠습니다."], expression: "알겠습니다.", naturalExpression: "무슨 말씀인지 알겠습니다.", question: "더 덧붙이고 싶은 말이 있나요?" }
+          ? { target_sentence: "알겠습니다.", follow_up_question: "더 덧붙이고 싶은 말이 있나요?", requires_repeat: true }
           : input.learningLanguageCode.startsWith("es")
-            ? { expressions: ["Entiendo."], expression: "Entiendo.", naturalExpression: "Entiendo lo que quieres decir.", question: "¿Quieres añadir algo más?" }
+            ? { target_sentence: "Entiendo.", follow_up_question: "¿Quieres añadir algo más?", requires_repeat: true }
             : input.learningLanguageCode.startsWith("th")
-              ? { expressions: ["เข้าใจแล้ว"], expression: "เข้าใจแล้ว", naturalExpression: "ฉันเข้าใจสิ่งที่คุณต้องการจะสื่อแล้ว", question: "มีอะไรอยากเพิ่มเติมอีกไหม" }
-              : { expressions: ["I understand."], expression: "I understand.", naturalExpression: "I understand what you mean.", question: "Would you like to add anything else?" };
-    return { text: structured.expression, structured, provider: "fallback", model: "local-fallback" };
+              ? { target_sentence: "เข้าใจแล้ว", follow_up_question: "มีอะไรอยากเพิ่มเติมอีกไหม", requires_repeat: true }
+              : { target_sentence: "I understand.", follow_up_question: "Would you like to add anything else?", requires_repeat: true };
+    return { text: structured.target_sentence, structured, provider: "fallback", model: "local-fallback" };
   }
   const fallbackByLanguage: Record<string, string> = {
     en: input.mode === "talk" ? "I understand. Tell me one more detail.\nWhat would you like to add?" : "Try saying it in a natural way.\nWhat would you like to add?",
@@ -162,15 +162,9 @@ function parseSayItReply(text: string): SayItReply | null {
   if (!jsonText) return null;
   try {
     const parsed = JSON.parse(jsonText) as Record<string, unknown>;
-    const structured = {
-      expressions: Array.isArray(parsed.expressions) ? parsed.expressions.map(cleanStructuredLine).filter(Boolean).slice(0, 4) : [],
-      expression: cleanStructuredLine(parsed.expression),
-      naturalExpression: cleanStructuredLine(parsed.naturalExpression),
-      question: cleanStructuredLine(parsed.question)
-    };
-    if (!structured.expressions.length && structured.expression) structured.expressions = [structured.expression];
-    structured.expression = structured.expressions[0] || structured.expression;
-    return structured.expressions.length && structured.naturalExpression ? structured : null;
+    const target = cleanStructuredLine(parsed.target_sentence) || cleanStructuredLine(parsed.expression);
+    const question = cleanStructuredLine(parsed.follow_up_question) || cleanStructuredLine(parsed.question);
+    return target ? { target_sentence: target, follow_up_question: question, requires_repeat: parsed.requires_repeat !== false, expression: target } : null;
   } catch {
     return null;
   }
@@ -196,7 +190,7 @@ export async function generateTutorReply(input: TutorReplyInput): Promise<TutorR
     const result = await qwenChat(qwenMessages(input));
     if (input.mode === "say_it") {
       const structured = parseSayItReply(result.text);
-      if (structured) return { ...qwenResult(result), text: structured.expressions[0], structured };
+      if (structured) return { ...qwenResult(result), text: structured.target_sentence, structured };
       return fallbackReply(input);
     }
     return { ...qwenResult(result), text: sanitizeTutorText(result.text, input) || fallbackReply(input).text };
