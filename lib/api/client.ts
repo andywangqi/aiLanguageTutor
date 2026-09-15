@@ -157,8 +157,11 @@ export const api = {
         body
       });
     },
-    list(query = "") {
-      return request<ConversationList>(`ai-tutor/conversations${query ? `?${query}` : ""}`);
+    list(query: string | { limit?: number; cursor?: string; status?: string; mode?: string } = "") {
+      const search = typeof query === "string"
+        ? query
+        : new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string | number] => entry[1] !== undefined).map(([key, value]) => [key, String(value)])).toString();
+      return request<ConversationList>(`ai-tutor/conversations${search ? `?${search}` : ""}`);
     },
     get(id: string) {
       return request<TutorConversation>(`ai-tutor/conversations/${encodeURIComponent(id)}`);
@@ -232,8 +235,9 @@ export const api = {
     }
   },
   cards: {
-    list() {
-      return request<JsonObject>("ai-tutor/cards");
+    list(query: { limit?: number; status?: string } = {}) {
+      const search = new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string | number] => entry[1] !== undefined).map(([key, value]) => [key, String(value)])).toString();
+      return request<JsonObject>(`ai-tutor/cards${search ? `?${search}` : ""}`);
     },
     update(id: string, body: JsonObject) {
       return request<JsonObject>(`ai-tutor/cards/${encodeURIComponent(id)}`, { method: "PATCH", body });
