@@ -1,10 +1,24 @@
+"use client";
+
 import { ArrowRight, MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { LandingDictionary } from "@/lib/i18n/types";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { InteractiveDemo } from "./InteractiveDemo";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export function Hero({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => { if (active) setIsAuthenticated(Boolean(data.session)); });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setIsAuthenticated(Boolean(session)));
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
+  const heroHref = isAuthenticated ? localizedPath(locale, "/app") : `${localizedPath(locale, "/login")}?next=${encodeURIComponent(localizedPath(locale, "/app"))}`;
   return (
     <section className="hero-section">
       <div className="container hero-grid">
@@ -17,7 +31,7 @@ export function Hero({ dictionary, locale }: { dictionary: LandingDictionary; lo
           <p className="hero-lead">{dictionary.hero.lead}</p>
           <div className="hero-actions">
             <ButtonLink
-              href={localizedPath(locale, "/login")}
+              href={heroHref}
               eventName="home_cta_clicked"
               eventProperties={{ placement: "hero", cta: "primary", destination: "login", locale }}
             >
