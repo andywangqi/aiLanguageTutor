@@ -5,9 +5,9 @@ import { getProductCopy } from "./product-copy";
 const baseEn: LandingDictionary = {
   locale: "en",
   seo: {
-    title: "AI Language Tutor | Practice Speaking Through Real Conversations",
+    title: "AI Language Tutor | Practice Real Conversations",
     description:
-      "Practice speaking English and other languages with an AI tutor. Have real conversations, get help when you get stuck, improve your grammar and pronunciation, and speak with more confidence."
+      "Practice speaking English and other languages with an AI tutor. Have real conversations, get help when you're stuck, and improve your speaking skills."
   },
   nav: {
     product: "Product",
@@ -20,7 +20,7 @@ const baseEn: LandingDictionary = {
     eyebrow: "AI Language Tutor + speaking practice",
     h1: "Practice Speaking With an AI Language Tutor",
     lead:
-      "Have real conversations, get help when you get stuck, and improve by actually speaking the language you're learning.",
+      "Practice real conversations by voice or text, get help when you get stuck, and improve by using the language you're learning.",
     primaryCta: "Start Practicing Free",
     secondaryCta: "See how it works"
   },
@@ -142,7 +142,7 @@ const baseEn: LandingDictionary = {
         {
           question: "What is an AI Language Tutor?",
           answer:
-            "An AI language tutor is an AI-powered learning partner that helps you practice a language through conversation, feedback, explanations, and other learning support."
+            "An AI language tutor is a learning tool that lets you practice a language through real-time voice or text conversations. It can explain natural expressions, correct mistakes, and help you continue when you get stuck."
         },
         {
           question: "How does an AI Language Tutor work?",
@@ -157,7 +157,7 @@ const baseEn: LandingDictionary = {
         {
           question: "Can I practice conversations with an AI tutor?",
           answer:
-            "Yes. You can practice conversations about everyday life, travel, work, hobbies, and other topics in the language you're learning."
+            "Yes. You can role-play useful situations such as ordering food, checking into a hotel, joining a meeting, preparing for an interview, or making everyday small talk."
         },
         {
           question: "Can I listen to the AI tutor?",
@@ -168,6 +168,11 @@ const baseEn: LandingDictionary = {
           question: "What languages can I learn?",
           answer:
             "Start with the languages your learners care about most, then expand to more supported languages over time."
+        },
+        {
+          question: "Is AI Language Tutor free?",
+          answer:
+            "You can try your first one-minute AI conversation for free without a credit card. Paid plans are available for longer and unlimited practice."
         }
       ]
     },
