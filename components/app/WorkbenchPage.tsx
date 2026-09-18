@@ -198,7 +198,7 @@ const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
     repeatUnsupported: "Your browser cannot check repetition. Use Chrome or Edge and allow microphone access.",
     repeatRequired: "Please repeat the tutor's sentence before continuing.",
     repeatModalTitle: "Repeat before continuing",
-    repeatModalBody: "In Say It / Translate, repeat the tutor's English sentence and receive pronunciation feedback before starting the next turn.",
+    repeatModalBody: "In Say It / Translate, repeat the tutor's English sentence and check whether the recognized words match before starting the next turn.",
     repeatModalAction: "Start repeating",
     repeatModalClose: "Not now"
   },
@@ -213,7 +213,7 @@ const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
     repeatUnsupported: "お使いのブラウザでは復唱を確認できません。ChromeまたはEdgeでマイクの使用を許可してください。",
     repeatRequired: "続ける前に、Tutorの文を復唱してください。",
     repeatModalTitle: "復唱してから続けましょう",
-    repeatModalBody: "Say It / Translate では、次のターンへ進む前に Tutor の英語表現を復唱し、発音フィードバックを受けてください。",
+    repeatModalBody: "Say It / Translate では、次のターンへ進む前に Tutor の英語表現を復唱し、認識された単語が文と一致するか確認します。",
     repeatModalAction: "復唱を始める",
     repeatModalClose: "後で"
   },
@@ -228,7 +228,7 @@ const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
     repeatUnsupported: "เบราว์เซอร์ของคุณไม่สามารถตรวจสอบการพูดตามได้ โปรดใช้ Chrome หรือ Edge และอนุญาตให้ใช้ไมโครโฟน",
     repeatRequired: "โปรดพูดตามประโยคของ Tutor ก่อนดำเนินการต่อ",
     repeatModalTitle: "พูดตามก่อนดำเนินการต่อ",
-    repeatModalBody: "ในโหมด Say It / Translate โปรดพูดตามประโยคภาษาอังกฤษของ Tutor และรับคำแนะนำการออกเสียงก่อนเริ่มรอบถัดไป",
+    repeatModalBody: "ในโหมด Say It / Translate โปรดพูดตามประโยคภาษาอังกฤษของ Tutor และตรวจว่าคำที่ระบบรู้จำตรงกับประโยคก่อนเริ่มรอบถัดไป",
     repeatModalAction: "เริ่มพูดตาม",
     repeatModalClose: "ไว้ภายหลัง"
   },
@@ -243,7 +243,7 @@ const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
     repeatUnsupported: "현재 브라우저에서는 따라 말하기를 확인할 수 없습니다. Chrome 또는 Edge에서 마이크 사용을 허용해 주세요.",
     repeatRequired: "계속하기 전에 Tutor의 문장을 따라 말해 주세요.",
     repeatModalTitle: "따라 말한 후 계속하세요",
-    repeatModalBody: "Say It / Translate에서는 다음 대화를 시작하기 전에 Tutor의 영어 문장을 따라 말하고 발음 피드백을 받아야 합니다.",
+    repeatModalBody: "Say It / Translate에서는 다음 대화를 시작하기 전에 Tutor의 영어 문장을 따라 말하고 인식된 단어가 문장과 일치하는지 확인합니다.",
     repeatModalAction: "따라 말하기 시작",
     repeatModalClose: "나중에"
   },
@@ -258,7 +258,7 @@ const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
     repeatUnsupported: "当前浏览器无法检测复读，请使用 Chrome 或 Edge 并允许麦克风权限。",
     repeatRequired: "请先复读导师说的句子，然后再继续。",
     repeatModalTitle: "完成复读后再继续",
-    repeatModalBody: "在 Say It / Translate 模式中，需要先复读导师给出的自然英文表达并获得发音纠正，才能开始下一轮。",
+    repeatModalBody: "在 Say It / Translate 模式中，需要先复读导师给出的自然英文表达，并检查识别出的文字是否匹配，然后才能开始下一轮。",
     repeatModalAction: "开始复读",
     repeatModalClose: "暂不复读"
   },
@@ -273,7 +273,7 @@ const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
     repeatUnsupported: "目前瀏覽器無法檢查複誦，請使用 Chrome 或 Edge 並允許麥克風權限。",
     repeatRequired: "請先複誦 Tutor 的句子，再繼續。",
     repeatModalTitle: "完成複誦後再繼續",
-    repeatModalBody: "在 Say It / Translate 模式中，需要先複誦 Tutor 提供的自然英文表達並取得發音修正，才能開始下一輪。",
+    repeatModalBody: "在 Say It / Translate 模式中，需要先複誦 Tutor 提供的自然英文表達，並檢查辨識文字是否相符，才能開始下一輪。",
     repeatModalAction: "開始複誦",
     repeatModalClose: "暫不複誦"
   },
@@ -288,7 +288,7 @@ const localizedRepeatMessages: Record<Locale, RepeatUiMessages> = {
     repeatUnsupported: "Tu navegador no puede comprobar la repetición. Usa Chrome o Edge y permite el acceso al micrófono.",
     repeatRequired: "Repite la frase del tutor antes de continuar.",
     repeatModalTitle: "Repite antes de continuar",
-    repeatModalBody: "En Say It / Translate, repite la frase en inglés del tutor y recibe correcciones de pronunciación antes de empezar el siguiente turno.",
+    repeatModalBody: "En Say It / Translate, repite la frase en inglés del tutor y comprueba si las palabras reconocidas coinciden antes del siguiente turno.",
     repeatModalAction: "Empezar a repetir",
     repeatModalClose: "Ahora no"
   }
@@ -561,7 +561,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const router = useRouter();
   const copy = useMemo(
     () => ({ ...dictionary.product.workbench, ...localizedWorkbenchMessages[locale], ...localizedRepeatMessages[locale],
-      repeatModalTitle: localizedRepeatMessages[locale].repeat,
+      repeatModalTitle: localizedRepeatMessages[locale].repeatModalTitle,
       repeatModalBody: actions.note,
       repeatModalClose: actions.skip,
       repeatUnsupported: actions.type,
