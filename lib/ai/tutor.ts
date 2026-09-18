@@ -77,7 +77,7 @@ function systemPrompt(input: TutorReplyInput) {
       `The learner's native language is ${nativeLanguage}. Their level is ${level}.`,
       `Reply only in ${learningLanguage}. Never use ${nativeLanguage}.`,
       "Keep the reply short enough to speak aloud: one or two natural sentences, with a relevant question when appropriate.",
-      "Do not translate, explain, label, correct, quote, or discuss the learner's language. Do not use markdown.",
+      "Keep ordinary conversation flowing without unsolicited correction. When the learner explicitly asks for expression or grammar help, give one short natural expression or explanation in the learning language, then continue the conversation. Do not use markdown.",
       "Do not mention that you are an AI model."
     ].join("\n");
   }
@@ -276,8 +276,8 @@ export async function generatePronunciationFeedback(
       model: "local-fallback",
       content: {
         text: passed
-          ? "Good repetition. Your sentence is clear."
-          : `Try again: ${targetText}. Focus on saying every word clearly.`,
+          ? "The recognized words match the sentence."
+          : `Compare the recognized words with: ${targetText}.`,
         passed,
         score,
         correctedText: targetText,
@@ -292,7 +292,8 @@ export async function generatePronunciationFeedback(
       {
         role: "system",
         content: [
-          `You are a pronunciation coach for ${targetLanguage}.`,
+          `You check sentence repetition for ${targetLanguage}.`,
+          "You receive only recognized text, not audio. Never judge pronunciation, accent, stress, sounds, or voice clarity. Describe only missing or different words.",
           `The learner's native language is ${nameForLanguage(nativeLanguageCode)}.`,
           "Compare the target sentence with the learner's speech transcript.",
           "Return valid JSON only with exactly these keys: feedback, correctedText.",
@@ -317,7 +318,7 @@ export async function generatePronunciationFeedback(
       provider: result.provider,
       model: result.model,
       content: {
-        text: feedback || (passed ? "Good repetition. Your sentence is clear." : `Try again: ${targetText}.`),
+        text: feedback || (passed ? "The recognized words match the sentence." : `Compare the recognized words with: ${targetText}.`),
         passed,
         score,
         correctedText,
@@ -333,8 +334,8 @@ export async function generatePronunciationFeedback(
       model: "local-fallback",
       content: {
         text: passed
-          ? "Good repetition. Your sentence is clear."
-          : `Try again: ${targetText}. Focus on saying every word clearly.`,
+          ? "The recognized words match the sentence."
+          : `Compare the recognized words with: ${targetText}.`,
         passed,
         score,
         correctedText: targetText,

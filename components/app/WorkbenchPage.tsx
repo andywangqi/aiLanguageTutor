@@ -35,6 +35,8 @@ import { api } from "@/lib/api/client";
 import { trackEvent, trackEventOnce } from "@/lib/analytics/client";
 import { analyticsEvents, paymentEventForStatus } from "@/lib/analytics/events";
 import { ApiError, type JsonObject, type PronunciationFeedback, type TutorConversation, type TutorMessage, type TutorPartner, type WorkbenchData } from "@/lib/api/types";
+import { practiceActions } from "@/lib/i18n/practice-actions";
+import { findScenario, type Scenario } from "@/lib/scenarios";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { readingCopy } from "@/lib/i18n/reading-copy";
@@ -550,14 +552,28 @@ function isRepeatCloseEnough(spoken: string, target: string) {
 }
 
 export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
+  const actions = practiceActions[locale];
+  const composerRef = useRef<HTMLInputElement>(null);
+  const [scenario, setScenario] = useState<Scenario | undefined>();
+  useEffect(() => {
+    setScenario(findScenario(new URLSearchParams(window.location.search).get("scenario") || ""));
+  }, []);
   const router = useRouter();
   const copy = useMemo(
-    () => ({ ...dictionary.product.workbench, ...localizedWorkbenchMessages[locale], ...localizedRepeatMessages[locale] }),
+    () => ({ ...dictionary.product.workbench, ...localizedWorkbenchMessages[locale], ...localizedRepeatMessages[locale],
+      repeatModalTitle: localizedRepeatMessages[locale].repeat,
+      repeatModalBody: actions.note,
+      repeatModalClose: actions.skip,
+      repeatUnsupported: actions.type,
+      repeatRequired: actions.type,
+      repeatPrompt: localizedRepeatMessages[locale].repeat
+    }),
     [dictionary.product.workbench, locale]
   );
   const [activeNav, setActiveNav] = useState<NavItem>("home");
   const [mode, setMode] = useState<WorkbenchMode>("sayIt");
   const [insightMode, setInsightMode] = useState<InsightMode>("translate");
+  const [expressionHelp, setExpressionHelp] = useState("");
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [nativeLanguage, setNativeLanguage] = useState<string>(() => readNativeLanguagePreference() || detectBrowserNativeLanguage());
@@ -650,7 +666,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
-        router.replace(localizedPath(locale, "/login"));
+        router.replace(`${localizedPath(locale, "/login")}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         return;
       }
 
@@ -690,7 +706,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       } catch (error) {
         if (error instanceof ApiError && error.code === "UNAUTHENTICATED") {
           await supabase.auth.signOut();
-          router.replace(localizedPath(locale, "/login"));
+          router.replace(`${localizedPath(locale, "/login")}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
           return;
         }
         if (active) {
@@ -718,8 +734,43 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   const latestMessage = messages[messages.length - 1];
   const latestTutorMessage = [...messages].reverse().find((message) => message.role === "tutor");
   const hasTutorResponseToUser = latestMessage?.role === "tutor" && messages.some((message) => message.role === "user");
-  const requiresRepeat = mode === "sayIt" && Boolean(latestTutorMessage && hasTutorResponseToUser && latestTutorMessage.structured);
+  const requiresRepeat = mode === "sayIt" && hasTutorResponseToUser && latestTutorMessage?.structured?.requires_repeat === true;
   const canContinueConversation = !requiresRepeat || followUpVisible;
+
+  function skipRepeat(focusText = false) {
+    cancelRepeat();
+    setRepeatRequiredModalOpen(false);
+    setFollowUpVisible(true);
+    setVoiceNotice("");
+    if (focusText) requestAnimationFrame(() => composerRef.current?.focus());
+  }
+
+  async function helpExpressInput() {
+    if (!input.trim()) {
+      setVoiceNotice(actions.helpEmpty);
+      composerRef.current?.focus();
+      return;
+    }
+    setIsInsightBusy(true);
+    setExpressionHelp("");
+    setSelectedPhrase(input.trim());
+    setApiNotice("");
+    setInsightMode("translate");
+    try {
+      const result = await api.messages.translateText({
+        text: input.trim(),
+        sourceLanguageCode: languageCode(nativeLanguage),
+        targetLanguageCode: languageCode(learningLanguage)
+      }) as InsightResult;
+      const expression = insightContent(result, copy.noExplanation);
+      setInsightText(expression);
+      setExpressionHelp(expression);
+    } catch (error) {
+      setApiNotice(apiErrorMessage(error, copy.learningToolError));
+    } finally {
+      setIsInsightBusy(false);
+    }
+  }
 
   function showRepeatRequiredModal() {
     setVoiceNotice("");
@@ -782,6 +833,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   function resetDemoConversation(nextMode = mode) {
+    setExpressionHelp("");
     setIsReplyPending(false);
     setHasRepeatedLatestTutor(false);
     setFollowUpVisible(false);
@@ -831,6 +883,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
   }
 
   function switchMode(nextMode: WorkbenchMode) {
+    cancelRepeat();
     setMode(nextMode);
     void createConversation(nextMode);
   }
@@ -1222,8 +1275,8 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
             model: "demo-local",
             content: {
               text: isRepeatCloseEnough(spokenText, message.text)
-                ? "Good repetition. Your sentence is clear."
-                : "Try again and focus on saying every word clearly.",
+                ? "The recognized words match the sentence."
+                : "Compare the recognized words with the target sentence.",
               passed: isRepeatCloseEnough(spokenText, message.text),
               score: isRepeatCloseEnough(spokenText, message.text) ? 1 : 0,
               correctedText: message.text,
@@ -1269,7 +1322,6 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
     repeatTimeoutRef.current = null;
     repeatRecognitionRef.current?.abort?.();
-    repeatRecognitionRef.current?.stop();
     repeatRecognitionRef.current = null;
     setIsRepeatListening(false);
     setHasRepeatedLatestTutor(false);
@@ -1617,11 +1669,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                         </div>
                         {requiresRepeat && !followUpVisible && message.id === latestTutorMessage?.id ? (
                           <div className="repeat-action-wrap">
+                            <p>{actions.note}</p>
                             <button className="repeat-action" type="button" onClick={() => isRepeatListening ? cancelRepeat() : repeatTutorMessage(message)} disabled={isRepeatChecking}>
                               <Mic size={19} aria-hidden="true" />
                               {isRepeatListening ? copy.voiceCancel : isRepeatChecking ? copy.repeatChecking : copy.repeat}
                             </button>
                             {isRepeatListening ? <VoiceActivityIndicator label={copy.repeatPrompt} compact /> : null}
+                            <button type="button" disabled={isRepeatChecking} onClick={() => skipRepeat()}>{actions.skip}</button>
+                            <button type="button" disabled={isRepeatChecking} onClick={() => skipRepeat(true)}>{actions.type}</button>
                           </div>
                         ) : null}
                       </>
@@ -1644,9 +1699,18 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
               </div>
             </div>
 
+            {scenario ? <div className="repeat-feedback"><strong>{scenario.title}</strong><p>{scenario.prompt}</p><button type="button" disabled={isApiBusy || isReplyPending || isListening || isRepeatListening || isRepeatChecking} onClick={() => {
+              setMode("talk");
+              setLearningLanguage("English");
+              setConversationId(null);
+              resetDemoConversation("talk");
+              setInput(scenario.prompt);
+              setScenario(undefined);
+              requestAnimationFrame(() => composerRef.current?.focus());
+            }}>{actions.type}</button></div> : null}
             {canContinueConversation ? <div className="conversation-footer">
               <div className="conversation-shortcuts">
-                 <button className="lost" type="button" onClick={() => setInput("Could you say that more slowly?")}>
+                 <button className="lost" type="button" disabled={isInsightBusy} onClick={() => { if (latestTutorMessage) void requestMessageHelp(latestTutorMessage, "translate"); }}>
                   <AlertCircle size={16} aria-hidden="true" />
                   {copy.lost}
                 </button>
@@ -1657,12 +1721,14 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                  <button className="show-hints" type="button" onClick={() => { const tutorMessage = [...messages].reverse().find((message) => message.role === "tutor"); if (tutorMessage) void runInsight("grammar", tutorMessage); }}>
                   {copy.showHints}
                 </button>
+                {mode === "talk" ? <button type="button" disabled={isInsightBusy || isApiBusy} onClick={() => void helpExpressInput()}>{actions.help}</button> : null}
               </div>
               <div className="message-composer">
                 {isListening ? (
                   <VoiceActivityIndicator label={copy.voiceListening} />
                 ) : null}
                 <input
+                  ref={composerRef}
                   className={isListening ? "voice-input-hidden" : ""}
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
@@ -1690,6 +1756,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
+              {expressionHelp ? <div className="repeat-feedback" role="status"><strong>{actions.help}</strong><p>{expressionHelp}</p><button type="button" onClick={() => { setInput(expressionHelp); setExpressionHelp(""); composerRef.current?.focus(); }}>{actions.type}</button></div> : null}
             </div> : null}
             {voiceNotice ? <p className="voice-notice">{voiceNotice}</p> : null}
             {apiNotice ? <p className="workbench-api-notice" role="status">{apiNotice}</p> : null}
@@ -1789,7 +1856,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       {repeatRequiredModalOpen && requiresRepeat && !hasRepeatedLatestTutor && latestTutorMessage ? (
         <RepeatRequiredModal
           copy={copy}
-          onClose={() => setRepeatRequiredModalOpen(false)}
+          onClose={() => skipRepeat(true)}
           onRepeat={() => repeatTutorMessage(latestTutorMessage)}
         />
       ) : null}

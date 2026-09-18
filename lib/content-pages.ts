@@ -2,6 +2,7 @@ import { localizedPath, type Locale } from "./i18n/config";
 import { getFooterCopy } from "./i18n/footer-copy";
 import type { LandingDictionary } from "./i18n/types";
 import type { InfoSectionCopy } from "./i18n/info-types";
+import { scenarios } from "./scenarios";
 
 export const contentRoutes = {
   practice: ["talk", "get-help", "pronunciation", "vocabulary"],
@@ -157,11 +158,11 @@ export function getContentPageCopy(
             bullets: dictionary.product.home.storySamples.map((sample) => `${sample.badge}: ${sample.prompt}`)
           }
         ],
-        cards: storyCards(dictionary).map((card) => ({
+        cards: [...scenarios.map((scenario) => ({ title: scenario.title, body: scenario.description, href: `/learn/${scenario.slug}`, cta: "Explore English practice" })), ...storyCards(dictionary).map((card) => ({
           ...card,
           href: localizedPath(locale, "/app"),
           cta: dictionary.hero.primaryCta
-        }))
+        }))]
       };
     case "learn/learning-tips":
       return {

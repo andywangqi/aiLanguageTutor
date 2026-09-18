@@ -3,6 +3,7 @@ import { getPublicBlogPosts } from "@/lib/blog";
 import { contentRoutes, getContentPagePath, type ContentCategory, type ContentSlug } from "@/lib/content-pages";
 import { localeUrl, locales, localizedPath } from "@/lib/i18n/config";
 import { siteUrl } from "@/lib/seo/metadata";
+import { scenarios } from "@/lib/scenarios";
 
 const informationPaths = ["contact", "privacy", "terms"] as const;
 const contentPaths = Object.entries(contentRoutes).flatMap(([category, slugs]) =>
@@ -21,6 +22,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   return [
+    ...scenarios.map((scenario) => ({
+      url: `${siteUrl}/learn/${scenario.slug}`,
+      lastModified: "2026-09-17",
+      changeFrequency: "monthly" as const,
+      priority: 0.65
+    })),
     ...locales.map((locale) => ({
       url: localeUrl(siteUrl, locale),
       lastModified: new Date(),

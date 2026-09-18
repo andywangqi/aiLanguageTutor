@@ -1,13 +1,14 @@
 import type { LandingDictionary } from "./types";
 import { getLandingSections } from "./landing-copy";
 import { getProductCopy } from "./product-copy";
+import { repeatCopy, positioning, trialLabels } from "./practice-copy";
 
 const baseEn: LandingDictionary = {
   locale: "en",
   seo: {
-    title: "AI Language Tutor | Practice Real Conversations",
+    title: "AI Language Tutor | Practice Speaking With Help",
     description:
-      "Practice speaking English and other languages with an AI tutor. Have real conversations, get help when you're stuck, and improve your speaking skills."
+      "Practice speaking with an AI language tutor. Get help expressing what you mean, hear natural phrases, and save useful sentences for your next conversation."
   },
   nav: {
     product: "Product",
@@ -18,9 +19,9 @@ const baseEn: LandingDictionary = {
   },
   hero: {
     eyebrow: "AI Language Tutor + speaking practice",
-    h1: "Practice Speaking With an AI Language Tutor",
+    h1: "Practice Speaking With Help When You Get Stuck",
     lead:
-      "Practice real conversations by voice or text, get help when you get stuck, and improve by using the language you're learning.",
+      "Turn what you want to say into a natural sentence, practice it in conversation, and save useful phrases for later.",
     primaryCta: "Start Practicing Free",
     secondaryCta: "See how it works"
   },
@@ -406,5 +407,17 @@ for (const locale of ["ja", "th", "ko", "zh-CN", "zh-TW", "es"] as const) {
 }
 
 export function getDictionary(locale: LandingDictionary["locale"]): LandingDictionary {
-  return dictionaries[locale];
+  const dictionary = dictionaries[locale];
+  const feedback = repeatCopy[locale];
+  const localized = locale === "en" ? null : positioning[locale];
+  return {
+    ...dictionary,
+    seo: localized ? { title: localized.title, description: localized.description } : dictionary.seo,
+    hero: { ...dictionary.hero, ...(localized ? { h1: localized.h1, lead: localized.description } : {}) },
+    sections: {
+      ...dictionary.sections,
+      corrections: { ...dictionary.sections.corrections, h2: feedback.correction, lead: feedback.lead, points: [feedback.correction, feedback.label] },
+      stuck: { ...dictionary.sections.stuck, eyebrow: feedback.label, h2: feedback.label, lead: feedback.note }
+    }
+  };
 }

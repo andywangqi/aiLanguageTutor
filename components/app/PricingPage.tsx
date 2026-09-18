@@ -12,11 +12,9 @@ import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { LanguageSwitcher } from "@/components/landing/LanguageSwitcher";
 import { paymentEventForStatus } from "@/lib/analytics/events";
 import { trackEvent, trackEventOnce } from "@/lib/analytics/client";
+import { defaultPlans, paidPlan } from "@/lib/billing/catalog";
 
-const fallbackPlans: BillingPlan[] = [
-  { planCode: "pro_monthly", name: "Pro", amount: 12.99, currency: "USD", interval: "month", popular: true },
-  { planCode: "pro_annual", name: "Pro Annual", amount: 79.99, currency: "USD", interval: "year" }
-];
+const fallbackPlans = defaultPlans.filter((plan) => plan.type === "subscription");
 
 function planCode(plan: BillingPlan, fallback: string) {
   return plan.planCode || plan.code || fallback;
@@ -64,6 +62,7 @@ function delay(milliseconds: number) {
 export function PricingPage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
   const copy = dictionary.product.pricing;
   const [plans, setPlans] = useState<BillingPlan[]>(fallbackPlans);
+  const [plansVerified, setPlansVerified] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState("");
   const [notice, setNotice] = useState("");
   const [pendingCheckoutUrl, setPendingCheckoutUrl] = useState("");
@@ -98,21 +97,27 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
     api.billing
       .plans()
       .then((remotePlans) => {
-        if (active && remotePlans.length > 0) setPlans(remotePlans);
+        if (active) {
+          setPlans(remotePlans);
+          setPlansVerified(true);
+          if (!paidPlan(remotePlans, "month") || !paidPlan(remotePlans, "year")) setNotice(copy.pendingNotice);
+        }
       })
       .catch(() => {
-        // The documented defaults keep the page useful while central plans are unavailable.
+        if (active) setNotice(copy.pendingNotice);
       });
     return () => {
       active = false;
     };
   }, []);
 
-  const monthlyPlan = plans.find((plan) => (plan.interval || "").toLowerCase().includes("month")) || plans[0] || fallbackPlans[0];
-  const annualPlan = plans.find((plan) => (plan.interval || "").toLowerCase().includes("year")) || plans[1] || fallbackPlans[1];
+  const monthlyAvailable = plansVerified && Boolean(paidPlan(plans, "month"));
+  const annualAvailable = plansVerified && Boolean(paidPlan(plans, "year"));
+  const monthlyPlan = paidPlan(plans, "month") || fallbackPlans[0];
+  const annualPlan = paidPlan(plans, "year") || fallbackPlans[1];
   const monthlyAmount = planNumericAmount(monthlyPlan);
   const annualAmount = planNumericAmount(annualPlan);
-  const annualOriginal = monthlyAmount === null ? null : monthlyAmount * 12;
+  const annualOriginal = monthlyAmount === null || monthlyPlan.currency !== annualPlan.currency ? null : monthlyAmount * 12;
   const annualSavingsPercent = annualOriginal && annualAmount !== null
     ? Math.max(0, Math.round((1 - annualAmount / annualOriginal) * 100))
     : null;
@@ -144,6 +149,7 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
   }
 
   async function startCheckout(plan: BillingPlan, fallbackCode: string) {
+    if (!plansVerified || !(fallbackCode === "pro_monthly" ? monthlyAvailable : annualAvailable)) return;
     if (checkoutInFlight.current) return;
     checkoutInFlight.current = true;
     setNotice("");
@@ -270,7 +276,7 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
             <span className="pricing-lite-kicker">{copy.proKicker}</span>
             <h2>{copy.proName}</h2>
             <div className="pricing-lite-price">
-              <strong>{planAmount(monthlyPlan, copy.proFallbackPrice, locale)}</strong>
+              <strong>{monthlyAvailable ? planAmount(monthlyPlan, copy.proFallbackPrice, locale) : "—"}</strong>
               <span>/ {copy.month}</span>
             </div>
             <p className="pricing-lite-subtitle">{copy.proSubtitle}</p>
@@ -282,7 +288,7 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
                 </li>
               ))}
             </ul>
-            <button className="pricing-lite-button pricing-lite-button-primary" type="button" onClick={() => startCheckout(monthlyPlan, "pro_monthly")} disabled={Boolean(checkoutPlan) || paymentUnavailable || checkoutInProgress}>
+            <button className="pricing-lite-button pricing-lite-button-primary" type="button" onClick={() => startCheckout(monthlyPlan, "pro_monthly")} disabled={!monthlyAvailable || Boolean(checkoutPlan) || paymentUnavailable || checkoutInProgress}>
               {checkoutPlan === planCode(monthlyPlan, "pro_monthly") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
               {copy.proCta}
             </button>
@@ -296,12 +302,12 @@ export function PricingPage({ dictionary, locale }: { dictionary: LandingDiction
             <p>{copy.annualDescription}</p>
           </div>
           <div className="pricing-lite-annual-price">
-             {annualOriginal !== null && annualAmount !== null && annualOriginal > annualAmount ? <del>{formatCurrency(annualOriginal, annualPlan.currency || monthlyPlan.currency || "USD", locale)}</del> : null}
-             <strong>{planAmount(annualPlan, copy.annualFallbackPrice, locale)}</strong>
-             <span>/ {copy.year}{annualAmount !== null ? ` · ${formatCurrency(annualAmount / 12, annualPlan.currency || "USD", locale)} / ${copy.month}` : ` · ${copy.monthEquivalent}`}</span>
+             {monthlyAvailable && annualAvailable && annualOriginal !== null && annualAmount !== null && annualOriginal > annualAmount ? <del>{formatCurrency(annualOriginal, annualPlan.currency || monthlyPlan.currency || "USD", locale)}</del> : null}
+             <strong>{annualAvailable ? planAmount(annualPlan, copy.annualFallbackPrice, locale) : "—"}</strong>
+             <span>/ {copy.year}{annualAvailable && annualAmount !== null ? ` · ${formatCurrency(annualAmount / 12, annualPlan.currency || "USD", locale)} / ${copy.month}` : ""}</span>
            </div>
-           <div className="pricing-lite-annual-savings">{annualSavingsPercent !== null ? replacePercentage(copy.annualSavings, annualSavingsPercent) : copy.annualSavings}</div>
-          <button className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" type="button" onClick={() => startCheckout(annualPlan, "pro_annual")} disabled={Boolean(checkoutPlan) || paymentUnavailable || checkoutInProgress}>
+           <div className="pricing-lite-annual-savings">{monthlyAvailable && annualAvailable && annualSavingsPercent !== null && annualSavingsPercent > 0 ? replacePercentage(copy.annualSavings, annualSavingsPercent) : null}</div>
+          <button className="pricing-lite-button pricing-lite-button-primary pricing-lite-annual-button" type="button" onClick={() => startCheckout(annualPlan, "pro_annual")} disabled={!annualAvailable || Boolean(checkoutPlan) || paymentUnavailable || checkoutInProgress}>
             {checkoutPlan === planCode(annualPlan, "pro_annual") ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : null}
             {copy.annualCta}
           </button>

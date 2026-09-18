@@ -15,10 +15,11 @@ type InfoPageProps = {
   locale?: Locale;
   copy?: InfoCopy;
   showIntro?: boolean;
+  hideLanguageSwitcher?: boolean;
   children: ReactNode;
 };
 
-export function InfoPage({ eyebrow, title, lead, updated, locale = "en", copy, showIntro = true, children }: InfoPageProps) {
+export function InfoPage({ eyebrow, title, lead, updated, locale = "en", copy, showIntro = true, hideLanguageSwitcher = false, children }: InfoPageProps) {
   const shell = (copy ?? getInfoCopy(locale)).shell;
   const resolvedUpdated = updated ?? "August 24, 2026";
 
@@ -28,7 +29,7 @@ export function InfoPage({ eyebrow, title, lead, updated, locale = "en", copy, s
         <div className="container info-header-inner">
           <BrandMark href={localizedPath(locale, "/")} locale={locale} />
           <div className="info-header-actions">
-            <LanguageSwitcher currentLocale={locale} />
+            {!hideLanguageSwitcher ? <LanguageSwitcher currentLocale={locale} /> : null}
             <Link className="info-home-link" href={localizedPath(locale, "/")}>
               <ArrowLeft aria-hidden="true" size={16} />
               {shell.back}

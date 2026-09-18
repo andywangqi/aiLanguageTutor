@@ -6,6 +6,7 @@ import { isQwenConfigured } from "@/lib/ai/qwen";
 import { syncCentralEntity } from "@/lib/central/server";
 import { createSupabaseAdminClient, getSupabaseUserFromRequest } from "@/lib/supabase/server";
 import type { BillingPlan, JsonObject, TutorConversation, TutorMessage } from "./types";
+import { defaultPlans as catalogPlans } from "@/lib/billing/catalog";
 
 type LocalMessage = {
   id: string;
@@ -95,40 +96,7 @@ const defaultPartner = {
 };
 
 const defaultPlans: BillingPlan[] = [
-  {
-    code: "free",
-    planCode: "free",
-    name: "Free",
-    type: "free",
-    currency: "USD",
-    amount: 0,
-    interval: "trial",
-    description: "Try your first AI language conversation.",
-    features: ["1-minute AI conversation", "Voice input", "Translation", "Basic pronunciation feedback"]
-  },
-  {
-    code: "pro_monthly",
-    planCode: "pro_monthly",
-    name: "Pro",
-    type: "subscription",
-    currency: "USD",
-    amount: 12.99,
-    interval: "month",
-    popular: true,
-    description: "Practice without limits.",
-    features: ["Unlimited AI conversations", "Voice input", "Translation", "Pronunciation feedback", "Grammar correction"]
-  },
-  {
-    code: "pro_annual",
-    planCode: "pro_annual",
-    name: "Pro Annual",
-    type: "subscription",
-    currency: "USD",
-    amount: 79.99,
-    interval: "year",
-    description: "Save 49% with annual billing.",
-    features: ["Everything in Pro", "$6.67 per month", "Annual billing"]
-  },
+  ...catalogPlans,
   {
     code: "lifetime",
     planCode: "lifetime",

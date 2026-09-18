@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { localeLabels, localizedPath, localeUrl, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { trialMinutes } from "@/lib/billing/catalog";
 
 const defaultSiteUrl = "https://ailanguagetutor.online";
 
@@ -168,7 +169,10 @@ export function createSoftwareSchema(locale: Locale) {
     offers: {
       "@type": "Offer",
       price: "0",
-      priceCurrency: "USD"
+      priceCurrency: "USD",
+      name: `${trialMinutes}-minute introductory trial`,
+      description: "Limited introductory trial; paid subscription plans are listed on the pricing page.",
+      url: `${siteUrl}${localizedPath(locale, "/pricing")}`
     }
   };
 }

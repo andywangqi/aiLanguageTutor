@@ -1,5 +1,7 @@
 import type { Locale } from "./config";
 import type { ProductCopy } from "./types";
+import { honestFeedbackLabel, repeatCopy, trialLabels } from "./practice-copy";
+import { annualUsd, monthlyUsd } from "../billing/catalog";
 
 type BrowserDemoLanguage = "en" | "zh-CN" | "zh-TW" | "ja" | "th" | "ko" | "es" | "fr";
 
@@ -558,7 +560,7 @@ const localizedWorkbenchUi: Record<Exclude<Locale, "en">, Pick<ProductCopy["work
   es: { languageSettingsLabel: "Combinación de idiomas actual", german: "Alemán" }
 };
 
-export function getProductCopy(locale: Locale): ProductCopy {
+function originalProductCopy(locale: Locale): ProductCopy {
   if (locale === "en") {
     return {
       ...baseProduct,
@@ -578,6 +580,30 @@ export function getProductCopy(locale: Locale): ProductCopy {
       ...product.workbench,
       languageSettingsLabel: workbenchUi.languageSettingsLabel,
       languageNames: { ...product.workbench.languageNames, German: workbenchUi.german }
+    }
+  };
+}
+
+export function getProductCopy(locale: Locale): ProductCopy {
+  const product = originalProductCopy(locale);
+  const feedback = repeatCopy[locale];
+  return {
+    ...product,
+    home: { ...product.home, pronunciation: {
+      ...product.home.pronunciation,
+      label: feedback.label,
+      feedbackLabel: feedback.label,
+      feedbackTitle: feedback.label,
+      feedbackBody: feedback.note,
+      copy: feedback.note
+    } },
+    pricing: { ...product.pricing,
+      freeTerm: trialLabels[locale],
+      freeNote: trialLabels[locale],
+      proFallbackPrice: `$${monthlyUsd.toFixed(2)}`,
+      annualFallbackPrice: `$${annualUsd.toFixed(2)}`,
+      freeFeatures: product.pricing.freeFeatures.map((value, index) => index === 0 ? trialLabels[locale] : honestFeedbackLabel(value, locale)),
+      proFeatures: product.pricing.proFeatures.map((value) => honestFeedbackLabel(value, locale))
     }
   };
 }

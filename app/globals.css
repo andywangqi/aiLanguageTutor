@@ -3592,6 +3592,28 @@ h1 {
   background: #ffffff;
 }
 
+.repeat-action-wrap > p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.repeat-action-wrap > button:not(.repeat-action),
+.repeat-feedback > button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  color: #174a83;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.repeat-feedback > p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .repeat-action {
   width: 100%;
   min-height: 60px;
