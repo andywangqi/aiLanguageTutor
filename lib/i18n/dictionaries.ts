@@ -6,9 +6,9 @@ import { repeatCopy, positioning, trialLabels } from "./practice-copy";
 const baseEn: LandingDictionary = {
   locale: "en",
   seo: {
-    title: "AI Language Tutor | Practice Speaking With Help",
+    title: "AI Language Tutor | Speak Naturally in Real Conversations",
     description:
-      "Practice speaking with an AI language tutor. Get help expressing what you mean, hear natural phrases, and save useful sentences for your next conversation."
+      "Practice speaking with an AI language tutor. When you get stuck, get help saying what you mean, then practice it in a real conversation and learn natural phrases."
   },
   nav: {
     product: "Product",
@@ -18,12 +18,13 @@ const baseEn: LandingDictionary = {
     app: "Start Talking"
   },
   hero: {
-    eyebrow: "AI Language Tutor + speaking practice",
-    h1: "Practice Speaking With Help When You Get Stuck",
+    eyebrow: "AI Language Tutor · Real Conversation Practice",
+    h1: "AI Language Tutor for Real Conversations",
     lead:
-      "Turn what you want to say into a natural sentence, practice it in conversation, and save useful phrases for later.",
-    primaryCta: "Start Practicing Free",
-    secondaryCta: "See how it works"
+      "Know what you want to say. Learn how to say it naturally with help from your AI language tutor. Practice in real conversations and save useful phrases for next time.",
+    primaryCta: "Start Speaking Free",
+    secondaryCta: "See how it works",
+    proof: ["1-minute free conversation", "No credit card required"]
   },
   demo: {
     title: "Try your AI tutor",
