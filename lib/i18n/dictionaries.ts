@@ -18,11 +18,11 @@ const baseEn: LandingDictionary = {
     app: "Start Talking"
   },
   hero: {
-    eyebrow: "Say It first · Talk when you're ready",
-    h1: "Say what you mean. Then say it naturally.",
+    eyebrow: "AI Language Tutor · Real Conversation Practice",
+    h1: "AI Language Tutor for Real Conversation Practice",
     lead:
-      "Explain what you mean in your own language, get a natural phrase from your AI tutor, and practice it in a real conversation.",
-    primaryCta: "Try Say It Free",
+      "Practice speaking with an AI language tutor: explain what you mean in your own language, get a natural phrase, and use it in a real conversation.",
+    primaryCta: "Start Speaking Free",
     secondaryCta: "See how it works",
     proof: ["Start in your own language", "1-minute free practice"]
   },
