@@ -4,6 +4,106 @@
 **范围：** `https://www.lingualive.ai/` 与本仓库 `aiLanguageTutor`
 **结论类型：** 受限版研究。本文不把搜索摘要、代码中的 fallback 或营销文案当成已验证的线上事实。
 
+## 0A. 2026-09-22 官方页面复核更新
+
+本节覆盖并更新本文中部分较早的“未核实”结论。此次已直接读取 LinguaLive 官方公开页面：
+
+- [首页](https://www.lingualive.ai/)
+- [定价](https://www.lingualive.ai/pricing)
+- [英语学习 hub](https://www.lingualive.ai/learn-english)
+- [AI Spanish Tutor](https://www.lingualive.ai/tools/ai-spanish-tutor)
+- [IELTS Speaking Practice](https://www.lingualive.ai/tools/ielts-speaking-practice)
+- [Job Interview English Practice](https://www.lingualive.ai/tools/job-interview-english-practice)
+- [Alternatives](https://www.lingualive.ai/alternatives)
+
+### 已核实的 LinguaLive 定位
+
+LinguaLive 的首屏定位是 **“Talk. Get corrected. Instantly.”**，产品明确是浏览器和移动端的 AI voice tutor。首页提供无需注册、无需麦克风的 3 分钟试听入口，并宣传每天 10 分钟免费语音练习。公开支持的 7 种语言为 Spanish、French、German、Italian、Japanese、Korean 和 English。
+
+它的核心结果链是：实时说话 -> 中途或会话后获得 grammar/pronunciation/phrasing feedback -> 保持上下文 -> 复习错误和词汇。产品还强调 long-term AI memory、flashcard mastery、streaks、XP、5 个 leagues、30 个 achievements 和 custom scenarios。
+
+### 已核实的价格与商业模式
+
+官方公开页面存在套餐展示差异，应以付款页最终结果为准：
+
+- Free：每天 10 分钟 Live practice，免费且无需信用卡；页面写明额度每日重置。
+- Pro 定价页：年付 `$79.99/year`，折算 `$6.67/month`，每天 20 分钟 Live practice。
+- 语言页和具体工具页同时展示 `$7.99/month` 的 Premium 月付表述。
+- Max 页面入口宣传 450 Live voice minutes/month，`$34.99/month`，用于超过每日上限的用户。
+- IELTS、TOEFL、Visa 等部分工具可能作为一次性购买，和基础订阅分开。
+
+因此不能只把 LinguaLive 简化为“$7.99/月”或“$79.99/年”；它的公开价格信息本身需要在正式购买前验证。
+
+### 已核实的 SEO 策略
+
+LinguaLive 的 SEO 不是少量博客，而是产品页、语言 hub、工具页、场景页、地区页和竞品 comparison pages 组成的内容网络：
+
+- 语言 hub：English、Spanish、French、Japanese、German、Korean、Italian、Mandarin、Portuguese 等入口。
+- 产品/语言页：`ai-english-tutor`、`ai-spanish-tutor` 等。
+- 高意图工具页：IELTS、TOEFL、job interview、visa prep、speaking practice score。
+- 竞品比较页：Duolingo、Babbel、Rosetta Stone、iTalki、Preply、Pimsleur、TalkPal、Busuu、Memrise、HelloTalk、Cambly、Langua 等。
+- 地区与长尾页：例如 India 的 IELTS speaking practice。
+- 每个重要页面都使用 FAQ、价格 CTA、相关内容链接和下一步练习入口。
+
+这说明其增长打法是“场景关键词 -> 免费语音体验 -> 注册 -> 每日额度/付费”，而不只是首页品牌 SEO。
+
+## 0B. 更新后的执行结论
+
+### 一句话差异
+
+**LinguaLive 更像“马上开口的实时语音产品”，AI Language Tutor 更适合发展成“卡住时有母语支援、练习后有可复习沉淀的学习工作台”。**
+
+### 竞争位置
+
+| 维度 | LinguaLive | AI Language Tutor | 当前判断 |
+|---|---|---|---|
+| 首次体验 | 3 分钟免注册试听、每天 10 分钟免费 | 当前本地目录为 1 分钟 introductory trial，并需要进入登录/产品流程 | LinguaLive 在首次转化上明显更强 |
+| 核心交互 | Voice-first，实时对话与即时纠错 | Say It、Talk、文本/语音、按需翻译/语法/自然表达 | 我们的教学分层更清楚，但首屏卖点不够尖 |
+| 卡住时帮助 | 公开页面强调 correction 和 tutor memory | Say It 可先用母语表达，再生成自然目标语言；这是我们的可验证差异 | 应把“先说出意思”做成第一差异点 |
+| 发音反馈 | 宣传实时 pronunciation、intonation、stress feedback；算法准确度未测 | 当前 Repeat Check 主要是转写词项覆盖检查，不是声学发音评估 | 我们不能把当前能力宣传成完整 pronunciation scoring |
+| 学习沉淀 | Flashcard mastery、long-term memory、progress、streak/league/achievement | 历史、学习卡片、阅读材料/词汇 API 与 UI 基础 | LinguaLive 的长期激励更完整；我们可以做阅读 -> 对话 -> 卡片闭环 |
+| 场景深度 | 内置 9 个场景，并有 IELTS、Visa、Job Interview 等专页 | 当前公开场景主要是面试、旅行、IELTS，内容数据更偏练习脚本 | 我们应少做但做深，优先卡住表达、旅行澄清、工作沟通 |
+| 语言 | 7 种目标语言，另有多语言 hub | UI locale 为 7 种；目标学习语言与 UI locale 不是同一概念 | 公开页面必须分别说明“界面语言”和“可学习语言” |
+| 平台 | Web + iOS，Android Coming Soon | 当前以 Web 为主 | 移动端是 LinguaLive 的体验优势，不应在文案中暗示我们已有原生 App |
+| 价格 | Free 10 分钟/日；Pro 公开页约 $6.67-$7.99/月等多种展示 | 本地 fallback $12.99/月、$79.99/年；远端 billing 为最终权威 | 我们的免费入口和价格叙事需要重新测试 |
+| SEO | 语言、工具、地区、comparison 规模化矩阵 | 多语言首页、内容页、3 个场景、博客和 JSON-LD 基础 | 技术基础不弱，但公开页面数量和搜索意图覆盖落后 |
+
+### 我们不应直接复制的部分
+
+1. 不要直接复制“10 分钟/日”而不先核算 ASR、TTS、LLM 成本和激活质量。
+2. 不要宣传“pronunciation score”或“实时发音纠正”，除非增加音频/音素/重音层面的可靠评估。
+3. 不要批量生成薄的 `AI + language` 页面；LinguaLive 的优势来自完整内容、FAQ、场景和内部链接，而不是 URL 数量本身。
+4. 不要使用考试官方、招聘结果或“保证流利”等暗示性表达。LinguaLive 自身的 IELTS 页面也反复声明不是官方考试或成绩保证，这应成为行业基线。
+
+### 我们最值得建立的差异
+
+1. **Meaning-first speaking：** 用户先用自己的语言说清楚意思，Tutor 再给自然目标表达，再把表达放回 Talk 对话中。
+2. **可控帮助：** Talk 保持沉浸式对话；用户在需要时明确请求翻译、语法、自然表达或音频，而不是每句话自动打断。
+3. **真实学习循环：** 理解 -> 尝试 -> 复述/反馈 -> 保存卡片 -> 在阅读或下一次对话中复用。
+4. **适合容易卡住的人：** 重点不是让用户“永远说得更快”，而是让用户在卡住时能继续，并知道下一步怎么练。
+
+### 建议优先级
+
+#### P0：缩短首次价值时间
+
+- 增加公开、免登录的可交互试听，至少让用户看到“输入意思 -> 获得自然表达 -> 听到/读到回复”的完整小循环。
+- 把 1 分钟试用改成可配置实验：比较“1 个完整学习循环”与“固定分钟数”，不要只与竞品分钟数竞价。
+- 在首页首屏明确 Say It 的差异，而不是只写泛化的 AI conversation practice。
+
+#### P1：做深差异能力
+
+- 打通“母语表达 -> 自然表达 -> Talk -> 保存卡片 -> 复习”的路径。
+- 修正 Repeat Check 的命名和判定边界；如果暂时只有 ASR 文本匹配，就称为 repetition/transcript check。
+- 给 Talk 增加按需帮助入口的可见说明，避免用户不知道如何请求翻译或语法解释。
+
+#### P2：补搜索增长矩阵
+
+- 先建设 6-10 个高质量页面：English speaking practice、AI language tutor、get help saying something、travel English、job interview English、IELTS-style speaking、pronunciation/repetition practice 等。
+- 每个页面提供真实示例、适用人群、练习步骤、边界 FAQ 和 Workbench CTA。
+- 再扩展到语言 hub、行业沟通、签证/学校等场景；每个页面必须有独立价值，不做关键词换壳。
+- 增加 BlogPosting、BreadcrumbList 和场景 FAQ 结构化数据，但只标记页面真实展示的内容。
+
+
 ## 0. 研究限制与证据等级
 
 本次无法完成 LinguaLive 官网的只读抓取：官方 URL 的请求被网络/审批层阻断，自动审批最终返回 403 安全内容拦截。我没有通过替代执行路径绕过该限制。因此以下内容分为：
