@@ -19,9 +19,9 @@ const baseEn: LandingDictionary = {
   },
   hero: {
     eyebrow: "AI Language Tutor · Real Conversation Practice",
-    h1: "AI Language Tutor for Real Conversation Practice",
+    h1: "Practice Real Conversations With an AI Language Tutor",
     lead:
-      "Practice speaking with an AI language tutor: explain what you mean in your own language, get a natural phrase, and use it in a real conversation.",
+      "Explain what you mean in your own language, get a natural phrase, and use it in your next conversation.",
     primaryCta: "Start Speaking Free",
     secondaryCta: "See how it works",
     proof: ["Start in your own language", "1-minute free practice"]
