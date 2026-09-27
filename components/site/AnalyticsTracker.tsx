@@ -6,6 +6,10 @@ import { trackEventOnce } from "@/lib/analytics/client";
 
 export function AnalyticsTracker() {
   const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID?.trim() || "ylob2lw6up";
+  const umamiScriptUrl =
+    process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL?.trim() || "https://cloud.umami.is/script.js";
+  const umamiWebsiteId =
+    process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID?.trim() || "e6c32d26-58b3-4b93-bac9-94741f7a14d4";
   const analyticsEnabled = process.env.NODE_ENV === "production";
 
   useEffect(() => {
@@ -39,6 +43,14 @@ gtag('js', new Date());
 gtag('config', 'G-165PR16K2T');`}
           </Script>
         </>
+      ) : null}
+      {analyticsEnabled && umamiScriptUrl && umamiWebsiteId ? (
+        <Script
+          id="umami-analytics"
+          src={umamiScriptUrl}
+          data-website-id={umamiWebsiteId}
+          strategy="lazyOnload"
+        />
       ) : null}
     </>
   );
