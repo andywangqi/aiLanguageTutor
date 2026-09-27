@@ -677,7 +677,18 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
         if (!active) return;
         setIsRemoteSession(true);
         setIsRemoteUnavailable(false);
-        applyWorkbenchData(workbench);
+        const query = new URLSearchParams(window.location.search);
+        const requestedLearningLanguage = learningLanguageFromQuery(query.get("learningLanguage"));
+        applyWorkbenchData(workbench, requestedLearningLanguage);
+        if (query.get("chooseLanguage") === "1") setLanguageModalOpen(true);
+        if (requestedLearningLanguage && isLanguageSetupComplete(workbench)) {
+          const settings = languageSettingsFromWorkbench(workbench);
+          await api.me.updateSettings({
+            nativeLanguageCode: languageCode(settings.nativeLanguage || nativeLanguage),
+            learningLanguageCode: languageCode(requestedLearningLanguage),
+            levelCode: levelCode(settings.level || level)
+          });
+        }
         const paymentParams = new URLSearchParams(window.location.search);
         const orderId = paymentParams.get("orderId");
         if (paymentParams.get("payment") === "success" && orderId) {
@@ -777,7 +788,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
     setRepeatRequiredModalOpen(true);
   }
 
-  function applyWorkbenchData(workbench: WorkbenchData) {
+  function applyWorkbenchData(workbench: WorkbenchData, requestedLearningLanguage?: string) {
     setProfile(workbench.profile || null);
     setEntitlement(workbench.entitlement || null);
     setPartner(asTutorPartner(workbench.partner));
@@ -797,7 +808,7 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       setNativeLanguage(settings.nativeLanguage);
       if (setupComplete) saveNativeLanguagePreference(settings.nativeLanguage);
     }
-    if (settings.learningLanguage) setLearningLanguage(settings.learningLanguage);
+    if (requestedLearningLanguage || settings.learningLanguage) setLearningLanguage(requestedLearningLanguage || settings.learningLanguage!);
     if (settings.level) setLevel(settings.level);
 
     // A workbench visit always starts a fresh daily conversation. Previous
@@ -2036,6 +2047,19 @@ function languageCode(language: string) {
   };
 
   return codes[languageName(language)] || "en";
+}
+
+function learningLanguageFromQuery(value: string | null) {
+  const languages: Record<string, string> = {
+    en: "English",
+    es: "Spanish",
+    ja: "Japanese",
+    fr: "French",
+    de: "German",
+    ko: "Korean",
+    "zh-CN": "Chinese"
+  };
+  return value ? languages[value] : undefined;
 }
 
 function demoSayItExpression(targetLanguage: string) {

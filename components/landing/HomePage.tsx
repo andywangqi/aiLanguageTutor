@@ -31,18 +31,19 @@ type LanguageCardKey = "english" | "spanish" | "japanese" | "french" | "german" 
 type LanguageDetail = {
   key: LanguageCardKey;
   code: string;
+  languageCode: string;
   className: string;
   imageSrc: string;
 };
 
 const languageDetails: LanguageDetail[] = [
-  { key: "english", code: "EN", className: "language-english", imageSrc: "/images/languages/english-speaking-practice-v2.webp" },
-  { key: "spanish", code: "ES", className: "language-spanish", imageSrc: "/images/languages/spanish-speaking-practice-v2.webp" },
-  { key: "japanese", code: "JP", className: "language-japanese", imageSrc: "/images/languages/japanese-speaking-practice-v2.webp" },
-  { key: "french", code: "FR", className: "language-french", imageSrc: "/images/languages/french-speaking-practice-v2.webp" },
-  { key: "german", code: "DE", className: "language-german", imageSrc: "/images/languages/german-speaking-practice-v2.webp" },
-  { key: "korean", code: "KR", className: "language-korean", imageSrc: "/images/languages/korean-speaking-practice-v2.webp" },
-  { key: "chinese", code: "ZH", className: "language-chinese", imageSrc: "/images/languages/chinese-speaking-practice-v2.webp" }
+  { key: "english", code: "EN", languageCode: "en", className: "language-english", imageSrc: "/images/languages/english-speaking-practice-v2.webp" },
+  { key: "spanish", code: "ES", languageCode: "es", className: "language-spanish", imageSrc: "/images/languages/spanish-speaking-practice-v2.webp" },
+  { key: "japanese", code: "JP", languageCode: "ja", className: "language-japanese", imageSrc: "/images/languages/japanese-speaking-practice-v2.webp" },
+  { key: "french", code: "FR", languageCode: "fr", className: "language-french", imageSrc: "/images/languages/french-speaking-practice-v2.webp" },
+  { key: "german", code: "DE", languageCode: "de", className: "language-german", imageSrc: "/images/languages/german-speaking-practice-v2.webp" },
+  { key: "korean", code: "KR", languageCode: "ko", className: "language-korean", imageSrc: "/images/languages/korean-speaking-practice-v2.webp" },
+  { key: "chinese", code: "ZH", languageCode: "zh-CN", className: "language-chinese", imageSrc: "/images/languages/chinese-speaking-practice-v2.webp" }
 ];
 
 const languageCardCopy: Record<Locale, Record<LanguageCardKey, { name: string; description: string }>> = {
@@ -269,11 +270,11 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 const imageAlt = languageImageAltCopy[locale][language.key];
 
                 return (
-                  <button
-                    type="button"
+                  <Link
+                    href={localizedPath(locale, `/app?learningLanguage=${encodeURIComponent(language.languageCode)}`)}
                     className="home-v1-language-card"
                     key={language.key}
-                    onClick={() => void trackEvent("home_language_interest_clicked", { language: copy.name, locale })}
+                    onClick={() => void trackEvent("home_language_interest_clicked", { language: copy.name, locale, destination: "app" })}
                   >
                     <span className={`home-v1-language-visual ${language.className} has-image`}>
                       <img src={language.imageSrc} alt={imageAlt} width={960} height={720} loading="lazy" />
@@ -283,11 +284,17 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                       <strong>{copy.name}</strong>
                       <small>{copy.description}</small>
                     </span>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
-            <button type="button" className="home-v1-centered-link" onClick={() => scrollToSection("home-faq")}>{viewAllLanguagesCopy[locale]} <ArrowRight size={14} aria-hidden="true" /></button>
+            <Link
+              className="home-v1-centered-link"
+              href={localizedPath(locale, "/app?chooseLanguage=1")}
+              onClick={() => void trackEvent("home_language_interest_clicked", { language: "all", locale, destination: "app_language_setup" })}
+            >
+              {viewAllLanguagesCopy[locale]} <ArrowRight size={14} aria-hidden="true" />
+            </Link>
           </div>
         </section>
 
