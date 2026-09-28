@@ -30,7 +30,7 @@ const copy: Record<LandingDictionary["locale"], DemoCopy> = {
 };
 
 function normalize(value: string) {
-  return value.toLowerCase().replace(/[’']/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  return value.toLowerCase().replace(/[’']/g, "").replace(/[\p{P}\p{S}\s]/gu, "").trim();
 }
 
 export function InteractiveDemo({ dictionary }: { dictionary: LandingDictionary }) {
@@ -38,13 +38,14 @@ export function InteractiveDemo({ dictionary }: { dictionary: LandingDictionary 
   const text = copy[dictionary.locale];
   const [status, setStatus] = useState("");
   const recognitionRef = useRef<any>(null);
-  const phrase = "I’d like to take a day off.";
+  const phrase = "空港までの送迎はありますか？";
+  const exampleMeaning = "我想问酒店有没有机场接送服务。";
 
   function speak() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.lang = "en-US";
+    utterance.lang = "ja-JP";
     utterance.rate = 0.88;
     window.speechSynthesis.speak(utterance);
   }
@@ -54,22 +55,25 @@ export function InteractiveDemo({ dictionary }: { dictionary: LandingDictionary 
     const Recognition = browserWindow.SpeechRecognition || browserWindow.webkitSpeechRecognition;
     if (!Recognition) { setStatus(text.unsupported); return; }
     const recognition = new Recognition();
+    recognition.lang = "ja-JP";
     recognitionRef.current = recognition;
     setStatus(text.listening);
     recognition.onresult = (event: any) => {
       const spoken = event.results[0]?.[0]?.transcript || "";
-      setStatus(normalize(spoken).includes(normalize(phrase)) || normalize(phrase).includes(normalize(spoken)) ? text.passed : text.tryAgain);
+      const spokenText = normalize(spoken);
+      const targetText = normalize(phrase);
+      setStatus(spokenText && targetText && (spokenText.includes(targetText) || targetText.includes(spokenText)) ? text.passed : text.tryAgain);
     };
     recognition.onerror = () => setStatus(text.tryAgain);
     recognition.start();
   }
 
   return <div className="demo-panel hero-product-demo" id="demo">
-    <div className="demo-product-header"><div><span className="demo-window-dot" aria-hidden="true" /><strong>{demo.productName}</strong></div><span className="demo-language-pair">{text.pair}</span></div>
-    <div className="demo-input-area demo-example-heading"><span>{text.exampleLabel}</span><span>{text.exampleMeaning}</span></div>
+    <div className="demo-product-header"><div><span className="demo-window-dot" aria-hidden="true" /><strong>{demo.productName}</strong></div><span className="demo-language-pair">简体中文 → 日本語</span></div>
+    <div className="demo-input-area demo-example-heading"><span>Fixed example · not a live AI response</span><span>{exampleMeaning}</span></div>
     <div className="demo-conversation" aria-live="polite"><div className="demo-message-stack">
-      <div className="demo-message-row user"><div className="demo-avatar">{demo.userLabel}</div><div className="demo-chat-bubble user"><span>{demo.userInstruction}</span><strong>{text.exampleMeaning}</strong></div></div>
-      <div className="demo-message-row tutor"><div className="demo-avatar tutor">AI</div><div className="demo-chat-bubble tutor"><span>{text.responseLabel}</span><strong>{text.response} {phrase}</strong><div className="demo-learning-actions"><button type="button" onClick={speak}><Volume2 aria-hidden="true" size={15} />{text.listen}</button></div></div></div>
+      <div className="demo-message-row user"><div className="demo-avatar">{demo.userLabel}</div><div className="demo-chat-bubble user"><span>What I want to say</span><strong>{exampleMeaning}</strong></div></div>
+      <div className="demo-message-row tutor"><div className="demo-avatar tutor">AI</div><div className="demo-chat-bubble tutor"><span>Natural Japanese expression</span><strong>{phrase}</strong><div className="demo-learning-actions"><button type="button" onClick={speak}><Volume2 aria-hidden="true" size={15} />{text.listen}</button></div></div></div>
     </div><div className="demo-assist-card"><span><Sparkles aria-hidden="true" size={15} />{text.naturalLabel}</span><strong>{phrase}</strong></div></div>
     <div className="demo-practice-row"><button type="button" onClick={checkRepeat}><Mic aria-hidden="true" size={18} />{status === text.listening ? text.listening : text.practice}</button><div className="demo-mic-meter" aria-hidden="true"><span /><span /><span /><span /></div></div>
     {status && status !== text.listening ? <p className="demo-status" role="status">{status}</p> : null}

@@ -1,31 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowRight,
   BookOpen,
   Check,
-  ChevronDown,
+  BriefcaseBusiness,
   Headphones,
   Lightbulb,
   MessageCircle,
   Mic,
   Play,
+  Plane,
   Sparkles,
-  Target,
   Volume2
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { LandingDictionary } from "@/lib/i18n/types";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
-import { getFooterCopy } from "@/lib/i18n/footer-copy";
 import { homeUiCopy, type HomeUiCopy } from "@/lib/i18n/home-ui-copy";
 import { trackEvent } from "@/lib/analytics/client";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Header } from "./Header";
-import { InteractiveDemo } from "./InteractiveDemo";
-const featureIcons: LucideIcon[] = [MessageCircle, Lightbulb, Target];
-const benefitIcons: LucideIcon[] = [MessageCircle, Lightbulb, Check, Sparkles];
 type LanguageCardKey = "english" | "spanish" | "japanese" | "french" | "german" | "korean" | "chinese";
 
 type LanguageDetail = {
@@ -192,8 +189,18 @@ function scrollToSection(id: string) {
 }
 
 export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
-  const { sections, product } = dictionary;
+  const { sections } = dictionary;
   const ui = homeUiCopy[locale];
+  const heroLangs = [
+    { code: "en", name: "English", flag: "us" },
+    { code: "es", name: "Spanish", flag: "es" },
+    { code: "fr", name: "French", flag: "fr" },
+    { code: "de", name: "German", flag: "de" },
+    { code: "ja", name: "Japanese", flag: "jp" }
+  ];
+  const [heroLang, setHeroLang] = useState("en");
+  const targetLanguage = heroLang;
+  const startHref = `${localizedPath(locale, "/login")}?next=${encodeURIComponent(`${localizedPath(locale, "/app")}?learningLanguage=${targetLanguage}`)}`;
 
   return (
     <div className="home-v1-page">
@@ -202,124 +209,132 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
         <section className="home-v1-hero">
           <div className="home-v1-container home-v1-hero-grid">
             <div className="home-v1-hero-copy">
-              <p className="home-v1-eyebrow"><Sparkles size={13} aria-hidden="true" />{dictionary.hero.eyebrow}</p>
-              <h1>{dictionary.hero.h1}</h1>
-              <p className="home-v1-lead">{dictionary.hero.lead}</p>
+              <p className="home-v1-eyebrow">AI Language Tutor · Real Conversation Practice</p>
+              <h1>AI Language Tutor<br />for <span>Real Conversations</span></h1>
+              <p className="home-v1-lead">Practice speaking with an AI tutor that helps you say what you mean, get unstuck, and keep the conversation going — in the language you want to learn.</p>
+              <div className="home-v1-hero-lang-row" role="group" aria-label="Choose a language">
+                {heroLangs.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    className={`home-v1-hero-lang-pill${heroLang === l.code ? " is-active" : ""}`}
+                    onClick={() => setHeroLang(l.code)}
+                    aria-pressed={heroLang === l.code}
+                  >
+                    <img src={`https://flagcdn.com/w40/${l.flag}.png`} alt="" loading="lazy" />{l.name}
+                  </button>
+                ))}
+              </div>
               <div className="home-v1-hero-actions">
-                <ButtonLink href={localizedPath(locale, "/login")} eventName="home_cta_clicked" eventProperties={{ placement: "hero", cta: "primary", destination: "login", locale }}>
-                  {dictionary.hero.primaryCta}<ArrowRight size={16} aria-hidden="true" />
+                <ButtonLink href={startHref} eventName="home_cta_clicked" eventProperties={{ placement: "hero", cta: "primary", destination: "login", locale, target_language: targetLanguage }}>
+                  Start Speaking Free<ArrowRight size={16} aria-hidden="true" />
                 </ButtonLink>
-                <button className="home-v1-outline-cta" type="button" onClick={() => scrollToSection("home-features")}>{dictionary.hero.secondaryCta}</button>
+                <span className="home-v1-trial-note"><span><Check size={13} />No credit card required</span><span><Check size={13} />Practice at your own pace</span></span>
               </div>
             </div>
-            <InteractiveDemo dictionary={dictionary} />
+            <HeroConversationDemo />
           </div>
         </section>
 
-        <section className="home-v1-benefits" aria-label={ui.productBenefits}>
-          <div className="home-v1-container home-v1-benefits-grid">
-            {[
-              [sections.learn.cards[0]?.title ?? "Talk Naturally", sections.learn.cards[0]?.description ?? "Speak in the language you are learning."],
-              [sections.learn.cards[1]?.title ?? "Get Help Instantly", sections.learn.cards[1]?.description ?? "Get help when you get stuck."],
-              [ui.speakingBenefit.title, ui.speakingBenefit.description],
-              [ui.progressBenefit.title, ui.progressBenefit.description]
-            ].map(([title, text], index) => {
-              const Icon = benefitIcons[index];
-              return <div className="home-v1-benefit" key={title}><span className={`home-v1-benefit-icon benefit-${index}`}><Icon size={17} aria-hidden="true" /></span><div><strong>{title}</strong><span>{text}</span></div></div>;
-            })}
-          </div>
+        <section className="home-v1-how-strip" id="home-features" aria-label="How it works">
+          <div className="home-v1-how-intro"><span className="home-v1-kicker">THE MAGIC MOMENT</span><h2>Don&apos;t Know How to Say It?<br />Keep Talking.</h2><p>You don&apos;t need to know the perfect sentence. Tell your tutor what you mean, and get a natural expression in the language you&apos;re learning.</p></div>
+          <div className="home-v1-how-steps">{[
+            [BriefcaseBusiness, "Tell It", "Explain what you mean in your own words."],
+            [Lightbulb, "Get Help", "Your AI tutor gives you a natural expression."],
+            [Volume2, "Say It", "Listen, repeat, and practice saying it."],
+            [MessageCircle, "Keep Talking", "Use it in the conversation and build your confidence."]
+          ].map(([Icon, title, description], index) => { const StepIcon = Icon as LucideIcon; return <div className="home-v1-how-step" key={title as string}><span className="home-v1-how-icon"><StepIcon size={25} /></span><strong><i>{`0${index + 1}`}</i>{title as string}</strong><p>{description as string}</p></div>; })}</div>
         </section>
 
-        <section className="home-v1-section home-v1-white" id="home-features">
-          <div className="home-v1-container">
-            <HomeSectionHeading eyebrow={ui.coreFeatures} title={sections.learn.h2} lead={sections.learn.lead} />
-            <div className="home-v1-feature-grid">
-              {sections.learn.cards.map((card, index) => {
-                const Icon = featureIcons[index] ?? MessageCircle;
-                const sample = product.home.storySamples[index] ?? product.home.storySamples[0];
-                return <article className="home-v1-feature-card" key={card.title}>
-                  <span className={`home-v1-card-icon card-icon-${index}`}><Icon size={18} aria-hidden="true" /></span>
-                  <h3>{card.title}</h3><p>{card.description}</p>
-                  <div className={`home-v1-mini-dialogue mini-${index}`}><span>{product.demo.tutorLabel}</span><strong>{sample?.response ?? ui.conversationFallback}</strong></div>
-                  <button type="button" onClick={() => scrollToSection("home-help")} className="home-v1-text-link">{ui.featureActions[index] ?? ui.featureActions[2]}<ArrowRight size={14} aria-hidden="true" /></button>
-                </article>;
-              })}
-            </div>
-          </div>
+        <section className="home-v1-scenarios" id="home-practice">
+          <div className="home-v1-section-heading"><h2>Practice Conversations You Actually Need</h2><p>Choose a scenario and start practicing real conversations.</p></div>
+          <div className="home-v1-scenario-grid">{[
+            ["Job Interview", "Practice answering interview questions naturally.", "Start Interview Practice", "/app?scenario=english-job-interview", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=60", "Most Popular", BriefcaseBusiness],
+            ["Work", "Practice meetings, presentations, and everyday work conversations.", "Start Work Practice", "/app", "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&q=60", "", Headphones],
+            ["Travel", "Practice the conversations you’ll need while traveling.", "Start Travel Practice", "/app?scenario=english-travel-conversation", "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&q=60", "", Plane],
+            ["Everyday", "Talk about your day, interests, and real-life situations.", "Start Everyday Practice", "/app", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=60", "", MessageCircle]
+          ].map(([title, description, cta, href, image, badge, Icon]) => { const ScenarioIcon = Icon as LucideIcon; return <Link className={`home-v1-scenario-card ${badge ? "is-popular" : ""}`} href={localizedPath(locale, href as string)} key={title as string}><div className="home-v1-scenario-image"><img src={image as string} alt="" loading="lazy" />{badge ? <span>{badge as string}</span> : null}<em><ScenarioIcon size={17} /></em></div><div className="home-v1-scenario-body"><h3>{title as string}</h3><p>{description as string}</p><strong>{cta as string}<ArrowRight size={14} /></strong></div></Link>; })}</div>
         </section>
 
-        <section className="home-v1-section home-v1-warm" id="home-help">
-          <div className="home-v1-container home-v1-help-grid">
-            <div className="home-v1-section-copy"><p className="home-v1-kicker">{ui.helpKicker}</p><h2>{sections.modes.h2}</h2><p>{sections.modes.lead}</p><div className="home-v1-small-actions">{ui.helpActions.map((action) => <span key={action}>{action}</span>)}</div></div>
-            <div className="home-v1-chat-preview" aria-label={ui.helpExample}>
-              <div className="home-v1-chat-line home-v1-chat-user"><span>{ui.you}</span><strong>I want to book a table for tomorrow at 2 PM.</strong></div>
-              <div className="home-v1-chat-line home-v1-chat-ai"><span>AI Tutor · {ui.english}</span><strong>{ui.suggestionLead} <em>I&apos;d like to book a table for tomorrow at 2 PM.</em></strong><div className="home-v1-chat-actions"><span><Volume2 size={12} />{ui.listen}</span><span><BookOpen size={12} />{ui.practice}</span></div></div>
-              <div className="home-v1-chat-line home-v1-chat-user compact"><span>{ui.you}</span><strong>I&apos;d like to book a table for tomorrow at 2 PM.</strong></div><div className="home-v1-chat-line home-v1-chat-ai compact"><span>AI Tutor</span><strong>Great! How many people will be in your party?</strong></div>
-            </div>
-          </div>
+        <section className="home-v1-duo" aria-label="Help and languages">
+          <article className="home-v1-duo-card home-v1-unstuck">
+            <div className="home-v1-unstuck-media"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=520&q=60" alt="Learner getting unstuck with AI tutor" loading="lazy" /><span className="home-v1-unstuck-bubble top">I want to go hiking this weekend.</span><span className="home-v1-unstuck-bubble mid">Here&apos;s a natural way to say it: &ldquo;I&apos;m planning to go hiking this weekend.&rdquo;</span></div>
+            <div className="home-v1-unstuck-copy"><span className="home-v1-kicker">HELP ME SAY IT</span><h2>Get Unstuck Without Ending the Conversation</h2><p>Don&apos;t know the right words? Tell your tutor what you mean.</p><ul><li><Check size={14} />Get a natural expression</li><li><Check size={14} />Listen to it</li><li><Check size={14} />Say it again</li><li><Check size={14} />Keep talking</li></ul></div>
+          </article>
+          <article className="home-v1-duo-card home-v1-mini-langs" id="home-languages">
+            <span className="home-v1-kicker">30+ LANGUAGES</span><h2>Learn the Language You Want to Speak</h2><p>Use your own language when you need help. Practice in the language you&apos;re learning.</p>
+            <div className="home-v1-mini-lang-grid">{[{ c: "us", n: "English" }, { c: "es", n: "Spanish" }, { c: "jp", n: "Japanese" }, { c: "fr", n: "French" }, { c: "de", n: "German" }, { c: "kr", n: "Korean" }, { c: "cn", n: "Chinese" }, { c: "th", n: "Thai" }].map((l) => <span key={l.n}><img src={`https://flagcdn.com/w40/${l.c}.png`} alt="" loading="lazy" /><b>{l.n}</b></span>)}</div>
+            <Link href={localizedPath(locale, "/app?chooseLanguage=1")}>View all languages <ArrowRight size={13} /></Link>
+          </article>
         </section>
 
-        <section className="home-v1-section home-v1-blue"><div className="home-v1-container home-v1-three-feature-grid"><HomeFeaturePanel icon={Headphones} title={sections.corrections.h2} copy={sections.corrections.lead} points={sections.corrections.points} color="blue" ui={ui} /><HomeFeaturePanel icon={Volume2} title={sections.stuck.h2} copy={sections.stuck.lead} points={sections.stuck.points} color="orange" ui={ui} /><HomeFeaturePanel icon={BookOpen} title={sections.lesson.h2} copy={sections.lesson.lead} points={sections.lesson.steps} color="green" ui={ui} /></div></section>
+        <section className="home-v1-learning-section"><div className="home-v1-learning-copy"><h2>Your Conversations Become Your Lessons</h2><div className="home-v1-learning-points">{[
+          [Sparkles, "Natural Corrections", "See a more natural way to express yourself."],
+          [BookOpen, "Useful Phrases", "Save expressions you can use right away."],
+          [MessageCircle, "Vocabulary", "Build your vocabulary step by step."],
+          [Mic, "Review & Practice", "Revisit your conversations and keep improving."]
+        ].map(([Icon, title, description]) => { const FeatureIcon = Icon as LucideIcon; return <div key={title as string}><span><FeatureIcon size={17} /></span><strong>{title as string}</strong><p>{description as string}</p></div>; })}</div></div><ConversationSummaryCard /></section>
 
-        <section className="home-v1-section home-v1-white" id="home-languages">
-          <div className="home-v1-container">
-            <HomeSectionHeading eyebrow={sections.languages.eyebrow} title={sections.languages.h2} lead={sections.languages.lead} />
-            <div className="home-v1-language-grid">
-              {languageDetails.map((language) => {
-                const copy = languageCardCopy[locale][language.key];
-                const imageAlt = languageImageAltCopy[locale][language.key];
-
-                return (
-                  <Link
-                    href={localizedPath(locale, `/app?learningLanguage=${encodeURIComponent(language.languageCode)}`)}
-                    className="home-v1-language-card"
-                    key={language.key}
-                    onClick={() => void trackEvent("home_language_interest_clicked", { language: copy.name, locale, destination: "app" })}
-                  >
-                    <span className={`home-v1-language-visual ${language.className} has-image`}>
-                      <img src={language.imageSrc} alt={imageAlt} width={960} height={720} loading="lazy" />
-                      <strong>{language.code}</strong>
-                    </span>
-                    <span className="home-v1-language-copy">
-                      <strong>{copy.name}</strong>
-                      <small>{copy.description}</small>
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-            <Link
-              className="home-v1-centered-link"
-              href={localizedPath(locale, "/app?chooseLanguage=1")}
-              onClick={() => void trackEvent("home_language_interest_clicked", { language: "all", locale, destination: "app_language_setup" })}
-            >
-              {viewAllLanguagesCopy[locale]} <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-          </div>
+        <section className="home-v1-betterway" aria-label="A better way">
+          <div className="home-v1-betterway-main"><span className="home-v1-kicker">WHY AI LANGUAGE TUTOR</span><h2>A Better Way to Practice Speaking</h2><div className="home-v1-betterway-grid"><div><span><Check size={14} /></span><strong>Practice Without Pressure</strong><p>Make mistakes, ask questions, and learn at your own pace.</p></div><div><span><Check size={14} /></span><strong>Speak at Your Own Pace</strong><p>Take your time, your AI tutor will wait.</p></div><div><span><Check size={14} /></span><strong>Practice Anytime</strong><p>No tutor schedule. No classroom. Just start talking.</p></div></div></div>
+          <div className="home-v1-betterway-photo" aria-hidden="true"><span className="home-v1-hero-robot-shadow" aria-hidden="true" /><img className="home-v1-betterway-robot" src="/images/ai-tutor-robot.png" alt="" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /></div>
         </section>
 
-        <section className="home-v1-section home-v1-soft-warm"><div className="home-v1-container"><HomeSectionHeading eyebrow={ui.whyChooseUs} title={sections.why.h2} lead={sections.why.lead} /><div className="home-v1-why-grid">{sections.why.cards.map((card, index) => <article className="home-v1-why-card" key={card.title}><span className={`home-v1-why-icon why-${index}`}><Sparkles size={17} /></span><div><h3>{card.title}</h3><p>{card.description}</p></div></article>)}</div></div></section>
-
-        <section className="home-v1-section home-v1-white" id="home-faq"><div className="home-v1-container"><HomeSectionHeading eyebrow={ui.faq} title={sections.faq.h2} lead={sections.faq.lead} /><div className="home-v1-faq-grid">{sections.faq.items.slice(0, 8).map((item) => <details className="home-v1-faq" key={item.question}><summary>{item.question}<ChevronDown size={16} aria-hidden="true" /></summary><p>{item.answer}</p></details>)}</div></div></section>
-
-        <section className="home-v1-cta-section"><div className="home-v1-container"><div className="home-v1-cta-panel"><div><h2>{sections.cta.h2}</h2><p>{sections.cta.lead}</p><div className="home-v1-cta-actions"><ButtonLink href={localizedPath(locale, "/login")} variant="secondary" eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "primary", destination: "login", locale }}>{sections.cta.primaryCta}<ArrowRight size={15} /></ButtonLink><ButtonLink href={localizedPath(locale, "/pricing")} variant="ghost" eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "secondary", destination: "pricing", locale }}>{sections.cta.secondaryCta}</ButtonLink></div></div><div className="home-v1-student-visual" aria-hidden="true"><div className="home-v1-speech speech-one">Hello!<br />Nice to meet you.</div><div className="home-v1-student-head" /><div className="home-v1-student-body" /><div className="home-v1-phone" /><div className="home-v1-speech speech-two">I&apos;d love to<br />learn more!</div></div></div></div></section>
+        <section className="home-v1-final-cta"><div className="home-v1-final-text"><h2>Say What You Mean. Keep Talking.</h2><p>Start your first AI conversation and get help whenever you get stuck.</p><div className="home-v1-final-row"><ButtonLink href={localizedPath(locale, "/login")} eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "primary", destination: "login", locale }}>Start Speaking Free<ArrowRight size={15} /></ButtonLink><small><Check size={12} />No credit card required <i /> Free conversation included</small></div></div><div className="home-v1-final-steps"><div><span><BriefcaseBusiness size={15} /></span><b>Choose a scenario</b><ArrowRight size={13} /></div><div><span><Lightbulb size={15} /></span><b>Start talking</b><ArrowRight size={13} /></div><div><span><MessageCircle size={15} /></span><b>Get help when you&apos;re stuck</b></div></div></section>
       </main>
       <HomeFooter dictionary={dictionary} locale={locale} />
     </div>
   );
 }
 
-function HomeSectionHeading({ eyebrow, title, lead }: { eyebrow: string; title: string; lead?: string }) {
-  return <div className="home-v1-heading"><p className="home-v1-kicker">{eyebrow}</p><h2>{title}</h2>{lead ? <p>{lead}</p> : null}</div>;
+function HeroConversationDemo() {
+  function speak() {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance("I went hiking with some friends.");
+    utterance.lang = "en-US";
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function handleParallax(e: React.MouseEvent<HTMLDivElement>) {
+    const el = e.currentTarget.querySelector(".home-v1-hero-robot-img") as HTMLElement | null;
+    if (!el) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    el.style.setProperty("--px", `${(x * 16).toFixed(1)}px`);
+    el.style.setProperty("--py", `${(y * 12).toFixed(1)}px`);
+    el.style.setProperty("--rr", `${(x * 4).toFixed(1)}deg`);
+  }
+
+  function resetParallax(e: React.MouseEvent<HTMLDivElement>) {
+    const el = e.currentTarget.querySelector(".home-v1-hero-robot-img") as HTMLElement | null;
+    if (!el) return;
+    el.style.setProperty("--px", "0px");
+    el.style.setProperty("--py", "0px");
+    el.style.setProperty("--rr", "0deg");
+  }
+
+  return <div className="home-v1-hero-demo-wrap" onMouseMove={handleParallax} onMouseLeave={resetParallax}><div className="home-v1-hero-orb" aria-hidden="true" /><div className="home-v1-hero-demo">
+    <header><span className="home-v1-demo-logo"><span>▮</span> AI Language Tutor</span><span className="home-v1-demo-lang"><img src="https://flagcdn.com/w40/us.png" alt="" />English</span><span className="home-v1-demo-head-actions" aria-hidden="true">✈ ···</span></header>
+    <div className="home-v1-demo-chat"><div className="home-v1-demo-line tutor"><span className="home-v1-demo-avatar">AI</span><div><p>What did you do last weekend?</p></div></div><div className="home-v1-demo-line learner"><p>I… went to… um…</p></div>
+      <div className="home-v1-help-card"><strong><Lightbulb size={17} />Help Me Say It</strong><span>Try saying:</span><b>“I went hiking with some friends.”</b><div><button type="button" onClick={speak}><Volume2 size={14} />Listen</button><button type="button" onClick={speak}><Mic size={14} />Try Again</button></div></div>
+      <div className="home-v1-demo-line tutor follow-up"><span className="home-v1-demo-avatar">AI</span><div><p>That sounds great! What was the best part of the trip?</p></div></div></div>
+    <button className="home-v1-demo-mic" type="button" onClick={speak} aria-label="Play sample phrase"><Mic size={22} /></button><small className="home-v1-demo-tap">Tap to speak</small>
+  </div><figure className="home-v1-hero-robot"><span className="home-v1-robot-note" aria-hidden="true">Your AI tutor<br />is here to help.</span><span className="home-v1-robot-bubble" aria-hidden="true"><i /><i /><i /><i /></span><span className="home-v1-hero-robot-shadow" aria-hidden="true" /><img className="home-v1-hero-robot-img" src="/images/ai-tutor-robot.png" alt="AI tutor robot" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /><span className="home-v1-robot-eq" aria-hidden="true"><i /><i /><i /><i /><i /></span></figure></div>;
 }
 
-function HomeFeaturePanel({ icon: Icon, title, copy, points, color, ui }: { icon: LucideIcon; title: string; copy: string; points: string[]; color: string; ui: HomeUiCopy }) {
-  return <article className={`home-v1-feature-panel panel-${color}`}><div className="home-v1-feature-panel-copy"><span className="home-v1-panel-icon"><Icon size={18} /></span><h2>{title}</h2><p>{copy}</p><ul>{points.slice(0, 3).map((point) => <li key={point}><Check size={13} />{point}</li>)}</ul></div><div className="home-v1-panel-mock"><span>AI Tutor</span><strong>{points[0] ?? ui.personalizedPractice}</strong><div className="home-v1-wave"><i /><i /><i /><i /><i /><i /><i /><i /></div><small><Play size={11} fill="currentColor" /> {ui.tryAgain}</small></div></article>;
+function ConversationSummaryCard() {
+  return <div className="home-v1-summary-wrap"><div className="home-v1-summary-card"><header><span>‹</span><strong>Conversation Summary</strong><span>◌</span></header><nav><b>Phrases</b><span>Corrections</span><span>New Words</span></nav><article className="home-v1-summary-item"><span className="home-v1-summary-check"><Check size={12} /></span><div><strong>It was a great experience.</strong><small>Natural expression</small></div><ArrowRight size={13} /></article><article className="home-v1-summary-item"><span className="home-v1-summary-check"><Check size={12} /></span><div><strong>I really enjoyed the trip.</strong><small>Saved phrase</small></div><ArrowRight size={13} /></article></div><span className="home-v1-summary-spark spark-a">✧</span><span className="home-v1-summary-spark spark-b">✦</span></div>;
 }
 
 function HomeFooter({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
-  const footer = getFooterCopy(locale);
   const ui = homeUiCopy[locale];
+  const columns = [
+    { title: "Product", links: [{ label: "Home", href: localizedPath(locale, "/") }, { label: "Languages", href: "#home-languages" }, { label: "Practice", href: "#home-practice" }, { label: "Pricing", href: localizedPath(locale, "/pricing") }] },
+    { title: "Company", links: [{ label: "About Us", href: localizedPath(locale, "/company/about") }, { label: "Blog", href: localizedPath(locale, "/learn/blog") }, { label: "Contact", href: localizedPath(locale, "/contact") }] },
+    { title: "Support", links: [{ label: "Help Center", href: localizedPath(locale, "/contact") }, { label: "Privacy Policy", href: localizedPath(locale, "/privacy") }, { label: "Terms of Service", href: localizedPath(locale, "/terms") }] }
+  ];
 
   return (
     <footer className="home-v1-footer">
@@ -329,12 +344,12 @@ function HomeFooter({ dictionary, locale }: { dictionary: LandingDictionary; loc
             <span className="home-v1-brand-mark"><img src="/arno.svg" alt="" /></span>
             <strong>AI Language Tutor</strong>
           </Link>
-          <p>{dictionary.footer.rights}</p>
           <p>{ui.footerDescription}</p>
         </div>
-        {footer.columns.map((column) => (
+        {columns.map((column) => (
           <FooterColumn key={column.title} title={column.title} items={column.links} locale={locale} />
         ))}
+        <small className="home-v1-footer-copyright">© 2025 AI Language Tutor. {dictionary.footer.rights}</small>
       </div>
     </footer>
   );
