@@ -335,7 +335,6 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
 
         <section className="home-v1-duo" aria-label="Help and languages">
           <article className="home-v1-duo-card home-v1-unstuck">
-            <div className="home-v1-unstuck-media"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=520&q=60" alt="Learner getting unstuck with AI tutor" loading="lazy" /><span className="home-v1-unstuck-bubble top">I want to go hiking this weekend.</span><span className="home-v1-unstuck-bubble mid">Here&apos;s a natural way to say it: &ldquo;I&apos;m planning to go hiking this weekend.&rdquo;</span></div>
             <div className="home-v1-unstuck-copy"><span className="home-v1-kicker">{dictionary.sections.modes.eyebrow}</span><h2>{dictionary.sections.modes.h2}</h2><p>{dictionary.sections.modes.lead}</p><ul>{dictionary.sections.modes.items.map((item) => <li key={item.title}><Check size={14} />{item.title}</li>)}</ul></div>
           </article>
           <article className="home-v1-duo-card home-v1-mini-langs" id="home-languages">
