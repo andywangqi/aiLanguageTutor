@@ -1810,19 +1810,27 @@
 }
 
 /* Mobile hero fit: prevent 1100px+ tall hero on 320-390px screens */
-@media (max-width: 640px) {
-  .home-v1-hero { padding: 24px 0 20px; min-height: 0; }
-  .home-v1-hero-grid { gap: 18px; }
-  .home-v1-hero-copy { padding: 0; }
-  .home-v1-hero h1 { font-size: 32px; line-height: 1.08; }
-  .home-v1-lead { font-size: 13px; margin-bottom: 14px; }
-  .home-v1-hero-lang-row { gap: 8px; margin: 12px 0; }
-  .home-v1-hero-lang-pill { min-height: 32px; padding: 0 11px; font-size: 12px; }
-  .home-v1-hero-demo-wrap { min-height: 0; grid-template-columns: 1fr; gap: 0; }
-  .home-v1-hero-orb { inset: 0 -20% -10% -20%; }
-  .home-v1-hero-demo { width: 100%; min-height: 0; }
-  .home-v1-hero-robot { display: none; }
-  .home-v1-demo-line p { max-width: 100%; }
-  .home-v1-help-card { width: 100%; }
+@media (max-width: 760px) {
+  .home-v1-hero { padding: 28px 0 24px !important; min-height: 0 !important; }
+  .home-v1-hero-grid { grid-template-columns: 1fr !important; gap: 24px !important; align-items: start !important; }
+  .home-v1-hero-copy { padding: 0 2px !important; max-width: 100% !important; }
+  .home-v1-hero h1 { font-size: 38px !important; line-height: 1.06 !important; max-width: 100% !important; overflow-wrap: break-word; }
+  .home-v1-lead { font-size: 14px !important; margin-bottom: 14px !important; max-width: 100% !important; }
+  .home-v1-hero-lang-row { gap: 8px !important; margin: 14px 0 !important; }
+  .home-v1-hero-lang-pill { min-height: 34px !important; padding: 0 12px !important; font-size: 12px !important; }
+  .home-v1-hero-actions { flex-direction: column !important; align-items: stretch !important; }
+  .home-v1-hero-actions .button-primary { width: 100% !important; min-width: 0 !important; }
+  .home-v1-trial-note { flex-wrap: wrap !important; }
+  .home-v1-hero-demo-wrap { min-height: 0 !important; grid-template-columns: 1fr !important; gap: 0 !important; width: 100% !important; max-width: 100% !important; overflow: hidden; }
+  .home-v1-hero-orb { inset: 0 -20% -10% -20% !important; }
+  .home-v1-hero-demo { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 0 !important; overflow: hidden; }
+  .home-v1-demo-chat { max-width: 100% !important; }
+  .home-v1-demo-line { max-width: 100% !important; }
+  .home-v1-demo-line > div { min-width: 0 !important; max-width: 100% !important; }
+  .home-v1-demo-line p { max-width: 100% !important; overflow-wrap: break-word !important; font-size: 12px !important; }
+  .home-v1-demo-line.learner { max-width: 85% !important; }
+  .home-v1-help-card { width: 100% !important; max-width: 100% !important; margin: 0 !important; overflow-wrap: break-word !important; }
+  .home-v1-help-card > b { margin-right: 0 !important; overflow-wrap: break-word !important; }
+  .home-v1-hero-robot { display: none !important; }
 }
 
