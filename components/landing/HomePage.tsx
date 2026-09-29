@@ -43,23 +43,29 @@ const languageDetails: LanguageDetail[] = [
   { key: "chinese", code: "ZH", languageCode: "zh-CN", className: "language-chinese", imageSrc: "/images/languages/chinese-speaking-practice-v2.webp" }
 ];
 
-type HeroLanguage = {
-  code: string;
-  name: string;
-  flag: string;
-  speechLang: string;
+type HeroDialogue = {
   question: string;
   natural: string;
   followUp: string;
 };
 
-const heroLanguages: HeroLanguage[] = [
-  { code: "en", name: "English", flag: "us", speechLang: "en-US", question: "What did you do last weekend?", natural: "I went hiking with some friends.", followUp: "That sounds great! What was the best part of the trip?" },
-  { code: "es", name: "Spanish", flag: "es", speechLang: "es-ES", question: "¿Qué hiciste el fin de semana?", natural: "Fui de excursión con unos amigos.", followUp: "¡Qué bien! ¿Cuál fue la mejor parte del viaje?" },
-  { code: "fr", name: "French", flag: "fr", speechLang: "fr-FR", question: "Qu'est-ce que tu as fait ce week-end ?", natural: "Je suis allé faire une randonnée avec des amis.", followUp: "Ça a l'air super ! Quel a été le meilleur moment ?" },
-  { code: "de", name: "German", flag: "de", speechLang: "de-DE", question: "Was hast du letztes Wochenende gemacht?", natural: "Ich war mit Freunden wandern.", followUp: "Das klingt schön! Was war der beste Teil?" },
-  { code: "ja", name: "Japanese", flag: "jp", speechLang: "ja-JP", question: "週末は何をしましたか？", natural: "友達とハイキングに行きました。", followUp: "楽しそうですね！一番よかったことは何ですか？" }
-];
+// Hero 卡片 AI Tutor 的三句话 —— 跟随左侧目标语言(heroLang)
+const heroDialoguesByTarget: Record<string, HeroDialogue> = {
+  en: { question: "What did you do last weekend?", natural: "I went hiking with some friends.", followUp: "That sounds great! What was the best part of the trip?" },
+  es: { question: "¿Qué hiciste el fin de semana pasado?", natural: "Fui de excursión con unos amigos.", followUp: "¡Suena genial! ¿Cuál fue la mejor parte del viaje?" },
+  fr: { question: "Qu'as-tu fait le week-end dernier ?", natural: "Je suis parti en randonnée avec des amis.", followUp: "Génial ! Quel a été le meilleur moment de la sortie ?" },
+  de: { question: "Was hast du letztes Wochenende gemacht?", natural: "Ich war mit ein paar Freunden wandern.", followUp: "Das klingt toll! Was war der schönste Moment des Ausflugs?" },
+  ja: { question: "週末は何をしていましたか？", natural: "友達とハイキングに行ってきました。", followUp: "それはよかったですね！一番楽しかったのは何ですか？" }
+};
+
+// 卡片头部显示的目标语言国旗 + 名称 + TTS 语音 lang —— 跟随左侧 heroLang
+const targetMeta: Record<string, { flag: string; name: string; speechLang: string }> = {
+  en: { flag: "us", name: "English", speechLang: "en-US" },
+  es: { flag: "es", name: "Español", speechLang: "es-ES" },
+  fr: { flag: "fr", name: "Français", speechLang: "fr-FR" },
+  de: { flag: "de", name: "Deutsch", speechLang: "de-DE" },
+  ja: { flag: "jp", name: "日本語", speechLang: "ja-JP" }
+};
 
 // 用户母语的"卡壳"表达 —— 永远跟随页面 locale,与左侧切换的目标语言无关
 const learnerHesitations: Record<Locale, string> = {
@@ -393,7 +399,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
         if (saved && ["en", "es", "fr", "de", "ja"].includes(saved)) return saved;
       } catch {}
     }
-    return ["en", "es", "ja"].includes(locale) ? locale : "en";
+    return "en";
   });
   useEffect(() => {
     try { window.localStorage.setItem("homeHeroLang", heroLang); } catch {}
@@ -441,7 +447,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 <span className="home-v1-trial-note">{(dictionary.hero.proof ?? ["1-minute free conversation", "No credit card required"]).map((item) => <span key={item}><Check size={13} />{item}</span>)}</span>
               </div>
             </div>
-            <HeroConversationDemo language={heroLang} dictionary={dictionary} locale={locale} />
+            <HeroConversationDemo dictionary={dictionary} locale={locale} targetLanguage={targetLanguage} />
           </div>
         </section>
 
@@ -494,13 +500,14 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
   );
 }
 
-function HeroConversationDemo({ language, dictionary, locale }: { language: string; dictionary: LandingDictionary; locale: Locale }) {
-  const selected = heroLanguages.find((item) => item.code === language) ?? heroLanguages[0];
+function HeroConversationDemo({ dictionary, locale, targetLanguage }: { dictionary: LandingDictionary; locale: Locale; targetLanguage: string }) {
+  const selected = heroDialoguesByTarget[targetLanguage] ?? heroDialoguesByTarget.en;
+  const meta = targetMeta[targetLanguage] ?? targetMeta.en;
   function speak() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(selected.natural);
-    utterance.lang = selected.speechLang;
+    utterance.lang = meta.speechLang;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -524,7 +531,7 @@ function HeroConversationDemo({ language, dictionary, locale }: { language: stri
   }
 
   return <div className="home-v1-hero-demo-wrap" onMouseMove={handleParallax} onMouseLeave={resetParallax}><div className="home-v1-hero-orb" aria-hidden="true" /><div className="home-v1-hero-demo">
-    <header><span className="home-v1-demo-logo"><span>▮</span> AI Language Tutor</span><span className="home-v1-demo-lang"><img src={`https://flagcdn.com/w40/${selected.flag}.png`} alt="" />{selected.name}</span><span className="home-v1-demo-head-actions" aria-hidden="true">✈ ···</span></header>
+    <header><span className="home-v1-demo-logo"><span>▮</span> AI Language Tutor</span><span className="home-v1-demo-lang"><img src={`https://flagcdn.com/w40/${meta.flag}.png`} alt="" />{meta.name}</span><span className="home-v1-demo-head-actions" aria-hidden="true">✈ ···</span></header>
     <div className="home-v1-demo-chat"><div className="home-v1-demo-line tutor"><span className="home-v1-demo-avatar">AI</span><div><p>{selected.question}</p></div></div><div className="home-v1-demo-line learner"><p>{learnerHesitations[locale]}</p></div>
       <div className="home-v1-help-card"><strong><Lightbulb size={17} />{dictionary.demo.responseLabel}</strong><span>{dictionary.demo.promptLabel}:</span><b>“{selected.natural}”</b><div><button type="button" onClick={speak}><Volume2 size={14} />{dictionary.demo.actions[0]}</button><button type="button" onClick={speak}><Mic size={14} />{dictionary.demo.actions[1]}</button></div></div>
       <div className="home-v1-demo-line tutor follow-up"><span className="home-v1-demo-avatar">AI</span><div><p>{selected.followUp}</p></div></div></div>
@@ -553,6 +560,9 @@ function HomeFooter({ dictionary, locale }: { dictionary: LandingDictionary; loc
             <strong>AI Language Tutor</strong>
           </Link>
           <p>{ui.footerDescription}</p>
+          <a href="https://www.direct2app.com" target="_blank" rel="noopener" aria-label="Featured On Direct2App">
+            <img src="https://www.direct2app.com/featured-light.svg" alt="Featured On Direct2App" style={{ height: 54, width: "auto" }} loading="lazy" />
+          </a>
         </div>
         {columns.map((column) => (
           <FooterColumn key={column.title} title={column.title} items={column.links} locale={locale} />

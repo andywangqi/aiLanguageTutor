@@ -418,6 +418,17 @@ const demoActionsByLocale: Record<LandingDictionary["locale"], [string, string, 
   es: ["Escuchar", "Repetir", "Aprender"]
 };
 
+// 首页 Hero 卡片 UI 文案本地化 —— responseLabel "AI Tutor"、promptLabel "You:"、turn "Your turn"
+const demoFieldsByLocale: Record<LandingDictionary["locale"], { responseLabel: string; promptLabel: string; turn: string }> = {
+  en: { responseLabel: "AI Tutor", promptLabel: "You", turn: "Your turn" },
+  ja: { responseLabel: "AIチューター", promptLabel: "あなた", turn: "あなたの番" },
+  th: { responseLabel: "AI ติวเตอร์", promptLabel: "คุณ", turn: "ถึงตาคุณ" },
+  ko: { responseLabel: "AI 튜터", promptLabel: "나", turn: "당신 차례" },
+  "zh-CN": { responseLabel: "AI 导师", promptLabel: "你", turn: "轮到你了" },
+  "zh-TW": { responseLabel: "AI 導師", promptLabel: "你", turn: "換你了" },
+  es: { responseLabel: "Tutor IA", promptLabel: "Tú", turn: "Te toca" }
+};
+
 export function getDictionary(locale: LandingDictionary["locale"]): LandingDictionary {
   const dictionary = dictionaries[locale];
   const feedback = repeatCopy[locale];
@@ -426,7 +437,7 @@ export function getDictionary(locale: LandingDictionary["locale"]): LandingDicti
     ...dictionary,
     seo: localized ? { title: localized.title, description: localized.description } : dictionary.seo,
     hero: { ...dictionary.hero, ...(localized ? { h1: localized.h1, lead: localized.description } : {}) },
-    demo: { ...dictionary.demo, actions: demoActionsByLocale[locale] },
+    demo: { ...dictionary.demo, ...demoFieldsByLocale[locale], actions: demoActionsByLocale[locale] },
     sections: {
       ...dictionary.sections,
       corrections: { ...dictionary.sections.corrections, h2: feedback.correction, lead: feedback.lead, points: [feedback.correction, feedback.label] },
