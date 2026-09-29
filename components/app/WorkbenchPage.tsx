@@ -666,7 +666,6 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
-        router.replace(`${localizedPath(locale, "/login")}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         return;
       }
 
@@ -717,7 +716,10 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
       } catch (error) {
         if (error instanceof ApiError && error.code === "UNAUTHENTICATED") {
           await supabase.auth.signOut();
-          router.replace(`${localizedPath(locale, "/login")}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+          if (active) {
+            setIsRemoteUnavailable(true);
+            setApiNotice(copy.remoteUnavailable);
+          }
           return;
         }
         if (active) {

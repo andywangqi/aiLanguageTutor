@@ -56,9 +56,7 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
     };
   }, []);
 
-  const startHref = isAuthenticated
-    ? localizedPath(locale, "/app")
-    : `${localizedPath(locale, "/login")}?next=${encodeURIComponent(localizedPath(locale, "/app"))}`;
+  const startHref = localizedPath(locale, "/app");
   const startLabel = isAuthenticated ? copy.signedIn : copy.start;
   const startEvent = isAuthenticated ? "open_tutor" : "start_free";
 
@@ -84,7 +82,7 @@ export function Header({ dictionary, locale }: { dictionary: LandingDictionary; 
           <Link
             className="home-v1-start"
             href={startHref}
-            onClick={() => void trackEvent("home_cta_clicked", { placement: "header", cta: startEvent, destination: isAuthenticated ? "app" : "login", locale })}
+            onClick={() => void trackEvent("home_cta_clicked", { placement: "header", cta: startEvent, destination: "app", locale })}
           >
             {startLabel}
           </Link>

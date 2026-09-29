@@ -2651,7 +2651,7 @@ h1 {
   width: min(430px, 100%);
   max-height: calc(100dvh - 36px);
   overflow: auto;
-  padding: 24px 28px 22px;
+  padding: 20px 22px 18px;
   border: 1px solid rgba(231, 220, 208, 0.95);
   border-radius: 22px;
   background: rgba(255, 252, 248, 0.98);
@@ -2691,7 +2691,7 @@ h1 {
 }
 
 .auth-dialog-copy {
-  margin-top: 28px;
+  margin-top: 18px;
   padding-right: 26px;
 }
 

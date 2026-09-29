@@ -279,7 +279,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
   };
   const scenarioBadge = locale === "en" ? "Most Popular" : locale === "ja" ? "人気" : locale === "zh-CN" ? "最受欢迎" : locale === "zh-TW" ? "最受歡迎" : locale === "es" ? "Más popular" : locale === "ko" ? "인기" : "ยอดนิยม";
   const targetLanguage = heroLang;
-  const startHref = `${localizedPath(locale, "/login")}?next=${encodeURIComponent(`${localizedPath(locale, "/app")}?learningLanguage=${targetLanguage}`)}`;
+  const startHref = `${localizedPath(locale, "/app")}?learningLanguage=${targetLanguage}`;
 
   return (
     <div className="home-v1-page">
@@ -305,7 +305,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 ))}
               </div>
               <div className="home-v1-hero-actions">
-                <ButtonLink className="home-v1-hero-cta" href={startHref} eventName="home_cta_clicked" eventProperties={{ placement: "hero", cta: "primary", destination: "login", locale, target_language: targetLanguage }}>
+                <ButtonLink className="home-v1-hero-cta" href={startHref} eventName="home_cta_clicked" eventProperties={{ placement: "hero", cta: "primary", destination: "app", locale, target_language: targetLanguage }}>
                   {dictionary.hero.primaryCta}<ArrowRight size={16} aria-hidden="true" />
                 </ButtonLink>
                 <span className="home-v1-trial-note">{(dictionary.hero.proof ?? ["1-minute free conversation", "No credit card required"]).map((item) => <span key={item}><Check size={13} />{item}</span>)}</span>
@@ -359,7 +359,7 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
 
         <HomeFaq locale={locale} />
 
-        <section className="home-v1-final-cta"><div className="home-v1-final-text"><h2>{dictionary.sections.cta.h2}</h2><p>{dictionary.sections.cta.lead}</p><div className="home-v1-final-row"><ButtonLink href={localizedPath(locale, "/login")} eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "primary", destination: "login", locale }}>{dictionary.sections.cta.primaryCta}<ArrowRight size={15} /></ButtonLink><small><Check size={12} />{(dictionary.hero.proof ?? ["No credit card required", "Free conversation included"]).join(" · ")}</small></div></div><div className="home-v1-final-steps"><div><span><BriefcaseBusiness size={15} /></span><b>{finalStepsCopy[locale][0]}</b><ArrowRight size={13} /></div><div><span><Lightbulb size={15} /></span><b>{finalStepsCopy[locale][1]}</b><ArrowRight size={13} /></div><div><span><MessageCircle size={15} /></span><b>{finalStepsCopy[locale][2]}</b></div></div></section>
+        <section className="home-v1-final-cta"><div className="home-v1-final-text"><h2>{dictionary.sections.cta.h2}</h2><p>{dictionary.sections.cta.lead}</p><div className="home-v1-final-row"><ButtonLink href={localizedPath(locale, "/app")} eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "primary", destination: "app", locale }}>{dictionary.sections.cta.primaryCta}<ArrowRight size={15} /></ButtonLink><small><Check size={12} />{(dictionary.hero.proof ?? ["No credit card required", "Free conversation included"]).join(" · ")}</small></div></div><div className="home-v1-final-steps"><div><span><BriefcaseBusiness size={15} /></span><b>{finalStepsCopy[locale][0]}</b><ArrowRight size={13} /></div><div><span><Lightbulb size={15} /></span><b>{finalStepsCopy[locale][1]}</b><ArrowRight size={13} /></div><div><span><MessageCircle size={15} /></span><b>{finalStepsCopy[locale][2]}</b></div></div></section>
       </main>
       <HomeFooter dictionary={dictionary} locale={locale} />
     </div>
