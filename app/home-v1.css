@@ -1834,3 +1834,11 @@
   .home-v1-hero-robot { display: none !important; }
 }
 
+
+.home-v1-help-card a{display:inline-flex;align-items:center;gap:5px;min-height:25px;padding:0 10px;border:1px solid #e7eafa;border-radius:18px;color:#485ef5;background:#fff;font-size:8px;font-weight:700;text-decoration:none}
+.home-v1-demo-mic{display:grid;place-items:center;text-decoration:none}
+
+
+.home-v1-faq-section{width:min(100% - 64px,1320px);margin:0 auto 26px}
+@media (max-width: 640px){.home-v1-faq-section{width:min(100% - 32px,620px)}}
+

@@ -11,7 +11,6 @@ import {
   Lightbulb,
   MessageCircle,
   Mic,
-  Play,
   Plane,
   Sparkles,
   Volume2
@@ -19,30 +18,11 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { LandingDictionary } from "@/lib/i18n/types";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
-import { homeUiCopy, type HomeUiCopy } from "@/lib/i18n/home-ui-copy";
+import { homeUiCopy } from "@/lib/i18n/home-ui-copy";
 import { trackEvent } from "@/lib/analytics/client";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Header } from "./Header";
-type LanguageCardKey = "english" | "spanish" | "japanese" | "french" | "german" | "korean" | "chinese";
-
-type LanguageDetail = {
-  key: LanguageCardKey;
-  code: string;
-  languageCode: string;
-  className: string;
-  imageSrc: string;
-};
-
-const languageDetails: LanguageDetail[] = [
-  { key: "english", code: "EN", languageCode: "en", className: "language-english", imageSrc: "/images/languages/english-speaking-practice-v2.webp" },
-  { key: "spanish", code: "ES", languageCode: "es", className: "language-spanish", imageSrc: "/images/languages/spanish-speaking-practice-v2.webp" },
-  { key: "japanese", code: "JP", languageCode: "ja", className: "language-japanese", imageSrc: "/images/languages/japanese-speaking-practice-v2.webp" },
-  { key: "french", code: "FR", languageCode: "fr", className: "language-french", imageSrc: "/images/languages/french-speaking-practice-v2.webp" },
-  { key: "german", code: "DE", languageCode: "de", className: "language-german", imageSrc: "/images/languages/german-speaking-practice-v2.webp" },
-  { key: "korean", code: "KR", languageCode: "ko", className: "language-korean", imageSrc: "/images/languages/korean-speaking-practice-v2.webp" },
-  { key: "chinese", code: "ZH", languageCode: "zh-CN", className: "language-chinese", imageSrc: "/images/languages/chinese-speaking-practice-v2.webp" }
-];
-
+import { HomeFaq } from "./HomeFaq";
 type HeroDialogue = {
   question: string;
   natural: string;
@@ -97,138 +77,6 @@ const learnerHesitations: Record<Locale, string> = {
   "zh-TW": "我…去了…嗯…",
   es: "Yo… fui a… eh…"
 };
-const languageCardCopy: Record<Locale, Record<LanguageCardKey, { name: string; description: string }>> = {
-  en: {
-    english: { name: "English", description: "Practice English speaking" },
-    spanish: { name: "Spanish", description: "Practice Spanish speaking" },
-    japanese: { name: "Japanese", description: "Practice Japanese speaking" },
-    french: { name: "French", description: "Practice French speaking" },
-    german: { name: "German", description: "Practice German speaking" },
-    korean: { name: "Korean", description: "Practice Korean speaking" },
-    chinese: { name: "Chinese", description: "Practice Chinese speaking" }
-  },
-  ja: {
-    english: { name: "英語", description: "英語で自然に話す練習" },
-    spanish: { name: "スペイン語", description: "スペイン語の会話を練習" },
-    japanese: { name: "日本語", description: "日本語で自然な会話を練習" },
-    french: { name: "フランス語", description: "旅行や日常で使うフランス語" },
-    german: { name: "ドイツ語", description: "実用的なドイツ語会話" },
-    korean: { name: "韓国語", description: "韓国語の話し方を練習" },
-    chinese: { name: "中国語", description: "中国語で伝える練習" }
-  },
-  th: {
-    english: { name: "ภาษาอังกฤษ", description: "ฝึกพูดอังกฤษในบทสนทนาจริง" },
-    spanish: { name: "ภาษาสเปน", description: "ฝึกสนทนาภาษาสเปน" },
-    japanese: { name: "ภาษาญี่ปุ่น", description: "ฝึกพูดญี่ปุ่นให้เป็นธรรมชาติ" },
-    french: { name: "ภาษาฝรั่งเศส", description: "ฝึกฝรั่งเศสสำหรับชีวิตจริง" },
-    german: { name: "ภาษาเยอรมัน", description: "ฝึกบทสนทนาเยอรมัน" },
-    korean: { name: "ภาษาเกาหลี", description: "ฝึกพูดเกาหลีในสถานการณ์จริง" },
-    chinese: { name: "ภาษาจีน", description: "ฝึกสื่อสารภาษาจีน" }
-  },
-  ko: {
-    english: { name: "영어", description: "실제 대화로 영어 말하기 연습" },
-    spanish: { name: "스페인어", description: "스페인어 회화 연습" },
-    japanese: { name: "일본어", description: "자연스러운 일본어 말하기" },
-    french: { name: "프랑스어", description: "일상에서 쓰는 프랑스어" },
-    german: { name: "독일어", description: "실용적인 독일어 대화" },
-    korean: { name: "한국어", description: "한국어 말하기 연습" },
-    chinese: { name: "중국어", description: "중국어로 표현하는 연습" }
-  },
-  "zh-CN": {
-    english: { name: "英语", description: "练习真实场景里的英语口语" },
-    spanish: { name: "西班牙语", description: "练习西班牙语日常会话" },
-    japanese: { name: "日语", description: "练习自然的日语表达" },
-    french: { name: "法语", description: "练习旅行和生活中的法语" },
-    german: { name: "德语", description: "练习实用德语会话" },
-    korean: { name: "韩语", description: "练习真实情境里的韩语" },
-    chinese: { name: "中文", description: "练习自然中文表达" }
-  },
-  "zh-TW": {
-    english: { name: "英語", description: "練習真實情境中的英語口說" },
-    spanish: { name: "西班牙語", description: "練習西班牙語日常會話" },
-    japanese: { name: "日語", description: "練習自然的日語表達" },
-    french: { name: "法語", description: "練習旅行和生活中的法語" },
-    german: { name: "德語", description: "練習實用德語會話" },
-    korean: { name: "韓語", description: "練習真實情境裡的韓語" },
-    chinese: { name: "中文", description: "練習自然中文表達" }
-  },
-  es: {
-    english: { name: "Inglés", description: "Practica conversaciones reales en inglés" },
-    spanish: { name: "Español", description: "Mejora tu conversación en español" },
-    japanese: { name: "Japonés", description: "Practica japonés para situaciones reales" },
-    french: { name: "Francés", description: "Habla francés de forma más natural" },
-    german: { name: "Alemán", description: "Practica conversaciones útiles en alemán" },
-    korean: { name: "Coreano", description: "Practica coreano con situaciones reales" },
-    chinese: { name: "Chino", description: "Practica cómo expresarte en chino" }
-  }
-};
-
-const languageImageAltCopy: Record<Locale, Record<LanguageCardKey, string>> = {
-  en: {
-    english: "Learner practicing English speaking with AI Language Tutor on a laptop in a cafe",
-    spanish: "Learner practicing Spanish speaking with a phone at a Barcelona cafe",
-    japanese: "Learner practicing Japanese speaking with a phone in a modern cafe",
-    french: "Learner practicing French speaking with a phone in a Paris cafe",
-    german: "Learner practicing German speaking with a phone in a modern cafe",
-    korean: "Learner practicing Korean speaking with a phone in a modern cafe",
-    chinese: "Learner practicing Mandarin Chinese speaking with a phone in a Shanghai cafe"
-  },
-  ja: {
-    english: "カフェでノートパソコンを使い、AI Language Tutorで英会話を練習する学習者",
-    spanish: "バルセロナのカフェでスマートフォンを使い、スペイン語会話を練習する学習者",
-    japanese: "モダンなカフェでスマートフォンを使い、日本語会話を練習する学習者",
-    french: "パリのカフェでスマートフォンを使い、フランス語会話を練習する学習者",
-    german: "モダンなカフェでスマートフォンを使い、ドイツ語会話を練習する学習者",
-    korean: "モダンなカフェでスマートフォンを使い、韓国語会話を練習する学習者",
-    chinese: "上海のカフェでスマートフォンを使い、中国語会話を練習する学習者"
-  },
-  th: {
-    english: "ผู้เรียนฝึกพูดภาษาอังกฤษกับ AI Language Tutor บนแล็ปท็อปในคาเฟ่",
-    spanish: "ผู้เรียนฝึกพูดภาษาสเปนด้วยโทรศัพท์ในคาเฟ่สไตล์บาร์เซโลนา",
-    japanese: "ผู้เรียนฝึกพูดภาษาญี่ปุ่นด้วยโทรศัพท์ในคาเฟ่สมัยใหม่",
-    french: "ผู้เรียนฝึกพูดภาษาฝรั่งเศสด้วยโทรศัพท์ในคาเฟ่สไตล์ปารีส",
-    german: "ผู้เรียนฝึกพูดภาษาเยอรมันพร้อมโทรศัพท์ในคาเฟ่สมัยใหม่",
-    korean: "ผู้เรียนฝึกพูดภาษาเกาหลีด้วยโทรศัพท์ในคาเฟ่สมัยใหม่",
-    chinese: "ผู้เรียนฝึกพูดภาษาจีนกลางด้วยโทรศัพท์ในคาเฟ่สไตล์เซี่ยงไฮ้"
-  },
-  ko: {
-    english: "카페에서 노트북으로 AI Language Tutor와 영어 말하기를 연습하는 학습자",
-    spanish: "바르셀로나 카페에서 휴대전화로 스페인어 말하기를 연습하는 학습자",
-    japanese: "모던한 카페에서 휴대전화로 일본어 말하기를 연습하는 학습자",
-    french: "파리 카페에서 휴대전화로 프랑스어 말하기를 연습하는 학습자",
-    german: "모던한 카페에서 휴대전화로 독일어 말하기를 연습하는 학습자",
-    korean: "모던한 카페에서 휴대전화로 한국어 말하기를 연습하는 학습자",
-    chinese: "상하이 분위기의 카페에서 휴대전화로 중국어 말하기를 연습하는 학습자"
-  },
-  "zh-CN": {
-    english: "学习者在咖啡馆用笔记本电脑跟 AI Language Tutor 练习英语口语",
-    spanish: "学习者在巴塞罗那风格的咖啡馆用手机练习西班牙语口语",
-    japanese: "学习者在现代咖啡馆用手机练习日语口语",
-    french: "学习者在巴黎风格的咖啡馆用手机练习法语口语",
-    german: "学习者在现代咖啡馆用手机练习德语口语",
-    korean: "学习者在现代咖啡馆用手机练习韩语口语",
-    chinese: "学习者在上海风格的咖啡馆用手机练习中文口语"
-  },
-  "zh-TW": {
-    english: "學習者在咖啡館用筆記型電腦跟 AI Language Tutor 練習英語口說",
-    spanish: "學習者在巴塞隆納風格的咖啡館用手機練習西班牙語口說",
-    japanese: "學習者在現代咖啡館用手機練習日語口說",
-    french: "學習者在巴黎風格的咖啡館用手機練習法語口說",
-    german: "學習者在現代咖啡館用手機練習德語口說",
-    korean: "學習者在現代咖啡館用手機練習韓語口說",
-    chinese: "學習者在上海風格的咖啡館用手機練習中文口說"
-  },
-  es: {
-    english: "Persona practicando conversación en inglés con AI Language Tutor en una laptop dentro de una cafetería",
-    spanish: "Persona practicando conversación en español con un teléfono en una cafetería de estilo Barcelona",
-    japanese: "Persona practicando conversación en japonés con un teléfono en una cafetería moderna",
-    french: "Persona practicando conversación en francés con un teléfono en una cafetería de estilo París",
-    german: "Persona practicando conversación en alemán con un teléfono en una cafetería moderna",
-    korean: "Persona practicando conversación en coreano en una cafetería moderna",
-    chinese: "Persona practicando conversación en chino mandarín con un teléfono en una cafetería de estilo Shanghái"
-  }
-};
-
 const viewAllLanguagesCopy: Record<Locale, string> = {
   en: "View all languages",
   ja: "対応言語を見る",
@@ -398,10 +246,6 @@ const footerColumnsCopy: Record<Locale, FooterColumnCopy[]> = {
     { title: "Soporte", links: [{ label: "Centro de ayuda", href: "/contact" }, { label: "Política de privacidad", href: "/privacy" }, { label: "Términos del servicio", href: "/terms" }] }
   ]
 };
-function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
 export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary; locale: Locale }) {
   const { sections } = dictionary;
   const ui = homeUiCopy[locale];
@@ -513,6 +357,8 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
           <div className="home-v1-betterway-photo" aria-hidden="true"><span className="home-v1-hero-robot-shadow" aria-hidden="true" /><img className="home-v1-betterway-robot" src="/images/ai-tutor-robot.png" alt="" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /></div>
         </section>
 
+        <HomeFaq locale={locale} />
+
         <section className="home-v1-final-cta"><div className="home-v1-final-text"><h2>{dictionary.sections.cta.h2}</h2><p>{dictionary.sections.cta.lead}</p><div className="home-v1-final-row"><ButtonLink href={localizedPath(locale, "/login")} eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "primary", destination: "login", locale }}>{dictionary.sections.cta.primaryCta}<ArrowRight size={15} /></ButtonLink><small><Check size={12} />{(dictionary.hero.proof ?? ["No credit card required", "Free conversation included"]).join(" · ")}</small></div></div><div className="home-v1-final-steps"><div><span><BriefcaseBusiness size={15} /></span><b>{finalStepsCopy[locale][0]}</b><ArrowRight size={13} /></div><div><span><Lightbulb size={15} /></span><b>{finalStepsCopy[locale][1]}</b><ArrowRight size={13} /></div><div><span><MessageCircle size={15} /></span><b>{finalStepsCopy[locale][2]}</b></div></div></section>
       </main>
       <HomeFooter dictionary={dictionary} locale={locale} />
@@ -525,6 +371,7 @@ function HeroConversationDemo({ dictionary, locale, targetLanguage }: { dictiona
   const localeDialogue = heroDialoguesByLocale[locale] ?? heroDialoguesByLocale.en;
   const meta = localeMeta[locale] ?? localeMeta.en;
   const speechLang = targetSpeechLang[targetLanguage] ?? targetSpeechLang.en;
+  const workHref = localizedPath(locale, `/app?learningLanguage=${targetLanguage}`);
   function speak() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -555,9 +402,9 @@ function HeroConversationDemo({ dictionary, locale, targetLanguage }: { dictiona
   return <div className="home-v1-hero-demo-wrap" onMouseMove={handleParallax} onMouseLeave={resetParallax}><div className="home-v1-hero-orb" aria-hidden="true" /><div className="home-v1-hero-demo">
     <header><span className="home-v1-demo-logo"><span>▮</span> AI Language Tutor</span><span className="home-v1-demo-lang"><img src={`https://flagcdn.com/w40/${meta.flag}.png`} alt="" />{meta.name}</span><span className="home-v1-demo-head-actions" aria-hidden="true">✈ ···</span></header>
     <div className="home-v1-demo-chat"><div className="home-v1-demo-line tutor"><span className="home-v1-demo-avatar">AI</span><div><p>{localeDialogue.question}</p></div></div><div className="home-v1-demo-line learner"><p>{learnerHesitations[locale]}</p></div>
-      <div className="home-v1-help-card"><strong><Lightbulb size={17} />{dictionary.demo.responseLabel}</strong><span>{dictionary.demo.promptLabel}:</span><b>“{targetDialogue.natural}”</b><div><button type="button" onClick={speak}><Volume2 size={14} />{dictionary.demo.actions[0]}</button><button type="button" onClick={speak}><Mic size={14} />{dictionary.demo.actions[1]}</button></div></div>
+      <div className="home-v1-help-card"><strong><Lightbulb size={17} />{dictionary.demo.responseLabel}</strong><span>{dictionary.demo.promptLabel}:</span><b>“{targetDialogue.natural}”</b><div><button type="button" onClick={speak}><Volume2 size={14} />{dictionary.demo.actions[0]}</button><Link href={workHref} onClick={() => void trackEvent("home_cta_clicked", { placement: "hero-demo", cta: "mic", destination: "app", locale, target_language: targetLanguage })}><Mic size={14} />{dictionary.demo.actions[1]}</Link></div></div>
       <div className="home-v1-demo-line tutor follow-up"><span className="home-v1-demo-avatar">AI</span><div><p>{localeDialogue.followUp}</p></div></div></div>
-    <button className="home-v1-demo-mic" type="button" onClick={speak} aria-label={dictionary.demo.actions[0]}><Mic size={22} /></button><small className="home-v1-demo-tap">{dictionary.demo.turn}</small>
+    <Link className="home-v1-demo-mic" href={workHref} aria-label={dictionary.demo.actions[1]} onClick={() => void trackEvent("home_cta_clicked", { placement: "hero-demo", cta: "mic-big", destination: "app", locale, target_language: targetLanguage })}><Mic size={22} /></Link><small className="home-v1-demo-tap">{dictionary.demo.turn}</small>
   </div><figure className="home-v1-hero-robot"><span className="home-v1-robot-note" aria-hidden="true">Your AI tutor<br />is here to help.</span><span className="home-v1-robot-bubble" aria-hidden="true"><i /><i /><i /><i /></span><span className="home-v1-hero-robot-shadow" aria-hidden="true" /><img className="home-v1-hero-robot-img" src="/images/ai-tutor-robot.png" alt="AI tutor robot" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /><span className="home-v1-robot-eq" aria-hidden="true"><i /><i /><i /><i /><i /></span></figure></div>;
 }
 
