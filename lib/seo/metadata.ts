@@ -37,7 +37,7 @@ const openGraphLocale: Record<Locale, string> = {
   es: "es_ES"
 };
 const localeKeywords: Record<Locale, string[]> = {
-  en: ["AI language tutor", "English speaking practice", "AI conversation practice", "pronunciation practice"],
+  en: ["AI language tutor", "online English AI tutor", "English speaking practice", "AI conversation practice", "pronunciation practice"],
   ja: ["AI英会話", "英会話練習", "英語スピーキング練習", "発音練習"],
   th: ["ฝึกพูดภาษาอังกฤษ", "ฝึกสนทนาภาษาอังกฤษ", "ติวเตอร์ภาษา AI", "ฝึกออกเสียงภาษาอังกฤษ"],
   ko: ["AI 영어 회화", "영어 회화 연습", "영어 말하기 연습", "영어 발음 연습"],

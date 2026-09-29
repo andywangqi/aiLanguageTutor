@@ -43,6 +43,24 @@ const languageDetails: LanguageDetail[] = [
   { key: "chinese", code: "ZH", languageCode: "zh-CN", className: "language-chinese", imageSrc: "/images/languages/chinese-speaking-practice-v2.webp" }
 ];
 
+type HeroLanguage = {
+  code: string;
+  name: string;
+  flag: string;
+  speechLang: string;
+  question: string;
+  hesitation: string;
+  natural: string;
+  followUp: string;
+};
+
+const heroLanguages: HeroLanguage[] = [
+  { code: "en", name: "English", flag: "us", speechLang: "en-US", question: "What did you do last weekend?", hesitation: "I… went to… um…", natural: "I went hiking with some friends.", followUp: "That sounds great! What was the best part of the trip?" },
+  { code: "es", name: "Spanish", flag: "es", speechLang: "es-ES", question: "¿Qué hiciste el fin de semana?", hesitation: "Yo… fui a… eh…", natural: "Fui de excursión con unos amigos.", followUp: "¡Qué bien! ¿Cuál fue la mejor parte del viaje?" },
+  { code: "fr", name: "French", flag: "fr", speechLang: "fr-FR", question: "Qu'est-ce que tu as fait ce week-end ?", hesitation: "Je… suis allé… euh…", natural: "Je suis allé faire une randonnée avec des amis.", followUp: "Ça a l'air super ! Quel a été le meilleur moment ?" },
+  { code: "de", name: "German", flag: "de", speechLang: "de-DE", question: "Was hast du letztes Wochenende gemacht?", hesitation: "Ich… bin… äh…", natural: "Ich war mit Freunden wandern.", followUp: "Das klingt schön! Was war der beste Teil?" },
+  { code: "ja", name: "Japanese", flag: "jp", speechLang: "ja-JP", question: "週末は何をしましたか？", hesitation: "えっと…友達と…", natural: "友達とハイキングに行きました。", followUp: "楽しそうですね！一番よかったことは何ですか？" }
+];
 const languageCardCopy: Record<Locale, Record<LanguageCardKey, { name: string; description: string }>> = {
   en: {
     english: { name: "English", description: "Practice English speaking" },
@@ -198,7 +216,16 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
     { code: "de", name: "German", flag: "de" },
     { code: "ja", name: "Japanese", flag: "jp" }
   ];
-  const [heroLang, setHeroLang] = useState("en");
+  const [heroLang, setHeroLang] = useState("en");  const scenarioTitles: Record<Locale, string[]> = {
+    en: ["Job Interview", "Work", "Travel", "Everyday"],
+    ja: ["面接", "仕事", "旅行", "日常会話"],
+    th: ["สัมภาษณ์งาน", "การทำงาน", "การเดินทาง", "ชีวิตประจำวัน"],
+    ko: ["면접", "업무", "여행", "일상 대화"],
+    "zh-CN": ["求职面试", "工作沟通", "旅行", "日常对话"],
+    "zh-TW": ["求職面試", "工作溝通", "旅行", "日常對話"],
+    es: ["Entrevista de trabajo", "Trabajo", "Viajes", "Conversación diaria"]
+  };
+  const scenarioBadge = locale === "en" ? "Most Popular" : locale === "ja" ? "人気" : locale === "zh-CN" ? "最受欢迎" : locale === "zh-TW" ? "最受歡迎" : locale === "es" ? "Más popular" : locale === "ko" ? "인기" : "ยอดนิยม";
   const targetLanguage = heroLang;
   const startHref = `${localizedPath(locale, "/login")}?next=${encodeURIComponent(`${localizedPath(locale, "/app")}?learningLanguage=${targetLanguage}`)}`;
 
@@ -209,9 +236,9 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
         <section className="home-v1-hero">
           <div className="home-v1-container home-v1-hero-grid">
             <div className="home-v1-hero-copy">
-              <p className="home-v1-eyebrow">AI Language Tutor · Real Conversation Practice</p>
-              <h1>AI Language Tutor<br />for <span>Real Conversations</span></h1>
-              <p className="home-v1-lead">Practice speaking with an AI tutor that helps you say what you mean, get unstuck, and keep the conversation going — in the language you want to learn.</p>
+              <p className="home-v1-eyebrow">{dictionary.hero.eyebrow}</p>
+              <h1>{dictionary.hero.h1}</h1>
+              <p className="home-v1-lead">{dictionary.hero.lead}</p>
               <div className="home-v1-hero-lang-row" role="group" aria-label="Choose a language">
                 {heroLangs.map((l) => (
                   <button
@@ -227,17 +254,17 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
               </div>
               <div className="home-v1-hero-actions">
                 <ButtonLink href={startHref} eventName="home_cta_clicked" eventProperties={{ placement: "hero", cta: "primary", destination: "login", locale, target_language: targetLanguage }}>
-                  Start Speaking Free<ArrowRight size={16} aria-hidden="true" />
+                  {dictionary.hero.primaryCta}<ArrowRight size={16} aria-hidden="true" />
                 </ButtonLink>
-                <span className="home-v1-trial-note"><span><Check size={13} />No credit card required</span><span><Check size={13} />Practice at your own pace</span></span>
+                <span className="home-v1-trial-note">{(dictionary.hero.proof ?? ["1-minute free conversation", "No credit card required"]).map((item) => <span key={item}><Check size={13} />{item}</span>)}</span>
               </div>
             </div>
-            <HeroConversationDemo />
+            <HeroConversationDemo language={heroLang} dictionary={dictionary} />
           </div>
         </section>
 
         <section className="home-v1-how-strip" id="home-features" aria-label="How it works">
-          <div className="home-v1-how-intro"><span className="home-v1-kicker">THE MAGIC MOMENT</span><h2>Don&apos;t Know How to Say It?<br />Keep Talking.</h2><p>You don&apos;t need to know the perfect sentence. Tell your tutor what you mean, and get a natural expression in the language you&apos;re learning.</p></div>
+          <div className="home-v1-how-intro"><span className="home-v1-kicker">{dictionary.sections.learn.eyebrow}</span><h2>{dictionary.sections.learn.h2}</h2><p>{dictionary.sections.learn.lead}</p></div>
           <div className="home-v1-how-steps">{[
             [BriefcaseBusiness, "Tell It", "Explain what you mean in your own words."],
             [Lightbulb, "Get Help", "Your AI tutor gives you a natural expression."],
@@ -247,28 +274,26 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
         </section>
 
         <section className="home-v1-scenarios" id="home-practice">
-          <div className="home-v1-section-heading"><h2>Practice Conversations You Actually Need</h2><p>Choose a scenario and start practicing real conversations.</p></div>
-          <div className="home-v1-scenario-grid">{[
-            ["Job Interview", "Practice answering interview questions naturally.", "Start Interview Practice", "/app?scenario=english-job-interview", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=60", "Most Popular", BriefcaseBusiness],
-            ["Work", "Practice meetings, presentations, and everyday work conversations.", "Start Work Practice", "/app", "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&q=60", "", Headphones],
-            ["Travel", "Practice the conversations you’ll need while traveling.", "Start Travel Practice", "/app?scenario=english-travel-conversation", "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&q=60", "", Plane],
-            ["Everyday", "Talk about your day, interests, and real-life situations.", "Start Everyday Practice", "/app", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=60", "", MessageCircle]
-          ].map(([title, description, cta, href, image, badge, Icon]) => { const ScenarioIcon = Icon as LucideIcon; return <Link className={`home-v1-scenario-card ${badge ? "is-popular" : ""}`} href={localizedPath(locale, href as string)} key={title as string}><div className="home-v1-scenario-image"><img src={image as string} alt="" loading="lazy" />{badge ? <span>{badge as string}</span> : null}<em><ScenarioIcon size={17} /></em></div><div className="home-v1-scenario-body"><h3>{title as string}</h3><p>{description as string}</p><strong>{cta as string}<ArrowRight size={14} /></strong></div></Link>; })}</div>
+          <div className="home-v1-section-heading"><h2>{dictionary.sections.personal.h2}</h2><p>{dictionary.sections.personal.lead}</p></div>
+          <div className="home-v1-scenario-grid">{[[scenarioTitles[locale][0], dictionary.sections.personal.lead, dictionary.sections.cta.primaryCta, "/app?scenario=english-job-interview", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=60", scenarioBadge, BriefcaseBusiness],
+            [scenarioTitles[locale][1], dictionary.sections.personal.lead, dictionary.sections.cta.primaryCta, "/app", "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&q=60", "", Headphones],
+            [scenarioTitles[locale][2], dictionary.sections.personal.lead, dictionary.sections.cta.primaryCta, "/app?scenario=english-travel-conversation", "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&q=60", "", Plane],
+            [scenarioTitles[locale][3], dictionary.sections.personal.lead, dictionary.sections.cta.primaryCta, "/app", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=60", "", MessageCircle]].map(([title, description, cta, href, image, badge, Icon]) => { const ScenarioIcon = Icon as LucideIcon; return <Link className={`home-v1-scenario-card ${badge ? "is-popular" : ""}`} href={localizedPath(locale, href as string)} key={title as string}><div className="home-v1-scenario-image"><img src={image as string} alt="" loading="lazy" />{badge ? <span>{badge as string}</span> : null}<em><ScenarioIcon size={17} /></em></div><div className="home-v1-scenario-body"><h3>{title as string}</h3><p>{description as string}</p><strong>{cta as string}<ArrowRight size={14} /></strong></div></Link>; })}</div>
         </section>
 
         <section className="home-v1-duo" aria-label="Help and languages">
           <article className="home-v1-duo-card home-v1-unstuck">
             <div className="home-v1-unstuck-media"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=520&q=60" alt="Learner getting unstuck with AI tutor" loading="lazy" /><span className="home-v1-unstuck-bubble top">I want to go hiking this weekend.</span><span className="home-v1-unstuck-bubble mid">Here&apos;s a natural way to say it: &ldquo;I&apos;m planning to go hiking this weekend.&rdquo;</span></div>
-            <div className="home-v1-unstuck-copy"><span className="home-v1-kicker">HELP ME SAY IT</span><h2>Get Unstuck Without Ending the Conversation</h2><p>Don&apos;t know the right words? Tell your tutor what you mean.</p><ul><li><Check size={14} />Get a natural expression</li><li><Check size={14} />Listen to it</li><li><Check size={14} />Say it again</li><li><Check size={14} />Keep talking</li></ul></div>
+            <div className="home-v1-unstuck-copy"><span className="home-v1-kicker">{dictionary.sections.modes.eyebrow}</span><h2>{dictionary.sections.modes.h2}</h2><p>{dictionary.sections.modes.lead}</p><ul>{dictionary.sections.modes.items.map((item) => <li key={item.title}><Check size={14} />{item.title}</li>)}</ul></div>
           </article>
           <article className="home-v1-duo-card home-v1-mini-langs" id="home-languages">
-            <span className="home-v1-kicker">30+ LANGUAGES</span><h2>Learn the Language You Want to Speak</h2><p>Use your own language when you need help. Practice in the language you&apos;re learning.</p>
+            <span className="home-v1-kicker">{dictionary.sections.languages.eyebrow}</span><h2>{dictionary.sections.languages.h2}</h2><p>{dictionary.sections.languages.lead}</p>
             <div className="home-v1-mini-lang-grid">{[{ c: "us", n: "English" }, { c: "es", n: "Spanish" }, { c: "jp", n: "Japanese" }, { c: "fr", n: "French" }, { c: "de", n: "German" }, { c: "kr", n: "Korean" }, { c: "cn", n: "Chinese" }, { c: "th", n: "Thai" }].map((l) => <span key={l.n}><img src={`https://flagcdn.com/w40/${l.c}.png`} alt="" loading="lazy" /><b>{l.n}</b></span>)}</div>
-            <Link href={localizedPath(locale, "/app?chooseLanguage=1")}>View all languages <ArrowRight size={13} /></Link>
+            <Link href={localizedPath(locale, "/app?chooseLanguage=1")}>{viewAllLanguagesCopy[locale]} <ArrowRight size={13} /></Link>
           </article>
         </section>
 
-        <section className="home-v1-learning-section"><div className="home-v1-learning-copy"><h2>Your Conversations Become Your Lessons</h2><div className="home-v1-learning-points">{[
+        <section className="home-v1-learning-section"><div className="home-v1-learning-copy"><h2>{dictionary.sections.lesson.h2}</h2><div className="home-v1-learning-points">{[
           [Sparkles, "Natural Corrections", "See a more natural way to express yourself."],
           [BookOpen, "Useful Phrases", "Save expressions you can use right away."],
           [MessageCircle, "Vocabulary", "Build your vocabulary step by step."],
@@ -276,23 +301,24 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
         ].map(([Icon, title, description]) => { const FeatureIcon = Icon as LucideIcon; return <div key={title as string}><span><FeatureIcon size={17} /></span><strong>{title as string}</strong><p>{description as string}</p></div>; })}</div></div><ConversationSummaryCard /></section>
 
         <section className="home-v1-betterway" aria-label="A better way">
-          <div className="home-v1-betterway-main"><span className="home-v1-kicker">WHY AI LANGUAGE TUTOR</span><h2>A Better Way to Practice Speaking</h2><div className="home-v1-betterway-grid"><div><span><Check size={14} /></span><strong>Practice Without Pressure</strong><p>Make mistakes, ask questions, and learn at your own pace.</p></div><div><span><Check size={14} /></span><strong>Speak at Your Own Pace</strong><p>Take your time, your AI tutor will wait.</p></div><div><span><Check size={14} /></span><strong>Practice Anytime</strong><p>No tutor schedule. No classroom. Just start talking.</p></div></div></div>
+          <div className="home-v1-betterway-main"><span className="home-v1-kicker">{dictionary.sections.why.eyebrow}</span><h2>{dictionary.sections.why.h2}</h2><div className="home-v1-betterway-grid">{dictionary.sections.why.cards.map((card) => <div key={card.title}><span><Check size={14} /></span><strong>{card.title}</strong><p>{card.description}</p></div>)}</div></div>
           <div className="home-v1-betterway-photo" aria-hidden="true"><span className="home-v1-hero-robot-shadow" aria-hidden="true" /><img className="home-v1-betterway-robot" src="/images/ai-tutor-robot.png" alt="" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /></div>
         </section>
 
-        <section className="home-v1-final-cta"><div className="home-v1-final-text"><h2>Say What You Mean. Keep Talking.</h2><p>Start your first AI conversation and get help whenever you get stuck.</p><div className="home-v1-final-row"><ButtonLink href={localizedPath(locale, "/login")} eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "primary", destination: "login", locale }}>Start Speaking Free<ArrowRight size={15} /></ButtonLink><small><Check size={12} />No credit card required <i /> Free conversation included</small></div></div><div className="home-v1-final-steps"><div><span><BriefcaseBusiness size={15} /></span><b>Choose a scenario</b><ArrowRight size={13} /></div><div><span><Lightbulb size={15} /></span><b>Start talking</b><ArrowRight size={13} /></div><div><span><MessageCircle size={15} /></span><b>Get help when you&apos;re stuck</b></div></div></section>
+        <section className="home-v1-final-cta"><div className="home-v1-final-text"><h2>{dictionary.sections.cta.h2}</h2><p>{dictionary.sections.cta.lead}</p><div className="home-v1-final-row"><ButtonLink href={localizedPath(locale, "/login")} eventName="home_cta_clicked" eventProperties={{ placement: "final", cta: "primary", destination: "login", locale }}>{dictionary.sections.cta.primaryCta}<ArrowRight size={15} /></ButtonLink><small><Check size={12} />{(dictionary.hero.proof ?? ["No credit card required", "Free conversation included"]).join(" · ")}</small></div></div><div className="home-v1-final-steps"><div><span><BriefcaseBusiness size={15} /></span><b>Choose a scenario</b><ArrowRight size={13} /></div><div><span><Lightbulb size={15} /></span><b>Start talking</b><ArrowRight size={13} /></div><div><span><MessageCircle size={15} /></span><b>Get help when you&apos;re stuck</b></div></div></section>
       </main>
       <HomeFooter dictionary={dictionary} locale={locale} />
     </div>
   );
 }
 
-function HeroConversationDemo() {
+function HeroConversationDemo({ language, dictionary }: { language: string; dictionary: LandingDictionary }) {
+  const selected = heroLanguages.find((item) => item.code === language) ?? heroLanguages[0];
   function speak() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance("I went hiking with some friends.");
-    utterance.lang = "en-US";
+    const utterance = new SpeechSynthesisUtterance(selected.natural);
+    utterance.lang = selected.speechLang;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -316,11 +342,11 @@ function HeroConversationDemo() {
   }
 
   return <div className="home-v1-hero-demo-wrap" onMouseMove={handleParallax} onMouseLeave={resetParallax}><div className="home-v1-hero-orb" aria-hidden="true" /><div className="home-v1-hero-demo">
-    <header><span className="home-v1-demo-logo"><span>▮</span> AI Language Tutor</span><span className="home-v1-demo-lang"><img src="https://flagcdn.com/w40/us.png" alt="" />English</span><span className="home-v1-demo-head-actions" aria-hidden="true">✈ ···</span></header>
-    <div className="home-v1-demo-chat"><div className="home-v1-demo-line tutor"><span className="home-v1-demo-avatar">AI</span><div><p>What did you do last weekend?</p></div></div><div className="home-v1-demo-line learner"><p>I… went to… um…</p></div>
-      <div className="home-v1-help-card"><strong><Lightbulb size={17} />Help Me Say It</strong><span>Try saying:</span><b>“I went hiking with some friends.”</b><div><button type="button" onClick={speak}><Volume2 size={14} />Listen</button><button type="button" onClick={speak}><Mic size={14} />Try Again</button></div></div>
-      <div className="home-v1-demo-line tutor follow-up"><span className="home-v1-demo-avatar">AI</span><div><p>That sounds great! What was the best part of the trip?</p></div></div></div>
-    <button className="home-v1-demo-mic" type="button" onClick={speak} aria-label="Play sample phrase"><Mic size={22} /></button><small className="home-v1-demo-tap">Tap to speak</small>
+    <header><span className="home-v1-demo-logo"><span>▮</span> AI Language Tutor</span><span className="home-v1-demo-lang"><img src={`https://flagcdn.com/w40/${selected.flag}.png`} alt="" />{selected.name}</span><span className="home-v1-demo-head-actions" aria-hidden="true">✈ ···</span></header>
+    <div className="home-v1-demo-chat"><div className="home-v1-demo-line tutor"><span className="home-v1-demo-avatar">AI</span><div><p>{selected.question}</p></div></div><div className="home-v1-demo-line learner"><p>{selected.hesitation}</p></div>
+      <div className="home-v1-help-card"><strong><Lightbulb size={17} />{dictionary.demo.responseLabel}</strong><span>{dictionary.demo.promptLabel}:</span><b>“{selected.natural}”</b><div><button type="button" onClick={speak}><Volume2 size={14} />{dictionary.demo.actions[0]}</button><button type="button" onClick={speak}><Mic size={14} />{dictionary.demo.actions[1]}</button></div></div>
+      <div className="home-v1-demo-line tutor follow-up"><span className="home-v1-demo-avatar">AI</span><div><p>{selected.followUp}</p></div></div></div>
+    <button className="home-v1-demo-mic" type="button" onClick={speak} aria-label={dictionary.demo.actions[0]}><Mic size={22} /></button><small className="home-v1-demo-tap">{dictionary.demo.turn}</small>
   </div><figure className="home-v1-hero-robot"><span className="home-v1-robot-note" aria-hidden="true">Your AI tutor<br />is here to help.</span><span className="home-v1-robot-bubble" aria-hidden="true"><i /><i /><i /><i /></span><span className="home-v1-hero-robot-shadow" aria-hidden="true" /><img className="home-v1-hero-robot-img" src="/images/ai-tutor-robot.png" alt="AI tutor robot" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /><span className="home-v1-robot-eq" aria-hidden="true"><i /><i /><i /><i /><i /></span></figure></div>;
 }
 
