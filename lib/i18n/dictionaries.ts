@@ -215,7 +215,8 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
       h1: "リアルな会話のためのAI Language Tutor",
       lead: "学習中の言語で話し、すぐに添削を受け、自然な表現を身につけましょう。",
       primaryCta: "無料で話し始める",
-      secondaryCta: "デモを見る"
+      secondaryCta: "デモを見る",
+      proof: ["母語で始めてOK", "止まらずに話し続けられる"]
     },
     sections: {
       ...baseEn.sections,
@@ -255,7 +256,8 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
       h1: "AI Language Tutor สำหรับบทสนทนาจริง",
       lead: "พูดภาษาที่คุณกำลังเรียน รับคำแก้ไขทันที และเรียนรู้วิธีสื่อสารอย่างเป็นธรรมชาติ",
       primaryCta: "เริ่มพูดฟรี",
-      secondaryCta: "ลองเดโม"
+      secondaryCta: "ลองเดโม",
+      proof: ["เริ่มด้วยภาษาของคุณ", "คุยต่อได้โดยไม่สะดุด"]
     },
     sections: {
       ...baseEn.sections,
@@ -286,7 +288,8 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
       h1: "실전 대화를 위한 AI Language Tutor",
       lead: "배우는 언어로 말하고, 즉시 교정을 받고, 자연스럽게 표현하는 법을 익히세요.",
       primaryCta: "무료로 말하기 시작",
-      secondaryCta: "데모 보기"
+      secondaryCta: "데모 보기",
+      proof: ["모국어로 시작하세요", "막히지 않고 계속 대화"]
     },
     sections: {
       ...baseEn.sections,
@@ -317,7 +320,8 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
       h1: "面向真实对话的 AI Language Tutor",
       lead: "用你正在学习的语言开口说，获得即时纠错，并学习如何更自然地表达自己。",
       primaryCta: "免费开始开口练",
-      secondaryCta: "试试演示"
+      secondaryCta: "试试演示",
+      proof: ["用母语开场也没关系", "卡住也能继续聊下去"]
     },
     sections: {
       ...baseEn.sections,
@@ -354,7 +358,8 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
       h1: "面向真實對話的 AI Language Tutor",
       lead: "用你正在學習的語言開口說，獲得即時修正，並學會如何更自然地表達自己。",
       primaryCta: "免費開始開口練",
-      secondaryCta: "試試示範"
+      secondaryCta: "試試示範",
+      proof: ["用母語開場也沒關係", "卡住也能繼續聊下去"]
     },
     sections: {
       ...baseEn.sections,
@@ -385,7 +390,8 @@ export const dictionaries: Record<LandingDictionary["locale"], LandingDictionary
       h1: "Tu AI Language Tutor para conversaciones reales",
       lead: "Habla en el idioma que aprendes, recibe correcciones al instante y aprende a expresarte con naturalidad.",
       primaryCta: "Empieza gratis",
-      secondaryCta: "Probar demo"
+      secondaryCta: "Probar demo",
+      proof: ["Empieza en tu idioma", "Sigue hablando aunque te atasques"]
     },
     sections: {
       ...baseEn.sections,
