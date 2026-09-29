@@ -37,7 +37,7 @@ const baseEn: LandingDictionary = {
     prompt: "I might be late tomorrow.",
     responseLabel: "AI Tutor",
     response: "I might be late tomorrow.",
-    actions: ["Listen", "Translation", "Learn"],
+    actions: ["Listen", "Repeat", "Learn"],
     turn: "Your turn",
     hint: "Long-press to speak, then release to send."
   },
@@ -407,6 +407,17 @@ for (const locale of ["ja", "th", "ko", "zh-CN", "zh-TW", "es"] as const) {
   dictionaries[locale].sections = getLandingSections(locale);
 }
 
+// 首页 Hero 卡片底部三个操作按钮 —— 第二项配麦克风图标,语义是"复读/跟读"而非"翻译"
+const demoActionsByLocale: Record<LandingDictionary["locale"], [string, string, string]> = {
+  en: ["Listen", "Repeat", "Learn"],
+  ja: ["聞く", "リピート", "学ぶ"],
+  th: ["ฟัง", "พูดตาม", "เรียนรู้"],
+  ko: ["듣기", "따라 말하기", "배우기"],
+  "zh-CN": ["听一遍", "复读", "学会它"],
+  "zh-TW": ["聽一遍", "跟讀", "學會它"],
+  es: ["Escuchar", "Repetir", "Aprender"]
+};
+
 export function getDictionary(locale: LandingDictionary["locale"]): LandingDictionary {
   const dictionary = dictionaries[locale];
   const feedback = repeatCopy[locale];
@@ -415,6 +426,7 @@ export function getDictionary(locale: LandingDictionary["locale"]): LandingDicti
     ...dictionary,
     seo: localized ? { title: localized.title, description: localized.description } : dictionary.seo,
     hero: { ...dictionary.hero, ...(localized ? { h1: localized.h1, lead: localized.description } : {}) },
+    demo: { ...dictionary.demo, actions: demoActionsByLocale[locale] },
     sections: {
       ...dictionary.sections,
       corrections: { ...dictionary.sections.corrections, h2: feedback.correction, lead: feedback.lead, points: [feedback.correction, feedback.label] },

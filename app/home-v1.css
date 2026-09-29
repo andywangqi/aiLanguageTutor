@@ -1542,6 +1542,10 @@
 .home-v1-language-start select { min-width: 0; height: 46px; padding: 0 12px; border: 1px solid #e7ebf5; border-radius: 12px; color: #15264b; background: #fff; font: inherit; font-size: 14px; font-weight: 700; }
 .home-v1-hero-actions { align-items: center; gap: 16px; }
 .home-v1-hero-actions .button-primary { min-height: 48px; padding: 0 21px; border-radius: 13px; font-size: 14px; }
+.home-v1-hero-cta { position: relative; animation: homeHeroCtaPulse 2.4s ease-in-out infinite; }
+.home-v1-hero-cta::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; box-shadow: 0 0 0 0 rgba(88, 101, 242, .55); pointer-events: none; animation: homeHeroCtaGlow 2.4s ease-in-out infinite; }
+@keyframes homeHeroCtaPulse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes homeHeroCtaGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(88, 101, 242, .55); } 50% { box-shadow: 0 0 0 10px rgba(88, 101, 242, 0); } }
 .home-v1-trial-note { display: inline-flex; align-items: center; gap: 11px; color: #5b6f96; font-size: 12px; }
 .home-v1-trial-note i { width: 1px; height: 15px; background: #aab6d0; }
 .home-v1-page .hero-product-demo { border-color: #e6ebf8; border-radius: 24px; box-shadow: 0 24px 56px rgba(55,80,145,.14); }
@@ -1664,7 +1668,7 @@
 .home-v1-robot-eq i { width: 4px; border-radius: 4px; background: #6f8bff; animation: homeEq 1s ease-in-out infinite; }
 @keyframes homeEq { 0%,100% { height: 6px; } 50% { height: 16px; } }
 @media (prefers-reduced-motion: reduce) {
-  .home-v1-hero-robot-img, .home-v1-hero-robot-shadow, .home-v1-robot-bubble { animation: none; }
+  .home-v1-hero-robot-img, .home-v1-hero-robot-shadow, .home-v1-robot-bubble, .home-v1-hero-cta, .home-v1-hero-cta::after { animation: none; }
 }
 .home-v1-hero-lang-row { display: flex; align-items: center; gap: 10px; margin: 18px 0; flex-wrap: wrap; }
 .home-v1-hero-lang-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 1px solid #e3e9f7; border-radius: 999px; background: #fff; color: #33456e; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(68,94,155,.06); }
