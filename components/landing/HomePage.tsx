@@ -308,7 +308,6 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
                 <ButtonLink className="home-v1-hero-cta" href={startHref} eventName="home_cta_clicked" eventProperties={{ placement: "hero", cta: "primary", destination: "app", locale, target_language: targetLanguage }}>
                   {dictionary.hero.primaryCta}<ArrowRight size={16} aria-hidden="true" />
                 </ButtonLink>
-                <span className="home-v1-trial-note">{(dictionary.hero.proof ?? ["1-minute free conversation", "No credit card required"]).map((item) => <span key={item}><Check size={13} />{item}</span>)}</span>
               </div>
             </div>
             <HeroConversationDemo dictionary={dictionary} locale={locale} targetLanguage={targetLanguage} />
