@@ -1808,3 +1808,21 @@
   .home-v1-robot-note { top: -38px; right: 8px; font-size: 12px; }
   .home-v1-lang-strip-inner { grid-template-columns: 1fr; }
 }
+
+/* Mobile hero fit: prevent 1100px+ tall hero on 320-390px screens */
+@media (max-width: 640px) {
+  .home-v1-hero { padding: 24px 0 20px; min-height: 0; }
+  .home-v1-hero-grid { gap: 18px; }
+  .home-v1-hero-copy { padding: 0; }
+  .home-v1-hero h1 { font-size: 32px; line-height: 1.08; }
+  .home-v1-lead { font-size: 13px; margin-bottom: 14px; }
+  .home-v1-hero-lang-row { gap: 8px; margin: 12px 0; }
+  .home-v1-hero-lang-pill { min-height: 32px; padding: 0 11px; font-size: 12px; }
+  .home-v1-hero-demo-wrap { min-height: 0; grid-template-columns: 1fr; gap: 0; }
+  .home-v1-hero-orb { inset: 0 -20% -10% -20%; }
+  .home-v1-hero-demo { width: 100%; min-height: 0; }
+  .home-v1-hero-robot { display: none; }
+  .home-v1-demo-line p { max-width: 100%; }
+  .home-v1-help-card { width: 100%; }
+}
+

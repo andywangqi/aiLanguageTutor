@@ -49,7 +49,7 @@ type HeroDialogue = {
   followUp: string;
 };
 
-// Hero 卡片 AI Tutor 的三句话 —— 跟随左侧目标语言(heroLang)
+// AI 第一句提问 —— 跟随左侧目标语言(heroLang)；后两句 natural / followUp 跟随顶部用户本地语言
 const heroDialoguesByTarget: Record<string, HeroDialogue> = {
   en: { question: "What did you do last weekend?", natural: "I went hiking with some friends.", followUp: "That sounds great! What was the best part of the trip?" },
   es: { question: "¿Qué hiciste el fin de semana pasado?", natural: "Fui de excursión con unos amigos.", followUp: "¡Suena genial! ¿Cuál fue la mejor parte del viaje?" },
@@ -58,13 +58,33 @@ const heroDialoguesByTarget: Record<string, HeroDialogue> = {
   ja: { question: "週末は何をしていましたか？", natural: "友達とハイキングに行ってきました。", followUp: "それはよかったですね！一番楽しかったのは何ですか？" }
 };
 
-// 卡片头部显示的目标语言国旗 + 名称 + TTS 语音 lang —— 跟随左侧 heroLang
-const targetMeta: Record<string, { flag: string; name: string; speechLang: string }> = {
-  en: { flag: "us", name: "English", speechLang: "en-US" },
-  es: { flag: "es", name: "Español", speechLang: "es-ES" },
-  fr: { flag: "fr", name: "Français", speechLang: "fr-FR" },
-  de: { flag: "de", name: "Deutsch", speechLang: "de-DE" },
-  ja: { flag: "jp", name: "日本語", speechLang: "ja-JP" }
+const heroDialoguesByLocale: Record<Locale, HeroDialogue> = {
+  en: { question: "What did you do last weekend?", natural: "I went hiking with some friends.", followUp: "That sounds great! What was the best part of the trip?" },
+  ja: { question: "週末は何をしていましたか？", natural: "友達とハイキングに行ってきました。", followUp: "それはよかったですね！一番楽しかったのは何ですか？" },
+  th: { question: "สุดสัปดาห์ที่ผ่านมาคุณทำอะไรไปบ้าง?", natural: "ฉันไปเดินป่ากับเพื่อนๆ", followUp: "เสียงดูสนุก!ส่วนไหนสนุกที่สุด?" },
+  ko: { question: "지난 주말에 무엇을 하셨나요?", natural: "친구들과 하이킹을 갔어요.", followUp: "좋겠네요! 가장 좋았던 부분은 뭐였어요?" },
+  "zh-CN": { question: "上周末你做什么了？", natural: "我跟几个朋友去爬山了。", followUp: "听起来不错！这次最开心的部分是什么？" },
+  "zh-TW": { question: "上週末你做什麼了？", natural: "我跟幾個朋友去爬山了。", followUp: "聽起來不錯！這次最開心的部分是什麼？" },
+  es: { question: "¿Qué hiciste el fin de semana pasado?", natural: "Fui de excursión con unos amigos.", followUp: "¡Suena genial! ¿Cuál fue la mejor parte del viaje?" }
+};
+
+// 卡片头部国旗 + 名称 —— 跟随顶部用户本地语言(header locale)；TTS 语音跟随左侧目标语言
+const localeMeta: Record<Locale, { flag: string; name: string }> = {
+  en: { flag: "us", name: "English" },
+  ja: { flag: "jp", name: "日本語" },
+  th: { flag: "th", name: "ไทย" },
+  ko: { flag: "kr", name: "한국어" },
+  "zh-CN": { flag: "cn", name: "中文" },
+  "zh-TW": { flag: "tw", name: "繁體中文" },
+  es: { flag: "es", name: "Español" }
+};
+
+const targetSpeechLang: Record<string, string> = {
+  en: "en-US",
+  es: "es-ES",
+  fr: "fr-FR",
+  de: "de-DE",
+  ja: "ja-JP"
 };
 
 // 用户母语的"卡壳"表达 —— 永远跟随页面 locale,与左侧切换的目标语言无关
@@ -501,13 +521,15 @@ export function HomePage({ dictionary, locale }: { dictionary: LandingDictionary
 }
 
 function HeroConversationDemo({ dictionary, locale, targetLanguage }: { dictionary: LandingDictionary; locale: Locale; targetLanguage: string }) {
-  const selected = heroDialoguesByTarget[targetLanguage] ?? heroDialoguesByTarget.en;
-  const meta = targetMeta[targetLanguage] ?? targetMeta.en;
+  const targetDialogue = heroDialoguesByTarget[targetLanguage] ?? heroDialoguesByTarget.en;
+  const localeDialogue = heroDialoguesByLocale[locale] ?? heroDialoguesByLocale.en;
+  const meta = localeMeta[locale] ?? localeMeta.en;
+  const speechLang = targetSpeechLang[targetLanguage] ?? targetSpeechLang.en;
   function speak() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(selected.natural);
-    utterance.lang = meta.speechLang;
+    const utterance = new SpeechSynthesisUtterance(targetDialogue.natural);
+    utterance.lang = speechLang;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -532,9 +554,9 @@ function HeroConversationDemo({ dictionary, locale, targetLanguage }: { dictiona
 
   return <div className="home-v1-hero-demo-wrap" onMouseMove={handleParallax} onMouseLeave={resetParallax}><div className="home-v1-hero-orb" aria-hidden="true" /><div className="home-v1-hero-demo">
     <header><span className="home-v1-demo-logo"><span>▮</span> AI Language Tutor</span><span className="home-v1-demo-lang"><img src={`https://flagcdn.com/w40/${meta.flag}.png`} alt="" />{meta.name}</span><span className="home-v1-demo-head-actions" aria-hidden="true">✈ ···</span></header>
-    <div className="home-v1-demo-chat"><div className="home-v1-demo-line tutor"><span className="home-v1-demo-avatar">AI</span><div><p>{selected.question}</p></div></div><div className="home-v1-demo-line learner"><p>{learnerHesitations[locale]}</p></div>
-      <div className="home-v1-help-card"><strong><Lightbulb size={17} />{dictionary.demo.responseLabel}</strong><span>{dictionary.demo.promptLabel}:</span><b>“{selected.natural}”</b><div><button type="button" onClick={speak}><Volume2 size={14} />{dictionary.demo.actions[0]}</button><button type="button" onClick={speak}><Mic size={14} />{dictionary.demo.actions[1]}</button></div></div>
-      <div className="home-v1-demo-line tutor follow-up"><span className="home-v1-demo-avatar">AI</span><div><p>{selected.followUp}</p></div></div></div>
+    <div className="home-v1-demo-chat"><div className="home-v1-demo-line tutor"><span className="home-v1-demo-avatar">AI</span><div><p>{localeDialogue.question}</p></div></div><div className="home-v1-demo-line learner"><p>{learnerHesitations[locale]}</p></div>
+      <div className="home-v1-help-card"><strong><Lightbulb size={17} />{dictionary.demo.responseLabel}</strong><span>{dictionary.demo.promptLabel}:</span><b>“{targetDialogue.natural}”</b><div><button type="button" onClick={speak}><Volume2 size={14} />{dictionary.demo.actions[0]}</button><button type="button" onClick={speak}><Mic size={14} />{dictionary.demo.actions[1]}</button></div></div>
+      <div className="home-v1-demo-line tutor follow-up"><span className="home-v1-demo-avatar">AI</span><div><p>{localeDialogue.followUp}</p></div></div></div>
     <button className="home-v1-demo-mic" type="button" onClick={speak} aria-label={dictionary.demo.actions[0]}><Mic size={22} /></button><small className="home-v1-demo-tap">{dictionary.demo.turn}</small>
   </div><figure className="home-v1-hero-robot"><span className="home-v1-robot-note" aria-hidden="true">Your AI tutor<br />is here to help.</span><span className="home-v1-robot-bubble" aria-hidden="true"><i /><i /><i /><i /></span><span className="home-v1-hero-robot-shadow" aria-hidden="true" /><img className="home-v1-hero-robot-img" src="/images/ai-tutor-robot.png" alt="AI tutor robot" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /><span className="home-v1-robot-eq" aria-hidden="true"><i /><i /><i /><i /><i /></span></figure></div>;
 }
