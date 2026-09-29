@@ -1,2 +1,4 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Auto detect text files and perform LF normalization.
+# eol=lf keeps line endings LF on every checkout (Windows/macOS/Linux),
+# so editors and scripts never flip files between LF and CRLF.
+* text=auto eol=lf
