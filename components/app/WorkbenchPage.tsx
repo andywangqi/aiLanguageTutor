@@ -666,6 +666,12 @@ export function WorkbenchPage({ dictionary, locale }: { dictionary: LandingDicti
 
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
+        if (active) {
+          const query = new URLSearchParams(window.location.search);
+          const requestedLearningLanguage = learningLanguageFromQuery(query.get("learningLanguage"));
+          if (requestedLearningLanguage) setLearningLanguage(requestedLearningLanguage);
+          if (query.get("chooseLanguage") === "1") setLanguageModalOpen(true);
+        }
         return;
       }
 
