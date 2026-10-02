@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { localeLabels, localizedPath, localeUrl, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { trialMinutes } from "@/lib/billing/catalog";
+import type { BlogPost } from "@/lib/api/types";
 
 const defaultSiteUrl = "https://ailanguagetutor.online";
 
@@ -138,6 +139,78 @@ export function createLocalizedPageMetadata(locale: Locale, path: string, title:
     }
   };
 }
+export function createBlogPostMetadata(locale: Locale, slug: string, post: BlogPost): Metadata {
+  const enUrl = `${siteUrl}/learn/blog/${slug}`;
+  const title = post.seo?.title || post.title;
+  const description = post.seo?.description || post.excerpt || undefined;
+
+  // 未翻译判定：API 明确回退(fallbackUsed)，或返回内容语言与请求 locale 不一致
+  const isTranslated =
+    locale === "en" ||
+    (post.fallbackUsed !== true && (!post.locale || post.locale === locale));
+
+  if (!isTranslated) {
+    // 关键：不输出 hreflang，canonical 归并到英文原版，避免重复内容稀释权重
+    return {
+      metadataBase: new URL(siteUrl),
+      title,
+      description,
+      alternates: { canonical: enUrl },
+      robots: { index: true, follow: true }
+    };
+  }
+
+  // 已翻译：hreflang 集群只列真实存在的语言版本(en + alternateLocales)
+  const available = locales.filter(
+    (l) => l === "en" || (post.alternateLocales ?? []).includes(l)
+  );
+  const languages = Object.fromEntries(
+    available.map((item) => [
+      localeLabels[item].hreflang,
+      `${siteUrl}${localizedPath(item, `/learn/blog/${slug}`)}`
+    ])
+  );
+  const canonical = locale === "en" ? enUrl : `${siteUrl}${localizedPath(locale, `/learn/blog/${slug}`)}`;
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title,
+    description,
+    keywords: localeKeywords[locale],
+    alternates: {
+      canonical,
+      languages: {
+        ...languages,
+        "x-default": enUrl
+      }
+    },
+    openGraph: {
+      type: "article",
+      url: canonical,
+      title,
+      description,
+      siteName: "AI Language Tutor",
+      locale: openGraphLocale[locale]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1
+      }
+    }
+  };
+}
+
 export function createFaqSchema(locale: Locale) {
   const dictionary = getDictionary(locale);
 

@@ -1,67 +1,65 @@
 import type { MetadataRoute } from "next";
 import { getPublicBlogPosts } from "@/lib/blog";
-import { contentRoutes, getContentPagePath, type ContentCategory, type ContentSlug } from "@/lib/content-pages";
-import { localeUrl, locales, localizedPath } from "@/lib/i18n/config";
+import { localizedPath, locales, localeUrl, type Locale } from "@/lib/i18n/config";
 import { siteUrl } from "@/lib/seo/metadata";
-import { scenarios } from "@/lib/scenarios";
 
-const informationPaths = ["contact", "privacy", "terms"] as const;
-const contentPaths = Object.entries(contentRoutes).flatMap(([category, slugs]) =>
-  slugs.map((slug) => getContentPagePath(category as ContentCategory, slug as ContentSlug))
-);
+// 有搜索意图、值得被收录的白名单路径
+const LIST_PATHS = [
+  "",                           // 首页
+  "/pricing",
+  "/english-reading-practice",
+  "/learn/conversation-topics",
+  "/learn/learning-tips",
+  "/learn/practice-guide",
+  "/learn/blog",
+  "/practice/talk",
+  "/practice/get-help",
+  "/practice/pronunciation",
+  "/practice/vocabulary",
+  "/learn/ielts-speaking",
+  "/learn/english-job-interview",
+  "/learn/english-travel-conversation",
+] as const;
+
+// 仅英文版、无本地化版本的路径
+const EN_ONLY = new Set([
+  "/learn/ielts-speaking",
+  "/learn/english-job-interview",
+  "/learn/english-travel-conversation",
+]);
+
+function entryUrl(locale: Locale | "", path: string): string {
+  // 与 metadata canonical 保持一致：本地化首页无尾斜杠
+  if (path === "") return locale ? localeUrl(siteUrl, locale) : `${siteUrl}/`;
+  return `${siteUrl}${locale ? localizedPath(locale, path) : path}`;
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const blog = await getPublicBlogPosts("en");
-  const blogPaths = (blog?.posts ?? []).flatMap((post) =>
-    locales.map((locale) => ({
-      url: `${siteUrl}${localizedPath(locale, `/learn/blog/${post.slug}`)}`,
-      lastModified: post.updatedAt || post.publishedAt || new Date(),
-      changeFrequency: "weekly" as const,
-      priority: locale === "en" ? 0.65 : 0.55
-    }))
-  );
+  const now = new Date();
+  const out: MetadataRoute.Sitemap = [];
 
-  return [
-    ...scenarios.map((scenario) => ({
-      url: `${siteUrl}/learn/${scenario.slug}`,
-      lastModified: "2026-09-17",
-      changeFrequency: "monthly" as const,
-      priority: 0.65
-    })),
-    ...locales.map((locale) => ({
-      url: localeUrl(siteUrl, locale),
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: locale === "en" ? 1 : 0.8
-    })),
-    ...locales.map((locale) => ({
-      url: `${siteUrl}${localizedPath(locale, "/pricing")}`,
-      lastModified: new Date(),
-      changeFrequency: "monthly" as const,
-      priority: locale === "en" ? 0.7 : 0.55
-    })),
-    ...locales.map((locale) => ({
-      url: `${siteUrl}${localizedPath(locale, "/english-reading-practice")}`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: locale === "en" ? 0.8 : 0.7
-    })),
-    ...contentPaths.flatMap((path) =>
-      locales.map((locale) => ({
-        url: `${siteUrl}${localizedPath(locale, path)}`,
-        lastModified: new Date(),
-        changeFrequency: "monthly" as const,
-        priority: path.startsWith("/legal/") ? 0.3 : 0.55
-      }))
-    ),
-    ...blogPaths,
-    ...informationPaths.flatMap((path) =>
-      locales.map((locale) => ({
-        url: `${siteUrl}${localizedPath(locale, `/${path}`)}`,
-        lastModified: new Date(),
-        changeFrequency: "yearly" as const,
-        priority: path === "contact" ? 0.4 : 0.3
-      }))
-    )
-  ];
+  // 白名单列表页
+  for (const path of LIST_PATHS) {
+    const enOnly = EN_ONLY.has(path);
+    const targetLocales: readonly (Locale | "")[] = enOnly ? [""] : ["", ...locales.filter((l) => l !== "en")];
+
+    for (const locale of targetLocales) {
+      out.push({
+        url: entryUrl(locale, path),
+        lastModified: now,
+      });
+    }
+  }
+
+  // 博客文章 —— 先保留英文版详情页(T02 再处理翻译状态与本地化 hreflang)
+  const blog = await getPublicBlogPosts("en");
+  const posts = blog?.posts ?? [];
+  for (const post of posts) {
+    out.push({
+      url: `${siteUrl}/learn/blog/${post.slug}`,
+      lastModified: post.updatedAt || post.publishedAt || now,
+    });
+  }
+
+  return out;
 }

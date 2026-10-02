@@ -2303,6 +2303,58 @@ h1 {
   font-weight: 650;
 }
 
+/* Related links (T05) */
+.info-related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border, #ece8e3);
+}
+
+.info-related h2 {
+  margin: 0 0 16px;
+  font-size: 15px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted, #667085);
+}
+
+.info-related ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.info-related a {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border, #ece8e3);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink, #182033);
+  text-decoration: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.info-related a:hover {
+  border-color: #d6dbe5;
+  box-shadow: 0 4px 14px rgba(50, 65, 110, 0.08);
+}
+
+.info-related a strong {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.info-related a span {
+  color: var(--muted, #667085);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .info-footer {
   padding: 24px 0;
   color: rgba(255, 255, 255, 0.72);

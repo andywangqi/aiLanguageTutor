@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { InfoPage } from "@/components/site/InfoPage";
 import { InfoSections } from "@/components/site/InfoSections";
+import { RelatedLinks } from "@/components/site/RelatedLinks";
 import { getInfoCopy } from "@/lib/i18n/info-copy";
 import type { Locale } from "@/lib/i18n/config";
 import type { ContentPageCopy } from "@/lib/content-pages";
 
 export function ContentPage({
   locale,
+  currentPath,
   eyebrow,
   title,
   lead,
@@ -16,6 +18,7 @@ export function ContentPage({
   callout
 }: {
   locale: Locale;
+  currentPath?: string;
   eyebrow: string;
   title: string;
   lead: string;
@@ -59,7 +62,7 @@ export function ContentPage({
         </section>
       ) : null}
 
-
+      {currentPath ? <RelatedLinks locale={locale} currentPath={currentPath} /> : null}
     </InfoPage>
   );
 }

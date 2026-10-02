@@ -7,6 +7,7 @@ import { getPublicBlogPosts } from "@/lib/blog";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
+import { getPageSeo } from "@/lib/seo/page-seo";
 
 const category = "learn" as const;
 
@@ -36,7 +37,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {};
   }
 
-  return createLocalizedPageMetadata(typedLocale, getContentPagePath(category, typedSlug), copy.title, copy.lead);
+  const path = getContentPagePath(category, typedSlug);
+  const seo = getPageSeo(path, typedLocale);
+  return createLocalizedPageMetadata(typedLocale, path, seo?.title ?? copy.title, seo?.description ?? copy.lead);
 }
 
 export default async function Page({ params }: PageProps) {
@@ -55,10 +58,12 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
+  const path = getContentPagePath(category, typedSlug);
+
   if (typedSlug === "blog") {
     const blog = await getPublicBlogPosts(typedLocale);
     if (blog) return <BlogPage locale={typedLocale} copy={copy} data={blog} />;
   }
 
-  return <ContentPage locale={typedLocale} {...copy} />;
+  return <ContentPage locale={typedLocale} currentPath={path} {...copy} />;
 }

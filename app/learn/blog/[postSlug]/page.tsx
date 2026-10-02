@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BlogArticlePage } from "@/components/site/BlogPage";
 import { getPublicBlogPost } from "@/lib/blog";
-import { getContentPageCopy, getContentPagePath } from "@/lib/content-pages";
+import { getContentPageCopy } from "@/lib/content-pages";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
+import { createBlogPostMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = result?.post;
   if (!copy || !post) return {};
 
-  return createLocalizedPageMetadata(
-    "en",
-    `${getContentPagePath("learn", "blog")}/${postSlug}`,
-    post.seo?.title || post.title,
-    post.seo?.description || post.excerpt || copy.lead
-  );
+  return createBlogPostMetadata("en", postSlug, post);
 }
 
 export default async function Page({ params }: PageProps) {

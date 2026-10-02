@@ -5,6 +5,7 @@ import { contentRoutes, getContentPageCopy, getContentPagePath, type ContentSlug
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
+import { getPageSeo } from "@/lib/seo/page-seo";
 
 const category = "practice" as const;
 
@@ -34,7 +35,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {};
   }
 
-  return createLocalizedPageMetadata(typedLocale, getContentPagePath(category, typedSlug), copy.title, copy.lead);
+  const path = getContentPagePath(category, typedSlug);
+  const seo = getPageSeo(path, typedLocale);
+  return createLocalizedPageMetadata(typedLocale, path, seo?.title ?? copy.title, seo?.description ?? copy.lead);
 }
 
 export default async function Page({ params }: PageProps) {
@@ -53,5 +56,6 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
-  return <ContentPage locale={typedLocale} {...copy} />;
+  const path = getContentPagePath(category, typedSlug);
+  return <ContentPage locale={typedLocale} currentPath={path} {...copy} />;
 }

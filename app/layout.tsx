@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { DocumentLanguage } from "@/components/site/DocumentLanguage";
 import { AnalyticsTracker } from "@/components/site/AnalyticsTracker";
 import "./globals.css";
@@ -14,9 +15,12 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const h = await headers();
+  const locale = h.get("x-locale") ?? "en";
+
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang={locale} data-scroll-behavior="smooth">
       <body>
         <DocumentLanguage />
         <AnalyticsTracker />

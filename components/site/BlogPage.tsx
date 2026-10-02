@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { InfoPage } from "@/components/site/InfoPage";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
+import { blogProductLinksMap } from "@/lib/seo/related-links";
 import type { BlogLayout, BlogListResponse, BlogPost, BlogPostSummary } from "@/lib/api/types";
 import type { ContentPageCopy } from "@/lib/content-pages";
 
@@ -166,6 +167,19 @@ export function BlogArticlePage({ locale, copy, post }: { locale: Locale; copy: 
               return block.type === "heading" ? <div id={headingAnchors[headingIndex] || blockAnchor(block, index)} key={index}>{rendered}</div> : rendered;
             })}
             {post.relatedArticles?.length ? <section className="blog-related" aria-labelledby="blog-related-title"><h2 id="blog-related-title">{locale === "zh-CN" ? "相关文章" : "Related articles"}</h2><div className="blog-related-grid">{post.relatedArticles.map((article) => <BlogCard key={article.id || article.slug} post={article} locale={locale} layout={article.layout || layout} />)}</div></section> : null}
+            <nav className="info-related blog-product-links" aria-label={locale === "zh-CN" ? "试试产品" : locale === "zh-TW" ? "試試產品" : "Try the product"}>
+              <h2>{locale === "zh-CN" ? "试试产品" : locale === "zh-TW" ? "試試產品" : locale === "ja" ? "製品を試す" : locale === "ko" ? "제품 체험" : locale === "th" ? "ลองใช้ผลิตภัณฑ์" : locale === "es" ? "Prueba el producto" : "Try the product"}</h2>
+              <ul>
+                {blogProductLinksMap[locale].map((item) => (
+                  <li key={item.href}>
+                    <Link href={localizedPath(locale, item.href)}>
+                      <strong>{item.label}</strong>
+                      <span>{item.description}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         </div>
       </article>

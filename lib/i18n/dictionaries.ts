@@ -6,7 +6,7 @@ import { repeatCopy, positioning, trialLabels } from "./practice-copy";
 const baseEn: LandingDictionary = {
   locale: "en",
   seo: {
-    title: "AI Language Tutor | Real Conversation Practice",
+    title: "AI Language Tutor: Practise Speaking Through Real Conversations",
     description:
       "Practice speaking languages through real conversations with an AI tutor. Get help, corrections, and feedback as you talk. Start free."
   },

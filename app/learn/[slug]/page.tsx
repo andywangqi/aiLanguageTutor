@@ -6,6 +6,7 @@ import { contentRoutes, getContentPageCopy, getContentPagePath, type ContentSlug
 import { getPublicBlogPosts } from "@/lib/blog";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { createLocalizedPageMetadata } from "@/lib/seo/metadata";
+import { getPageSeo } from "@/lib/seo/page-seo";
 
 const category = "learn" as const;
 
@@ -32,7 +33,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {};
   }
 
-  return createLocalizedPageMetadata("en", getContentPagePath(category, typedSlug), copy.title, copy.lead);
+  const path = getContentPagePath(category, typedSlug);
+  const seo = getPageSeo(path, "en");
+  return createLocalizedPageMetadata("en", path, seo?.title ?? copy.title, seo?.description ?? copy.lead);
 }
 
 export default async function Page({ params }: PageProps) {
@@ -50,10 +53,12 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
+  const path = getContentPagePath(category, typedSlug);
+
   if (typedSlug === "blog") {
     const blog = await getPublicBlogPosts("en");
     if (blog) return <BlogPage locale="en" copy={copy} data={blog} />;
   }
 
-  return <ContentPage locale="en" {...copy} />;
+  return <ContentPage locale="en" currentPath={path} {...copy} />;
 }
